@@ -1711,20 +1711,32 @@
             <div id="planificadorContent" style="display:none;">
                 <div class="filter-panel" style="justify-content: space-between; align-items:center;">
                     <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
-                        <div class="filter-group" style="min-width: 100px;">
+                        <div class="filter-group" style="min-width: 80px;">
                             <label>Año</label>
-                            <input type="number" id="planYearSelect" value="2026" style="font-size: 1.1rem; font-weight: bold; color: var(--neon-cyan);">
+                            <input type="number" id="planYearSelect" value="2026" style="font-size: 1.1rem; font-weight: bold; color: var(--neon-cyan);" onchange="loadSeasonPlanificador()">
                         </div>
-                        <div class="filter-group" style="min-width: 150px;">
+                        <div class="filter-group" style="min-width: 140px;">
                             <label>Temporada</label>
-                            <select id="planSeasonSelect" style="font-size: 1.1rem; font-weight: bold;">
+                            <select id="planSeasonSelect" style="font-size: 1.1rem; font-weight: bold;" onchange="loadSeasonPlanificador()">
                                 <option value="Winter">❄️ Winter (Invierno)</option>
                                 <option value="Spring">🌸 Spring (Primavera)</option>
                                 <option value="Summer" selected>☀️ Summer (Verano)</option>
                                 <option value="Fall">🍂 Fall (Otoño)</option>
                             </select>
                         </div>
-                        <button class="btn" style="margin:0; padding:12px 20px; width:auto; font-size:0.9rem;" onclick="loadSeasonPlanificador()">📡 Desplegar Temporada</button>
+                        <div class="filter-group" style="min-width: 150px;">
+                            <label>Filtrar Estado</label>
+                            <select id="planStatusFilter" style="font-size: 1.1rem; font-weight: bold; color: var(--neon-magenta); border-color: var(--neon-magenta);" onchange="renderSeasonGrid()">
+                                <option value="all">👁️ Ver Todos</option>
+                                <option value="visto">🟣 Lo he visto</option>
+                                <option value="interesa">🟢 Me interesa</option>
+                                <option value="sin_prisa">🟡 Sin prisa</option>
+                                <option value="poco_interes">🔴 Poco interés</option>
+                                <option value="no_ver">⚫ NO quiero verlo</option>
+                                <option value="default">⚪ Sin marcar</option>
+                            </select>
+                        </div>
+                        <button class="btn" style="margin:0; padding:12px 20px; width:auto; font-size:0.9rem;" onclick="loadSeasonPlanificador()">📡 Desplegar</button>
                     </div>
                     <div class="btn-action-group">
                         <button class="clear-cache-btn" id="btnSyncPlanificador" style="border-color:var(--neon-green); color:var(--neon-green); padding: 12px 20px; font-weight:bold;" onclick="syncPlanificadorToCloud()">☁️ Guardar Cambios</button>
@@ -1733,7 +1745,7 @@
 
                 <div id="planificadorGrid" class="season-grid">
                     <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">
-                        Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar Temporada"</strong> para cargar los animes.
+                        Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada para cargar los animes.
                     </div>
                 </div>
             </div>
@@ -3681,23 +3693,27 @@
         let _planificadorInitialized = false;
         let _planificadorSaveTimeout = null;
 
+        // Función auxiliar para forzar la lectura del elemento visual correcto
+        function getSafeEl(id) {
+            const els = document.querySelectorAll('#' + id);
+            return els[els.length - 1]; 
+        }
+
         function initPlanificadorFetch() {
-            // Evitamos borrar el progreso local si el usuario cambia de pestaña y vuelve
             if (_planificadorInitialized) {
-                document.getElementById('planificadorLoader').style.display = 'none';
-                document.getElementById('planificadorContent').style.display = 'block';
+                getSafeEl('planificadorLoader').style.display = 'none';
+                getSafeEl('planificadorContent').style.display = 'block';
                 return;
             }
 
-            document.getElementById('planificadorLoader').style.display = 'block';
-            document.getElementById('planificadorContent').style.display = 'none';
+            getSafeEl('planificadorLoader').style.display = 'block';
+            getSafeEl('planificadorContent').style.display = 'none';
 
             window.handlePlanificadorResponse = function(response) {
-                document.getElementById('planificadorLoader').style.display = 'none';
-                document.getElementById('planificadorContent').style.display = 'block';
+                getSafeEl('planificadorLoader').style.display = 'none';
+                getSafeEl('planificadorContent').style.display = 'block';
                 
                 if(response.status === 'success' && response.data && response.data.length > 0) {
-                    // Validar que realmente sea la pestaña del planificador y no datos cruzados
                     if (response.data[0].status !== undefined) {
                         _planificadorSavedProgress = response.data.map(i => ({
                            id: String(i.id), year: i.year, season: i.season, 
@@ -3708,7 +3724,7 @@
                 
                 _planificadorInitialized = true;
                 
-                document.getElementById('planificadorGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar Temporada"</strong> para cargar los animes.</div>';
+                getSafeEl('planificadorGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar Temporada"</strong> para cargar los animes.</div>';
                 
                 const scriptTag = document.getElementById('jsonpPlanificadorScript');
                 if(scriptTag) scriptTag.remove();
@@ -3721,9 +3737,9 @@
         }
 
         async function loadSeasonPlanificador() {
-            const year = document.getElementById('planYearSelect').value;
-            const season = document.getElementById('planSeasonSelect').value.toLowerCase();
-            const grid = document.getElementById('planificadorGrid');
+            const year = getSafeEl('planYearSelect').value;
+            const season = getSafeEl('planSeasonSelect').value.toLowerCase();
+            const grid = getSafeEl('planificadorGrid');
             
             grid.innerHTML = '<div class="loader" style="grid-column:1/-1; padding:40px 0;"><div class="spinner"></div>Descargando catálogo completo de la temporada (esto puede tardar unos segundos)... ⏳</div>';
             
@@ -3771,12 +3787,17 @@
         }
 
         function renderSeasonGrid() {
-            const grid = document.getElementById('planificadorGrid');
+            const grid = getSafeEl('planificadorGrid');
             grid.innerHTML = '';
             
             if (_currentSeasonData.length === 0) return;
 
             let autoSyncNeeded = false;
+            
+            // Leemos el filtro actual del estado
+            const filterElement = getSafeEl('planStatusFilter');
+            const currentFilter = filterElement ? filterElement.value : 'all';
+            let visibleCount = 0;
 
             _currentSeasonData.forEach(anime => {
                 const malId = String(anime.mal_id);
@@ -3784,7 +3805,6 @@
                 const cover = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url || FALLBACK_IMG;
                 
                 const isRegistered = _masterData.some(m => m.anime && m.anime.toLowerCase() === title.toLowerCase());
-                
                 const savedItem = _planificadorSavedProgress.find(p => String(p.id) === malId);
                 let status = savedItem ? savedItem.status : 'default';
 
@@ -3796,13 +3816,20 @@
                         id: String(malId),
                         title: title,
                         cover: cover,
-                        year: parseInt(document.getElementById('planYearSelect').value),
-                        season: document.getElementById('planSeasonSelect').value,
+                        year: parseInt(getSafeEl('planYearSelect').value),
+                        season: getSafeEl('planSeasonSelect').value,
                         status: 'visto'
                     });
                     
                     autoSyncNeeded = true;
                 }
+
+                // Filtrar visualmente: Si no coincide con el filtro, lo ignoramos y no se pinta
+                if (currentFilter !== 'all' && status !== currentFilter) {
+                    return; 
+                }
+
+                visibleCount++;
 
                 const card = document.createElement('div');
                 card.className = `plan-card plan-status-${status}`;
@@ -3826,17 +3853,21 @@
                 grid.appendChild(card);
             });
 
-            // Disparamos la subida si se hicieron comprobaciones automáticas con tu lista
+            // Mensaje si aplicas un filtro y no hay ninguno con ese estado
+            if (visibleCount === 0 && _currentSeasonData.length > 0 && filterElement) {
+                const filterName = filterElement.options[filterElement.selectedIndex].text;
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">No hay animes en esta temporada con el estado <strong>"${filterName}"</strong>.</div>`;
+            }
+
             if (autoSyncNeeded) {
                 setTimeout(() => syncPlanificadorToCloud(), 1000);
             }
         }
 
         function updateSeasonPlanStatus(malId, newStatus) {
-            const currentYear = document.getElementById('planYearSelect').value;
-            const currentSeason = document.getElementById('planSeasonSelect').value;
+            const currentYear = getSafeEl('planYearSelect').value;
+            const currentSeason = getSafeEl('planSeasonSelect').value;
             
-            // Actualizamos la base de memoria local
             _planificadorSavedProgress = _planificadorSavedProgress.filter(p => String(p.id) !== String(malId));
             
             if (newStatus !== 'default') {
@@ -3853,11 +3884,9 @@
                 }
             }
             
-            // Actualizamos solo el marco visual inmediatamente
             renderSeasonGrid();
             
-            // --- AUTO-GUARDADO INTELIGENTE (DEBOUNCE) ---
-            const btn = document.getElementById('btnSyncPlanificador');
+            const btn = getSafeEl('btnSyncPlanificador');
             if (btn) {
                 btn.innerText = "⏳ Guardando...";
                 btn.style.borderColor = "var(--neon-yellow)";
@@ -3871,7 +3900,7 @@
         }
 
         function syncPlanificadorToCloud() {
-            const btn = document.getElementById('btnSyncPlanificador');
+            const btn = getSafeEl('btnSyncPlanificador');
             if(btn) {
                 btn.innerText = "Sincronizando ☁️";
                 btn.disabled = true;
