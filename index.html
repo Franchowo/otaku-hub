@@ -860,7 +860,104 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
+
+        /* --- ESTILOS PLANIFICADOR TIPO LIVECHART --- */
+        .season-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); 
+            gap: 20px; 
+            margin-top: 25px; 
+        }
+        .plan-card { 
+            background: rgba(255,255,255,0.02); 
+            border: 2px solid var(--glass-border); /* Borde completo por defecto */
+            border-radius: 12px; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            transition: all 0.3s ease; 
+        }
+        .plan-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+        }
+        .plan-card-img { 
+            width: 100%; 
+            aspect-ratio: 2/3; 
+            position: relative; 
+            background: #111;
+        }
+        .plan-card-img img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transition: 0.3s;
+        }
+        .plan-card:hover .plan-card-img img { transform: scale(1.05); }
+        .plan-card-info { 
+            padding: 12px; 
+            display: flex; 
+            flex-direction: column; 
+            flex-grow: 1; 
+            gap: 10px; 
+            background: rgba(0,0,0,0.7); 
+            z-index: 1;
+        }
+        .plan-card-title { 
+            font-size: 0.85rem; 
+            font-weight: bold; 
+            line-height: 1.3; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            overflow: hidden; 
+            color: #fff; 
+            min-height: 2.6em;
+        }
+        .plan-card-select { 
+            font-size: 0.8rem; 
+            padding: 6px; 
+            border-radius: 6px; 
+            background: rgba(0,0,0,0.8); 
+            border: 1px solid var(--glass-border); 
+            color: #fff; 
+            cursor: pointer; 
+            outline: none; 
+            width: 100%; 
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .plan-card-select:hover { background: rgba(255,255,255,0.1); }
+        
+        /* --- CÓDIGO DE COLORES LIVECHART MEJORADO --- */
+        .plan-status-default { border-color: var(--glass-border); }
+
+        /* VISTO: Resplandor Morado sobre la portada */
+        .plan-status-visto { border-color: var(--neon-purple); box-shadow: 0 0 20px rgba(189, 0, 255, 0.4); }
+        .plan-status-visto .plan-card-select { border-color: var(--neon-purple); color: var(--neon-purple); background: rgba(189, 0, 255, 0.1); }
+        .plan-status-visto .plan-card-img::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 60px rgba(189, 0, 255, 0.8); pointer-events: none; z-index: 2; }
+        
+        /* INTERESA: Resplandor Verde sobre la portada */
+        .plan-status-interesa { border-color: var(--neon-green); box-shadow: 0 0 20px rgba(0, 255, 102, 0.4); }
+        .plan-status-interesa .plan-card-select { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0, 255, 102, 0.1); }
+        .plan-status-interesa .plan-card-img::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 60px rgba(0, 255, 102, 0.8); pointer-events: none; z-index: 2; }
+        
+        /* SIN PRISA: Resplandor Amarillo sobre la portada */
+        .plan-status-sin_prisa { border-color: var(--neon-yellow); box-shadow: 0 0 20px rgba(255, 170, 0, 0.4); }
+        .plan-status-sin_prisa .plan-card-select { border-color: var(--neon-yellow); color: var(--neon-yellow); background: rgba(255, 170, 0, 0.1); }
+        .plan-status-sin_prisa .plan-card-img::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 60px rgba(255, 170, 0, 0.8); pointer-events: none; z-index: 2; }
+        
+        /* POCO INTERÉS: Resplandor Rojo sobre la portada */
+        .plan-status-poco_interes { border-color: var(--neon-red); box-shadow: 0 0 20px rgba(255, 0, 51, 0.4); }
+        .plan-status-poco_interes .plan-card-select { border-color: var(--neon-red); color: var(--neon-red); background: rgba(255, 0, 51, 0.1); }
+        .plan-status-poco_interes .plan-card-img::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 60px rgba(255, 0, 51, 0.8); pointer-events: none; z-index: 2; }
+        
+        /* NO VER: Portada oscurecida y en blanco y negro */
+        .plan-status-no_ver { border-color: #333; opacity: 0.6; }
+        .plan-status-no_ver .plan-card-select { border-color: #555; color: #aaa; background: rgba(85, 85, 85, 0.3); }
+        .plan-status-no_ver .plan-card-img img { filter: grayscale(100%) brightness(0.35); }
     </style>
+
 </head>
 <body>
 
@@ -879,6 +976,7 @@
         <button class="tab-btn icon-only" id="tabBtn-rankerView" onclick="switchView('rankerView')" title="Opening Ranker">⚔️</button>
         <button class="tab-btn icon-only" id="tabBtn-recommendationsView" onclick="switchView('recommendationsView')" title="Sistema Recomendaciones">💡</button>
         <button class="tab-btn icon-only" id="tabBtn-calificadorView" onclick="switchView('calificadorView')" title="Calificador Anime">🎯</button>
+        <button class="tab-btn icon-only" id="tabBtn-planificadorView" onclick="switchView('planificadorView')" title="Planificador">📅</button>
     </nav>
 
     <div class="container hub-mode" id="mainContainer">
@@ -1001,6 +1099,15 @@
                     <div class="hub-text-content">
                         <span class="hub-card-title">Calificador Anime</span>
                         <span class="hub-card-desc">Puntúa episodio a episodio y descubre candidatos a nota 10.</span>
+                    </div>
+                    <div class="hub-arrow">→</div>
+                </div>
+
+                <div class="hub-card purple" onclick="switchView('planificadorView')">
+                    <div class="hub-icon-wrapper">📅</div>
+                    <div class="hub-text-content">
+                        <span class="hub-card-title">Planificador</span>
+                        <span class="hub-card-desc">Sigue tus intereses por año y temporada con portadas y colores.</span>
                     </div>
                     <div class="hub-arrow">→</div>
                 </div>
@@ -1593,9 +1700,48 @@
             </div>
         </div>
 
+        <div id="planificadorView" class="view">
+            <h2>📅 Planificador Estacional</h2>
+            
+            <div id="planificadorLoader" class="loader" style="display:none;">
+                <div class="spinner"></div>
+                Sincronizando estado de tu planificador con la nube...
+            </div>
+
+            <div id="planificadorContent" style="display:none;">
+                <div class="filter-panel" style="justify-content: space-between; align-items:center;">
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="filter-group" style="min-width: 100px;">
+                            <label>Año</label>
+                            <input type="number" id="planYearSelect" value="2026" style="font-size: 1.1rem; font-weight: bold; color: var(--neon-cyan);">
+                        </div>
+                        <div class="filter-group" style="min-width: 150px;">
+                            <label>Temporada</label>
+                            <select id="planSeasonSelect" style="font-size: 1.1rem; font-weight: bold;">
+                                <option value="Winter">❄️ Winter (Invierno)</option>
+                                <option value="Spring">🌸 Spring (Primavera)</option>
+                                <option value="Summer" selected>☀️ Summer (Verano)</option>
+                                <option value="Fall">🍂 Fall (Otoño)</option>
+                            </select>
+                        </div>
+                        <button class="btn" style="margin:0; padding:12px 20px; width:auto; font-size:0.9rem;" onclick="loadSeasonPlanificador()">📡 Desplegar Temporada</button>
+                    </div>
+                    <div class="btn-action-group">
+                        <button class="clear-cache-btn" id="btnSyncPlanificador" style="border-color:var(--neon-green); color:var(--neon-green); padding: 12px 20px; font-weight:bold;" onclick="syncPlanificadorToCloud()">☁️ Guardar Cambios</button>
+                    </div>
+                </div>
+
+                <div id="planificadorGrid" class="season-grid">
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">
+                        Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar Temporada"</strong> para cargar los animes.
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <script>
+<script>
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgm1NIEixEeDey3KYqlXI_IMQ_sE9p1ssRjDlXsxQFNRdBQXUGz9hsTOQaWco5j1HETA/exec";
         
         let _masterData = []; 
@@ -1611,6 +1757,9 @@
         let _calificadorEpisodesCount = 0;
         let _calificadorCurrentId = null;
         let _calificadorSavedProgress = [];
+
+        let _planificadorSavedProgress = [];
+        let _currentSeasonData = [];
 
         // Declaración de FALLBACK_IMG global al principio para evitar fallos de referencia
         const FALLBACK_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='85'%3E%3Crect width='60' height='85' fill='%23111122' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2300f0ff' font-family='sans-serif' font-size='20' font-weight='bold'%3E?%3C/text%3E%3C/svg%3E";
@@ -1753,6 +1902,8 @@
                 initRecommendationsFetch();
             } else if(viewId === 'calificadorView') {
                 initCalificadorFetch();
+            } else if(viewId === 'planificadorView') {
+                initMasterDataFetch(() => initPlanificadorFetch());
             }
         }
 
@@ -2217,6 +2368,8 @@
                 initMasterDataFetch(() => initTop150Fetch());
             } else if(activeView === 'calificadorView') {
                 initCalificadorFetch();
+            } else if(activeView === 'planificadorView') {
+                initPlanificadorFetch();
             } else {
                 initMasterDataFetch();
             }
@@ -3521,6 +3674,241 @@
                 if(callbackSuccess) callbackSuccess();
             }).catch(() => {
                 if(statusLabel) { statusLabel.innerText = "Error red ❌"; statusLabel.style.color = "var(--neon-red)"; }
+            });
+        }
+
+        // --- LOGICA EXCLUSIVA: PLANIFICADOR ESTACIONAL TIPO LIVECHART ---
+        let _planificadorInitialized = false;
+        let _planificadorSaveTimeout = null;
+
+        function initPlanificadorFetch() {
+            // Evitamos borrar el progreso local si el usuario cambia de pestaña y vuelve
+            if (_planificadorInitialized) {
+                document.getElementById('planificadorLoader').style.display = 'none';
+                document.getElementById('planificadorContent').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('planificadorLoader').style.display = 'block';
+            document.getElementById('planificadorContent').style.display = 'none';
+
+            window.handlePlanificadorResponse = function(response) {
+                document.getElementById('planificadorLoader').style.display = 'none';
+                document.getElementById('planificadorContent').style.display = 'block';
+                
+                if(response.status === 'success' && response.data && response.data.length > 0) {
+                    // Validar que realmente sea la pestaña del planificador y no datos cruzados
+                    if (response.data[0].status !== undefined) {
+                        _planificadorSavedProgress = response.data.map(i => ({
+                           id: String(i.id), year: i.year, season: i.season, 
+                           title: i.title, cover: i.cover, status: i.status
+                        }));
+                    }
+                }
+                
+                _planificadorInitialized = true;
+                
+                document.getElementById('planificadorGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar Temporada"</strong> para cargar los animes.</div>';
+                
+                const scriptTag = document.getElementById('jsonpPlanificadorScript');
+                if(scriptTag) scriptTag.remove();
+            };
+
+            const script = document.createElement('script');
+            script.id = 'jsonpPlanificadorScript';
+            script.src = `${WEB_APP_URL}?sheet=PLANIFICADOR_STATE&tab=PLANIFICADOR_STATE&sheetName=PLANIFICADOR_STATE&callback=handlePlanificadorResponse&_=${new Date().getTime()}`;
+            document.body.appendChild(script);
+        }
+
+        async function loadSeasonPlanificador() {
+            const year = document.getElementById('planYearSelect').value;
+            const season = document.getElementById('planSeasonSelect').value.toLowerCase();
+            const grid = document.getElementById('planificadorGrid');
+            
+            grid.innerHTML = '<div class="loader" style="grid-column:1/-1; padding:40px 0;"><div class="spinner"></div>Descargando catálogo completo de la temporada (esto puede tardar unos segundos)... ⏳</div>';
+            
+            try {
+                let allAnime = [];
+                let page = 1;
+                let hasNextPage = true;
+
+                while (hasNextPage) {
+                    const res = await fetch(`https://api.jikan.moe/v4/seasons/${year}/${season}?filter=tv&page=${page}`);
+                    const data = await res.json();
+                    
+                    if (data.data && data.data.length > 0) {
+                        allAnime = allAnime.concat(data.data);
+                    }
+                    
+                    if (data.pagination && data.pagination.has_next_page) {
+                        page++;
+                        await new Promise(r => setTimeout(r, 400));
+                    } else {
+                        hasNextPage = false;
+                    }
+                }
+                
+                if (allAnime.length > 0) {
+                    const uniqueAnimeMap = new Map();
+                    allAnime.forEach(anime => {
+                        if (!uniqueAnimeMap.has(anime.mal_id)) {
+                            uniqueAnimeMap.set(anime.mal_id, anime);
+                        }
+                    });
+                    allAnime = Array.from(uniqueAnimeMap.values());
+
+                    allAnime.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                    
+                    _currentSeasonData = allAnime;
+                    renderSeasonGrid();
+                } else {
+                    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--neon-red); padding: 40px 0;">No se han encontrado animes (TV) para esta temporada.</div>';
+                }
+            } catch (e) {
+                console.error(e);
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--neon-red); padding: 40px 0;">Error de red al conectar con Jikan API.</div>';
+            }
+        }
+
+        function renderSeasonGrid() {
+            const grid = document.getElementById('planificadorGrid');
+            grid.innerHTML = '';
+            
+            if (_currentSeasonData.length === 0) return;
+
+            let autoSyncNeeded = false;
+
+            _currentSeasonData.forEach(anime => {
+                const malId = String(anime.mal_id);
+                const title = anime.title;
+                const cover = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url || FALLBACK_IMG;
+                
+                const isRegistered = _masterData.some(m => m.anime && m.anime.toLowerCase() === title.toLowerCase());
+                
+                const savedItem = _planificadorSavedProgress.find(p => String(p.id) === malId);
+                let status = savedItem ? savedItem.status : 'default';
+
+                if (isRegistered && status !== 'visto') {
+                    status = 'visto';
+                    
+                    _planificadorSavedProgress = _planificadorSavedProgress.filter(p => String(p.id) !== String(malId));
+                    _planificadorSavedProgress.push({
+                        id: String(malId),
+                        title: title,
+                        cover: cover,
+                        year: parseInt(document.getElementById('planYearSelect').value),
+                        season: document.getElementById('planSeasonSelect').value,
+                        status: 'visto'
+                    });
+                    
+                    autoSyncNeeded = true;
+                }
+
+                const card = document.createElement('div');
+                card.className = `plan-card plan-status-${status}`;
+                
+                card.innerHTML = `
+                    <div class="plan-card-img">
+                        <img src="${cover}" alt="cover" onerror="this.src='${FALLBACK_IMG}';">
+                    </div>
+                    <div class="plan-card-info">
+                        <span class="plan-card-title" title="${title}">${title}</span>
+                        <select class="plan-card-select" onchange="updateSeasonPlanStatus('${malId}', this.value)">
+                            <option value="default" ${status==='default'?'selected':''}>⚪ Sin marcar</option>
+                            <option value="visto" ${status==='visto'?'selected':''}>🟣 Lo he visto</option>
+                            <option value="interesa" ${status==='interesa'?'selected':''}>🟢 Me interesa</option>
+                            <option value="sin_prisa" ${status==='sin_prisa'?'selected':''}>🟡 Sin prisa</option>
+                            <option value="poco_interes" ${status==='poco_interes'?'selected':''}>🔴 Poco interés</option>
+                            <option value="no_ver" ${status==='no_ver'?'selected':''}>⚫ NO quiero verlo</option>
+                        </select>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Disparamos la subida si se hicieron comprobaciones automáticas con tu lista
+            if (autoSyncNeeded) {
+                setTimeout(() => syncPlanificadorToCloud(), 1000);
+            }
+        }
+
+        function updateSeasonPlanStatus(malId, newStatus) {
+            const currentYear = document.getElementById('planYearSelect').value;
+            const currentSeason = document.getElementById('planSeasonSelect').value;
+            
+            // Actualizamos la base de memoria local
+            _planificadorSavedProgress = _planificadorSavedProgress.filter(p => String(p.id) !== String(malId));
+            
+            if (newStatus !== 'default') {
+                const animeRef = _currentSeasonData.find(a => String(a.mal_id) === String(malId));
+                if (animeRef) {
+                    _planificadorSavedProgress.push({
+                        id: String(malId),
+                        title: animeRef.title,
+                        cover: animeRef.images?.jpg?.large_image_url || animeRef.images?.jpg?.image_url || FALLBACK_IMG,
+                        year: parseInt(currentYear),
+                        season: currentSeason,
+                        status: newStatus
+                    });
+                }
+            }
+            
+            // Actualizamos solo el marco visual inmediatamente
+            renderSeasonGrid();
+            
+            // --- AUTO-GUARDADO INTELIGENTE (DEBOUNCE) ---
+            const btn = document.getElementById('btnSyncPlanificador');
+            if (btn) {
+                btn.innerText = "⏳ Guardando...";
+                btn.style.borderColor = "var(--neon-yellow)";
+                btn.style.color = "var(--neon-yellow)";
+            }
+            
+            clearTimeout(_planificadorSaveTimeout);
+            _planificadorSaveTimeout = setTimeout(() => {
+                syncPlanificadorToCloud();
+            }, 1000);
+        }
+
+        function syncPlanificadorToCloud() {
+            const btn = document.getElementById('btnSyncPlanificador');
+            if(btn) {
+                btn.innerText = "Sincronizando ☁️";
+                btn.disabled = true;
+            }
+
+            const payload = {
+                action: "save_planificador",
+                payload: _planificadorSavedProgress
+            };
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                if(btn) {
+                    btn.innerText = "¡Guardado! ✔️";
+                    btn.style.borderColor = "var(--neon-green)";
+                    btn.style.color = "var(--neon-green)";
+                    setTimeout(() => { 
+                        btn.innerText = "☁️ Guardar Cambios"; 
+                        btn.style.borderColor = "var(--neon-cyan)";
+                        btn.style.color = "var(--neon-cyan)";
+                        btn.disabled = false; 
+                    }, 2000);
+                }
+            }).catch(() => {
+                if(btn) {
+                    btn.innerText = "Fallo de red ❌";
+                    btn.style.borderColor = "var(--neon-red)";
+                    btn.style.color = "var(--neon-red)";
+                    setTimeout(() => { 
+                        btn.innerText = "☁️ Guardar Cambios"; 
+                        btn.disabled = false; 
+                    }, 2500);
+                }
             });
         }
 
