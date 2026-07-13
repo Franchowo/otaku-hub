@@ -1177,7 +1177,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="author">Autor (Mangaka)</label>
+                    <label for="author">Author</label>
                     <input type="text" id="author" required placeholder="Ej. Kentaro Miura">
                 </div>
 
@@ -2253,12 +2253,14 @@
                 const submitBtn = document.getElementById('mangaSubmitBtn'), statusMsg = document.getElementById('mangaStatusMsg');
                 submitBtn.disabled = true; submitBtn.innerText = "Registrando Manga...";
 
-                const authorVal = (document.getElementById('author') || document.getElementById('serialization')).value.trim() || "Desconocido";
+                // Obtenemos el valor del nuevo input "Author"
+                const authorVal = document.getElementById('author').value.trim() || "Desconocido";
 
                 const payload = { 
                     manga: document.getElementById('manga').value, 
                     year: parseInt(document.getElementById('mangaYear').value), 
-                    author: authorVal, 
+                    Author: authorVal,             // Rellena tu nueva columna "Author" en Sheets
+                    serialization: authorVal,      // Truco: Mantiene el enrutamiento a "FULL LIST MANGA" en el Apps Script
                     score: parseInt(document.getElementById('mangaScore').value) 
                 };
 
@@ -2785,7 +2787,7 @@
                         </div>
                         <div class="manga-book-back">
                             <div class="manga-back-title" title="${item.manga}">${item.manga}</div>
-                            <div class="manga-back-meta">Autor:<br><span style="color:var(--neon-green); font-weight:bold;">${item.author}</span></div>
+                            <div class="manga-back-meta">Author:<br><span style="color:var(--neon-green); font-weight:bold;">${item.author}</span></div>
                             <div class="manga-back-meta">Año: ${item.year}</div>
                             <div class="detail-score-badge ${neonClass}" style="margin-top:auto; font-size:0.75rem; padding:2px 8px;">${item.score} / 10</div>
                         </div>
