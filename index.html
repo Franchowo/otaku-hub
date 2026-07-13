@@ -1754,7 +1754,7 @@
     </div>
 
 <script>
-        const WEB_APP_ = "https://script.google.com/macros/s/AKfycbwFNp9Eq48qQM-2SXizDKQ2H5JxTRMY_kwzlSn0dTlX5_TyMydXraIFWxHL2LmYRW1alw/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgm1NIEixEeDey3KYqlXI_IMQ_sE9p1ssRjDlXsxQFNRdBQXUGz9hsTOQaWco5j1HETA/exec";
         
         let _masterData = []; 
         let _favsRawData = [];
@@ -1811,7 +1811,7 @@
 
             const script = document.createElement('script');
             script.id = 'jsonpTop150Script';
-            script.src = `${WEB_APP_}?sheet=TOP_150&tab=TOP_150&sheetName=TOP_150&callback=handleTop150Response&_=${new Date().getTime()}`;
+            script.src = `${WEB_APP_URL}?sheet=TOP_150&tab=TOP_150&sheetName=TOP_150&callback=handleTop150Response&_=${new Date().getTime()}`;
             document.body.appendChild(script);
         }
 
