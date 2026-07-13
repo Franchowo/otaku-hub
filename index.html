@@ -1776,7 +1776,7 @@
         const FALLBACK_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='85'%3E%3Crect width='60' height='85' fill='%23111122' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2300f0ff' font-family='sans-serif' font-size='20' font-weight='bold'%3E?%3C/text%3E%3C/svg%3E";
 
         // --- HELPER CENTRAL PARA ANILIST (GraphQL) CON MANEJO DE ERRORES ---
-        async (query, variables = {}) {
+        async function fetchAnilist(query, variables = {}) {
             try {
                 const response = await fetch('https://graphql.anilist.co', {
                     method: 'POST',
@@ -1794,90 +1794,42 @@
             }
         }
 
-        // --- HELPER CENTRAL PARA ANILIST Y COLA DE PETICIONES (ANTI-RATE LIMIT VELOZ) ---
-        let activeAnilistReqs = 0;
-        const reqQueue = [];
-
-        async function processAnilistQueue() {
-            if (activeAnilistReqs >= 8 || reqQueue.length === 0) return;
-            activeAnilistReqs++;
-            const task = reqQueue.shift();
-            try { await task(); } catch(e) {}
-            activeAnilistReqs--;
-            // Pequeño descanso entre llamadas para no ahogar la red
-            setTimeout(processAnilistQueue, 50); 
-            processAnilistQueue(); 
-        }
-
-        function executeAnilistWithThrottle(query, variables) {
-            return new Promise((resolve, reject) => {
-                reqQueue.push(async () => {
-                    try {
-                        const res = await fetchAnilist(query, variables);
-                        resolve(res);
-                    } catch(e) { reject(e); }
-                });
-                processAnilistQueue();
-            });
-        }
-
-        async function fetchAnilist(query, variables = {}, retries = 3) {
-            try {
-                const response = await fetch('https://graphql.anilist.co', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({ query, variables })
-                });
-                if (!response.ok) {
-                    if (response.status === 429 && retries > 0) {
-                        // Si nos pasamos del límite, esperamos lo que indique AniList o 2 segundos y reintentamos
-                        const retryAfter = response.headers.get('Retry-After') || 2;
-                        await new Promise(r => setTimeout(r, retryAfter * 1000));
-                        return fetchAnilist(query, variables, retries - 1);
-                    }
-                    if (response.status === 404) return { data: null };
-                    throw new Error("API_ERROR");
-                }
-                return await response.json();
-            } catch (e) { throw e; }
-        }
-
-        // --- MOTOR IMÁGENES ANILIST PRECISADO (Manga usa Título + Autor) ---
-        function fetchAnimeCoverArt(title, targetImgId) {
-            const cacheKey = `anime_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-            const cachedUrl = localStorage.getItem(cacheKey);
+        // --- MOTOR IMÁGENES ANILIST OPTIMIZADO ANTI-BANEO ---
+        function fetchAnimeCoverArt(title, targetImgId, index) {
+            const cacheKey = `anime_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`, cachedUrl = localStorage.getItem(cacheKey);
             if (cachedUrl) { const imgEl = document.getElementById(targetImgId); if (imgEl) imgEl.src = cachedUrl; return; }
             
             const query = `query($search: String) { Page(page:1, perPage:1){ media(search: $search, type: ANIME) { coverImage { large } } } }`;
-            executeAnilistWithThrottle(query, { search: title }).then(json => {
-                if(json?.data?.Page?.media?.[0]?.coverImage?.large) {
-                    const imgUrl = json.data.Page.media[0].coverImage.large;
-                    localStorage.setItem(cacheKey, imgUrl);
-                    const imgEl = document.getElementById(targetImgId); if(imgEl) imgEl.src = imgUrl;
-                }
-            });
+            setTimeout(() => {
+                fetchAnilist(query, { search: title }).then(json => {
+                    if(json?.data?.Page?.media?.[0]?.coverImage?.large) {
+                        const imgUrl = json.data.Page.media[0].coverImage.large;
+                        localStorage.setItem(cacheKey, imgUrl);
+                        const imgEl = document.getElementById(targetImgId); if(imgEl) imgEl.src = imgUrl;
+                    }
+                }).catch(() => {});
+            }, index * 600); 
         }
 
-        function fetchMangaCoverArt(title, author, targetImgId) {
-            // Unimos el Título y el Autor (si existe) para buscar la obra exacta
-            const searchTerm = author && author !== 'Desconocido' ? `${title} ${author}` : title;
-            
-            // Cambiamos la clave de caché a v2 para ignorar las portadas viejas incorrectas
-            const cacheKey = `manga_v2_cover_${searchTerm.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-            const cachedUrl = localStorage.getItem(cacheKey);
+        function fetchMangaCoverArt(title, targetImgId, index) {
+            const cacheKey = `manga_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`, cachedUrl = localStorage.getItem(cacheKey);
             if (cachedUrl) { const imgEl = document.getElementById(targetImgId); if (imgEl) imgEl.src = cachedUrl; return; }
             
             const query = `query($search: String) { Page(page:1, perPage:1){ media(search: $search, type: MANGA) { coverImage { large } } } }`;
-            executeAnilistWithThrottle(query, { search: searchTerm }).then(json => {
-                if(json?.data?.Page?.media?.[0]?.coverImage?.large) {
-                    const imgUrl = json.data.Page.media[0].coverImage.large;
-                    localStorage.setItem(cacheKey, imgUrl);
-                    const imgEl = document.getElementById(targetImgId); if(imgEl) imgEl.src = imgUrl;
-                }
-            });
+            setTimeout(() => {
+                fetchAnilist(query, { search: title }).then(json => {
+                    if(json?.data?.Page?.media?.[0]?.coverImage?.large) {
+                        const imgUrl = json.data.Page.media[0].coverImage.large;
+                        localStorage.setItem(cacheKey, imgUrl);
+                        const imgEl = document.getElementById(targetImgId); if(imgEl) imgEl.src = imgUrl;
+                    }
+                }).catch(() => {});
+            }, index * 600);
         }
 
-        function fetchStudioLogoArt() {} // Vacio, ya que Anilist no provee logos de estudio
+        function fetchStudioLogoArt(studioName, targetImgId, index) {
+            // Anilist no provee logos de estudio, mantenemos el SVG visualmente bonito.
+        }
 
         function updateScoreData(val) { document.getElementById('scoreVal').innerText = val; }
         function updateMangaScoreData(val) { document.getElementById('mangaScoreVal').innerText = val; }
@@ -1885,7 +1837,7 @@
         function clearLocalMemory() {
             if(confirm("¿Quieres limpiar las imágenes guardadas en caché? (Se volverán a descargar secuencialmente en alta definición la próxima vez)")) {
                 Object.keys(localStorage).forEach(key => {
-                    if(key.startsWith('studio_logo_') || key.startsWith('anime_cover_') || key.startsWith('manga_cover_') || key.startsWith('manga_v2_cover_')) {
+                    if(key.startsWith('studio_logo_') || key.startsWith('anime_cover_') || key.startsWith('manga_cover_')) {
                         localStorage.removeItem(key);
                     }
                 });
@@ -2388,7 +2340,7 @@
                         </div>
                     </div>
                 `;
-                fetchAnimeCoverArt(bestAnime.anime, 'tm-best-anime-img');
+                fetchAnimeCoverArt(bestAnime.anime, 'tm-best-anime-img', 0);
             } else {
                 featuredContainer.innerHTML += `<div class="tm-featured-card anime" style="justify-content:center; color:rgba(255,255,255,0.3);">Sin anime este año</div>`;
             }
@@ -2408,7 +2360,7 @@
                         </div>
                     </div>
                 `;
-                fetchMangaCoverArt(bestManga.manga, bestManga.author, 'tm-best-manga-img');
+                fetchMangaCoverArt(bestManga.manga, 'tm-best-manga-img', 1);
             } else {
                 featuredContainer.innerHTML += `<div class="tm-featured-card manga" style="justify-content:center; color:rgba(255,255,255,0.3);">Sin manga este año</div>`;
             }
@@ -2431,8 +2383,8 @@
                 div.innerHTML = `<img id="${imgId}" title="${title} (${item.score}⭐)" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='130'><rect width='90' height='130' fill='%23111122'/></svg>">`;
                 galleryContainer.appendChild(div);
 
-                if (item.type === 'anime') fetchAnimeCoverArt(title, imgId);
-                else fetchMangaCoverArt(title, item.author, imgId);
+                if (item.type === 'anime') fetchAnimeCoverArt(title, imgId, index);
+                else fetchMangaCoverArt(title, imgId, index);
             });
         }
 
@@ -2842,7 +2794,7 @@
                     </div>
                 `;
                 container.appendChild(book);
-                fetchMangaCoverArt(item.manga, item.author, imgId);
+                fetchMangaCoverArt(item.manga, imgId, index);
             });
         }
 
