@@ -956,6 +956,54 @@
         .plan-status-no_ver { border-color: #333; opacity: 0.6; }
         .plan-status-no_ver .plan-card-select { border-color: #555; color: #aaa; background: rgba(85, 85, 85, 0.3); }
         .plan-status-no_ver .plan-card-img img { filter: grayscale(100%) brightness(0.35); }
+
+        /* --- GACHA OTAKU --- */
+        .gacha-container {
+            display: flex; flex-direction: column; align-items: center;
+            background: rgba(0, 0, 0, 0.6); border: 2px solid var(--neon-magenta);
+            border-radius: 20px; padding: 30px; margin-top: 20px;
+            box-shadow: 0 0 30px rgba(255, 0, 127, 0.15), inset 0 0 20px rgba(255, 0, 127, 0.05);
+            position: relative; overflow: hidden;
+        }
+        .gacha-btn {
+            background: linear-gradient(135deg, #ff007f, #7000ff); border: 2px solid #fff;
+            color: #fff; font-size: 1.5rem; font-weight: 900; padding: 15px 40px;
+            border-radius: 50px; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 2px; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 25px rgba(255, 0, 127, 0.5); margin: 20px 0; z-index: 2;
+        }
+        .gacha-btn:hover { transform: scale(1.05) translateY(-5px); box-shadow: 0 15px 35px rgba(255, 0, 127, 0.7); }
+        .gacha-btn:active { transform: scale(0.95); }
+        .gacha-card {
+            display: flex; gap: 20px; background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px;
+            width: 100%; box-sizing: border-box;
+            animation: gachaReveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0; transform: scale(0.8) translateY(20px);
+        }
+        @keyframes gachaReveal { to { opacity: 1; transform: scale(1) translateY(0); } }
+        .gacha-poster {
+            width: 180px; flex-shrink: 0; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .gacha-info { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow: hidden; }
+        .gacha-title { font-size: 1.6rem; font-weight: 900; color: #fff; line-height: 1.2; text-shadow: 0 0 10px rgba(0, 240, 255, 0.4); }
+        .gacha-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .gacha-tag {
+            background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan);
+            border: 1px solid rgba(0, 240, 255, 0.3); font-size: 0.75rem;
+            padding: 4px 10px; border-radius: 20px; font-weight: bold;
+        }
+        .gacha-desc {
+            font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical;
+            overflow: hidden; background: rgba(0,0,0,0.4); padding: 12px;
+            border-radius: 8px; border-left: 3px solid var(--neon-magenta);
+        }
+        @media(max-width: 650px) {
+            .gacha-card { flex-direction: column; align-items: center; text-align: center; }
+            .gacha-tags { justify-content: center; }
+        }
     </style>
 </head>
 
@@ -977,6 +1025,7 @@
         <button class="tab-btn icon-only" id="tabBtn-recommendationsView" onclick="switchView('recommendationsView')" title="Sistema Recomendaciones">💡</button>
         <button class="tab-btn icon-only" id="tabBtn-calificadorView" onclick="switchView('calificadorView')" title="Calificador Anime">🎯</button>
         <button class="tab-btn icon-only" id="tabBtn-planificadorView" onclick="switchView('planificadorView')" title="Planificador">📅</button>
+        <button class="tab-btn icon-only" id="tabBtn-gachaView" onclick="switchView('gachaView')" title="Gacha Otaku">🎰</button>
     </nav>
 
     <div class="container hub-mode" id="mainContainer">
@@ -1108,6 +1157,15 @@
                     <div class="hub-text-content">
                         <span class="hub-card-title">Planificador</span>
                         <span class="hub-card-desc">Sigue tus intereses por año y temporada con portadas y colores.</span>
+                    </div>
+                    <div class="hub-arrow">→</div>
+                </div>
+
+                <div class="hub-card magenta" onclick="switchView('gachaView')">
+                    <div class="hub-icon-wrapper">🎰</div>
+                    <div class="hub-text-content">
+                        <span class="hub-card-title">Gacha Otaku</span>
+                        <span class="hub-card-desc">Tira de la ruleta y descubre tu próxima obra maestra.</span>
                     </div>
                     <div class="hub-arrow">→</div>
                 </div>
@@ -1274,6 +1332,20 @@
                         <label>Buscar Tomo</label>
                         <input type="text" id="mangaFilterText" placeholder="Ej. Berserk..." oninput="applyMangaFilters()">
                     </div>
+                    <!-- NUEVOS FILTROS -->
+                    <div class="filter-group">
+                        <label>Año</label>
+                        <select id="mangaFilterYear" onchange="applyMangaFilters()">
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Autor</label>
+                        <select id="mangaFilterAuthor" onchange="applyMangaFilters()">
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <!-- FIN NUEVOS FILTROS -->
                     <div class="filter-group">
                         <label>Ordenar por</label>
                         <select id="mangaSortKey" onchange="applyMangaFilters()">
@@ -1751,6 +1823,45 @@
             </div>
         </div>
 
+        <div id="gachaView" class="view">
+            <h2>🎰 Gacha Otaku</h2>
+            
+            <div class="filter-panel" style="justify-content: center; border-color: rgba(255, 0, 127, 0.3);">
+                <div class="filter-group">
+                    <label>Formato</label>
+                    <select id="gachaFormat" style="font-size: 1.1rem; font-weight: bold;">
+                        <option value="ANIME">📺 Anime</option>
+                        <option value="MANGA">📖 Manga</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Época</label>
+                    <select id="gachaDecade" style="font-size: 1.1rem; font-weight: bold;">
+                        <option value="all">Todas las épocas</option>
+                        <option value="2020">2020s (Actualidad)</option>
+                        <option value="2010">2010s</option>
+                        <option value="2000">2000s</option>
+                        <option value="1990">1990s (Retro)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="gacha-container">
+                <p style="color: rgba(255,255,255,0.5); text-align: center; margin-top: 0; font-size: 0.9rem;">
+                    El algoritmo buscará entre las obras más populares de AniList y filtrará automáticamente todo lo que ya tienes registrado en tu Hub.
+                </p>
+                
+                <button class="gacha-btn" onclick="pullGacha()">Tirar de la Ruleta</button>
+                
+                <div id="gachaLoader" class="loader" style="display: none; width: 100%;">
+                    <div class="spinner" style="border-top-color: var(--neon-magenta);"></div>
+                    <span id="gachaStatusText" style="color: var(--neon-magenta); font-weight: bold;">Mezclando base de datos global...</span>
+                </div>
+
+                <div id="gachaResultContainer" style="width: 100%;"></div>
+            </div>
+        </div>
+
     </div>
 
         <script>
@@ -1795,36 +1906,58 @@
         }
 
         // --- MOTOR IMÁGENES ANILIST OPTIMIZADO ANTI-BANEO ---
-        function fetchAnimeCoverArt(title, targetImgId, index) {
-            const cacheKey = `anime_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`, cachedUrl = localStorage.getItem(cacheKey);
-            if (cachedUrl) { const imgEl = document.getElementById(targetImgId); if (imgEl) imgEl.src = cachedUrl; return; }
+        function fetchAnimeCoverArt(title, targetImgId, retries = 3) {
+            const cacheKey = `anime_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+            const cachedUrl = localStorage.getItem(cacheKey);
+            const imgEl = document.getElementById(targetImgId);
+            
+            if (cachedUrl) { 
+                if (imgEl) imgEl.src = cachedUrl; 
+                return; 
+            }
             
             const query = `query($search: String) { Page(page:1, perPage:1){ media(search: $search, type: ANIME) { coverImage { large } } } }`;
+            
             setTimeout(() => {
                 fetchAnilist(query, { search: title }).then(json => {
                     if(json?.data?.Page?.media?.[0]?.coverImage?.large) {
                         const imgUrl = json.data.Page.media[0].coverImage.large;
                         localStorage.setItem(cacheKey, imgUrl);
-                        const imgEl = document.getElementById(targetImgId); if(imgEl) imgEl.src = imgUrl;
+                        if(imgEl) imgEl.src = imgUrl;
                     }
-                }).catch(() => {});
-            }, index * 600); 
+                }).catch((err) => {
+                    if (err.message === "RATE_LIMIT" && retries > 0) {
+                        setTimeout(() => fetchAnimeCoverArt(title, targetImgId, retries - 1), 2000);
+                    }
+                });
+            }, 50); 
         }
 
-        function fetchMangaCoverArt(title, targetImgId, index) {
-            const cacheKey = `manga_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`, cachedUrl = localStorage.getItem(cacheKey);
-            if (cachedUrl) { const imgEl = document.getElementById(targetImgId); if (imgEl) imgEl.src = cachedUrl; return; }
+        function fetchMangaCoverArt(title, targetImgId, retries = 3) {
+            const cacheKey = `manga_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+            const cachedUrl = localStorage.getItem(cacheKey);
+            const imgEl = document.getElementById(targetImgId);
+            
+            if (cachedUrl) { 
+                if (imgEl) imgEl.src = cachedUrl; 
+                return; 
+            }
             
             const query = `query($search: String) { Page(page:1, perPage:1){ media(search: $search, type: MANGA) { coverImage { large } } } }`;
+            
             setTimeout(() => {
                 fetchAnilist(query, { search: title }).then(json => {
                     if(json?.data?.Page?.media?.[0]?.coverImage?.large) {
                         const imgUrl = json.data.Page.media[0].coverImage.large;
                         localStorage.setItem(cacheKey, imgUrl);
-                        const imgEl = document.getElementById(targetImgId); if(imgEl) imgEl.src = imgUrl;
+                        if(imgEl) imgEl.src = imgUrl;
                     }
-                }).catch(() => {});
-            }, index * 600);
+                }).catch((err) => {
+                    if (err.message === "RATE_LIMIT" && retries > 0) {
+                        setTimeout(() => fetchMangaCoverArt(title, targetImgId, retries - 1), 2000);
+                    }
+                });
+            }, 50); 
         }
 
         function fetchStudioLogoArt(studioName, targetImgId, index) {
@@ -1968,6 +2101,8 @@
                 initCalificadorFetch();
             } else if(viewId === 'planificadorView') {
                 initMasterDataFetch(() => initPlanificadorFetch());
+            } else if(viewId === 'gachaView') {
+                initMasterDataFetch(() => initMangaDataFetch(false, () => {}));
             }
         }
 
@@ -2070,6 +2205,8 @@
                     };
                 }).filter(m => m.manga);
 
+                populateMangaFilterDropdowns(_mangaData);
+
                 if(callbackSuccess) callbackSuccess();
                 else renderMangaLibrary();
                 
@@ -2085,6 +2222,23 @@
             script.src = `${WEB_APP_URL}?sheet=FULL%20LIST%20MANGA&tab=FULL%20LIST%20MANGA&sheetName=FULL%20LIST%20MANGA&callback=handleMangaResponse&_=${new Date().getTime()}`;
             script.onerror = function() { alert("Error al conectar con la hoja FULL LIST MANGA."); };
             document.body.appendChild(script);
+        }
+
+        // NUEVA FUNCIÓN PARA RELLENAR LOS DROPDOWNS
+        function populateMangaFilterDropdowns(data) {
+            const yearSelect = document.getElementById('mangaFilterYear');
+            const authorSelect = document.getElementById('mangaFilterAuthor');
+            
+            if (!yearSelect || !authorSelect) return;
+
+            const years = [...new Set(data.map(item => item.year))].filter(y => y && y !== '????').sort((a,b) => b - a);
+            const authors = [...new Set(data.map(item => item.author))].filter(a => a && a !== 'Desconocido').sort();
+
+            yearSelect.innerHTML = '<option value="all">Todos</option>';
+            authorSelect.innerHTML = '<option value="all">Todos</option>';
+
+            years.forEach(y => { yearSelect.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`); });
+            authors.forEach(a => { authorSelect.insertAdjacentHTML('beforeend', `<option value="${a}">${a}</option>`); });
         }
 
         function initTimeMachineDataFetch() {
@@ -2749,9 +2903,13 @@
             if(!container) return;
 
             const q = document.getElementById('mangaFilterText').value.toLowerCase().trim();
+            const yearFilter = document.getElementById('mangaFilterYear') ? document.getElementById('mangaFilterYear').value : 'all';
+            const authorFilter = document.getElementById('mangaFilterAuthor') ? document.getElementById('mangaFilterAuthor').value : 'all';
             const sortKey = document.getElementById('mangaSortKey').value;
 
             let filtered = _mangaData.filter(item => {
+                if(yearFilter !== 'all' && String(item.year) !== String(yearFilter)) return false;
+                if(authorFilter !== 'all' && item.author !== authorFilter) return false;
                 if(q !== '' && (!item.manga || !item.manga.toLowerCase().includes(q))) return false;
                 return true;
             });
@@ -2769,9 +2927,21 @@
             container.innerHTML = '';
 
             if(filtered.length === 0) {
-                container.innerHTML = '<div style="width:100%; text-align:center; padding:40px; color:rgba(255,255,255,0.3); font-size:0.95rem;">No se han encontrado tomos en tu biblioteca.</div>';
+                container.innerHTML = '<div style="width:100%; text-align:center; padding:40px; color:rgba(255,255,255,0.3); font-size:0.95rem;">No se han encontrado tomos con estos filtros.</div>';
                 return;
             }
+
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const imgElement = entry.target;
+                        const mangaTitle = imgElement.getAttribute('data-title');
+                        const imgId = imgElement.id;
+                        fetchMangaCoverArt(mangaTitle, imgId, 3);
+                        obs.unobserve(imgElement);
+                    }
+                });
+            }, { rootMargin: '100px' });
 
             filtered.forEach((item, index) => {
                 const imgId = `manga-cover-${index}-${item.year}`;
@@ -2783,7 +2953,7 @@
                 book.innerHTML = `
                     <div class="manga-book-inner">
                         <div class="manga-book-front">
-                            <img id="${imgId}" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='175'><rect width='120' height='175' fill='%23111122'/></svg>">
+                            <img id="${imgId}" data-title="${item.manga}" loading="lazy" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='175'><rect width='120' height='175' fill='%23111122'/></svg>">
                         </div>
                         <div class="manga-book-back">
                             <div class="manga-back-title" title="${item.manga}">${item.manga}</div>
@@ -2794,7 +2964,9 @@
                     </div>
                 `;
                 container.appendChild(book);
-                fetchMangaCoverArt(item.manga, imgId, index);
+                
+                const imgEl = document.getElementById(imgId);
+                if(imgEl) observer.observe(imgEl);
             });
         }
 
@@ -2924,28 +3096,98 @@
         }
 
         function renderTopStudiosView() {
-            const container = document.getElementById('studiosGridContainer'); container.innerHTML = '';
+            const container = document.getElementById('studiosGridContainer'); 
+            container.innerHTML = '';
+            
             let studioMap = {};
+            
             _masterData.forEach(item => {
                 if(!item.studio || item.studio === 'Desconocido') return;
                 item.studio.split(/,|\s+&\s+|\s+and\s+/i).forEach(st => {
-                    const studioName = st.trim(); if(!studioName) return;
-                    if(!studioMap[studioName]) studioMap[studioName] = { sum: 0, count: 0 };
-                    studioMap[studioName].sum += item.score; studioMap[studioName].count += 1;
+                    const studioName = st.trim(); 
+                    if(!studioName) return;
+                    
+                    if(!studioMap[studioName]) {
+                        studioMap[studioName] = { 
+                            sum: item.score, 
+                            count: 1, 
+                            bestAnime: item.anime, 
+                            maxScore: item.score 
+                        };
+                    } else {
+                        studioMap[studioName].sum += item.score; 
+                        studioMap[studioName].count += 1;
+                        if(item.score > studioMap[studioName].maxScore) {
+                            studioMap[studioName].maxScore = item.score;
+                            studioMap[studioName].bestAnime = item.anime;
+                        }
+                    }
                 });
             });
 
-            let eligibleStudios = Object.keys(studioMap).map(name => { return { name: name, count: studioMap[name].count, avg: parseFloat((studioMap[name].sum / studioMap[name].count).toFixed(2)) }; }).filter(s => s.count >= 5);
+            let eligibleStudios = Object.keys(studioMap).map(name => { 
+                return { 
+                    name: name, 
+                    count: studioMap[name].count, 
+                    avg: parseFloat((studioMap[name].sum / studioMap[name].count).toFixed(2)),
+                    bestAnime: studioMap[name].bestAnime
+                }; 
+            }).filter(s => s.count >= 5);
+            
             eligibleStudios.sort((a, b) => b.avg - a.avg);
 
-            if(eligibleStudios.length === 0) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,255,255,0.3);">No hay estudios individuales con ≥ 5 animes.</div>'; document.getElementById('studiosLoader').style.display = 'none'; document.getElementById('studiosContent').style.display = 'block'; return; }
+            if(eligibleStudios.length === 0) { 
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,255,255,0.3);">No hay estudios individuales con ≥ 5 animes.</div>'; 
+                document.getElementById('studiosLoader').style.display = 'none'; 
+                document.getElementById('studiosContent').style.display = 'block'; 
+                return; 
+            }
+
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const imgEl = entry.target;
+                        const animeTitle = imgEl.getAttribute('data-anime');
+                        fetchAnimeCoverArt(animeTitle, imgEl.id, 3);
+                        obs.unobserve(imgEl);
+                    }
+                });
+            }, { rootMargin: '100px' });
 
             eligibleStudios.forEach((studio, index) => {
-                const imgId = `studio-img-${index}`;
-                let scoreTone = 'red'; if (studio.avg >= 8.00) scoreTone = 'purple'; else if (studio.avg >= 7.00) scoreTone = 'green'; else if (studio.avg >= 5.00) scoreTone = 'yellow';
-                container.insertAdjacentHTML('beforeend', `<div class="studio-card" onclick="filterByStudioDirect('${studio.name}')"><div class="studio-card-rank">#${index + 1}</div><div class="studio-logo-frame"><img id="${imgId}" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect width='60' height='60' fill='%230e0e1a'/><text x='50%' y='55%' font-size='10' fill='%2300f0ff' font-weight='bold' text-anchor='middle'>ST</text></svg>"></div><div class="studio-details"><span class="studio-card-name" title="${studio.name}">${studio.name}</span><span class="studio-card-count">${studio.count} animes</span><span class="studio-card-badge ${scoreTone}">${studio.avg.toFixed(2)} MEDIA</span></div></div>`);
+                const imgId = `studio-best-img-${index}`;
+                let scoreTone = 'red'; 
+                if (studio.avg >= 8.00) scoreTone = 'purple'; 
+                else if (studio.avg >= 7.00) scoreTone = 'green'; 
+                else if (studio.avg >= 5.00) scoreTone = 'yellow';
+                
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="studio-card" onclick="filterByStudioDirect('${studio.name}')">
+                        <div class="studio-card-rank">#${index + 1}</div>
+                        
+                        <div class="img-container" style="width: 60px; height: 85px; flex-shrink: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                            <img id="${imgId}" data-anime="${studio.bestAnime}" loading="lazy" class="img-thumb" style="width:100%; height:100%; object-fit:cover;" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='85'><rect width='60' height='85' fill='%23111122'/></svg>">
+                        </div>
+                        
+                        <div class="studio-details" style="margin-left: 10px; overflow: hidden;">
+                            <span class="studio-card-name" title="${studio.name}">${studio.name}</span>
+                            <span class="studio-card-count" style="margin-bottom:2px;">${studio.count} animes</span>
+                            
+                            <span style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Tu obra favorita: ${studio.bestAnime}">👑 ${studio.bestAnime}</span>
+                            
+                            <span class="studio-card-badge ${scoreTone}">${studio.avg.toFixed(2)} MEDIA</span>
+                        </div>
+                    </div>
+                `);
+                
+                setTimeout(() => {
+                    const imgEl = document.getElementById(imgId);
+                    if(imgEl) observer.observe(imgEl);
+                }, 0);
             });
-            document.getElementById('studiosLoader').style.display = 'none'; document.getElementById('studiosContent').style.display = 'block';
+            
+            document.getElementById('studiosLoader').style.display = 'none'; 
+            document.getElementById('studiosContent').style.display = 'block';
         }
 
         function renderAnnualRankingView() { document.getElementById('annualLoader').style.display = 'none'; document.getElementById('annualContent').style.display = 'block'; renderAnnualRankingList(); }
@@ -3491,6 +3733,108 @@
         function vote(winnerIndex) {
             state.pool[winnerIndex].elo += 50; const a = state.pool.shift(), b = state.pool.shift();
             state.pool.push(winnerIndex === 0 ? b : a); state.pool.push(winnerIndex === 0 ? a : b); state.duelsDone++; save(); renderDuel();
+        }
+
+        // --- MOTOR GACHA OTAKU ---
+        async function pullGacha() {
+            const format = document.getElementById('gachaFormat').value;
+            const decade = document.getElementById('gachaDecade').value;
+            const loader = document.getElementById('gachaLoader');
+            const resultContainer = document.getElementById('gachaResultContainer');
+            
+            resultContainer.innerHTML = '';
+            loader.style.display = 'block';
+
+            // Configurar los años según la década
+            let yearParams = '';
+            if (decade !== 'all') {
+                const startYear = parseInt(decade);
+                const endYear = startYear + 9;
+                yearParams = `startDate_greater: ${startYear}0000, startDate_lesser: ${endYear}9999,`;
+            }
+
+            // Elegimos una página al azar entre las 5 más populares para darle variabilidad
+            const randomPage = Math.floor(Math.random() * 5) + 1;
+
+            const gql = `
+            query { 
+                Page(page: ${randomPage}, perPage: 50) { 
+                    media(type: ${format}, sort: POPULARITY_DESC, ${yearParams} isAdult: false) { 
+                        title { romaji english } 
+                        coverImage { extraLarge } 
+                        description 
+                        genres 
+                        averageScore 
+                        seasonYear
+                        startDate { year }
+                    } 
+                } 
+            }`;
+
+            try {
+                const data = await fetchAnilist(gql);
+                const medias = data?.data?.Page?.media || [];
+                
+                if (medias.length === 0) {
+                    throw new Error("No hay resultados");
+                }
+
+                // Filtrar para excluir lo que el usuario ya ha visto/leído
+                const myAnimeNames = _masterData.map(a => a.anime.toLowerCase());
+                const myMangaNames = _mangaData.map(m => m.manga.toLowerCase());
+
+                const unseenMedias = medias.filter(item => {
+                    const titleRomaji = (item.title.romaji || '').toLowerCase();
+                    const titleEng = (item.title.english || '').toLowerCase();
+                    
+                    if (format === 'ANIME') {
+                        return !myAnimeNames.includes(titleRomaji) && !myAnimeNames.includes(titleEng);
+                    } else {
+                        return !myMangaNames.includes(titleRomaji) && !myMangaNames.includes(titleEng);
+                    }
+                });
+
+                loader.style.display = 'none';
+
+                if (unseenMedias.length === 0) {
+                    resultContainer.innerHTML = '<div style="text-align:center; color:var(--neon-yellow); padding: 20px;">¡Increíble! Ya has consumido todo el top 50 de esta categoría. Prueba a tirar otra vez o cambia la época.</div>';
+                    return;
+                }
+
+                // Selección de la obra aleatoria ganadora
+                const winner = unseenMedias[Math.floor(Math.random() * unseenMedias.length)];
+                
+                // Formatear datos
+                const title = winner.title.romaji || winner.title.english;
+                const cover = winner.coverImage?.extraLarge || FALLBACK_IMG;
+                const score = winner.averageScore ? (winner.averageScore / 10).toFixed(1) : 'N/A';
+                const year = winner.seasonYear || winner.startDate?.year || '????';
+                let description = winner.description || 'Sin sinopsis disponible.';
+                description = description.replace(/<br>/g, '').replace(/<i>/g, '').replace(/<\/i>/g, ''); // Limpiar HTML básico de AniList
+
+                const genresHtml = (winner.genres || []).map(g => `<span class="gacha-tag">${g}</span>`).join('');
+
+                // Renderizar la carta ganadora
+                resultContainer.innerHTML = `
+                    <div class="gacha-card">
+                        <img src="${cover}" class="gacha-poster" alt="Portada">
+                        <div class="gacha-info">
+                            <span style="color: var(--neon-magenta); font-weight: bold; font-size: 0.9rem; letter-spacing: 1px;">¡NUEVO DESCUBRIMIENTO!</span>
+                            <div class="gacha-title">${title}</div>
+                            <div style="display: flex; gap: 15px; align-items: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; font-weight: bold;">
+                                <span>📅 ${year}</span>
+                                <span>⭐ ${score} / 10 Media Global</span>
+                            </div>
+                            <div class="gacha-tags">${genresHtml}</div>
+                            <div class="gacha-desc">${description}</div>
+                        </div>
+                    </div>
+                `;
+
+            } catch (e) {
+                loader.style.display = 'none';
+                resultContainer.innerHTML = '<div style="text-align:center; color:var(--neon-red); padding: 20px;">Error al conectar con la base de datos global. Inténtalo de nuevo.</div>';
+            }
         }
 
         window.onload = () => {
