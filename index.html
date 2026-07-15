@@ -1864,8 +1864,9 @@
 
     </div>
 
-        <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzB8Q9DPl0z2mukInsyhRWLXh1X860MkxxsBqkZczfmzrDcD8O-JtYp5Klkcxp_g3Nqhg/exec";
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzB8Q9DPl0z2mukInsyhRWLXh1X860MkxxsBqkZczfmzrDcD8O-JtYp5Klkcxp_g3Nqhg/exec";
         
         let _masterData = []; 
         let _favsRawData = [];
@@ -1896,7 +1897,7 @@
                 });
                 if (!response.ok) {
                     if (response.status === 429) throw new Error("RATE_LIMIT");
-                    if (response.status === 404) return { data: null }; // Evita crash si no hay resultados
+                    if (response.status === 404) return { data: null };
                     throw new Error("API_ERROR");
                 }
                 return await response.json();
@@ -1904,6 +1905,25 @@
                 throw e;
             }
         }
+
+        // --- OBSERVADOR GLOBAL DE IMÁGENES (LAZY LOADING) ---
+        const globalImageObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const imgEl = entry.target;
+                    const type = imgEl.getAttribute('data-type');
+                    const title = imgEl.getAttribute('data-title');
+                    
+                    if (type === 'manga') {
+                        const author = imgEl.getAttribute('data-author');
+                        fetchMangaCoverArt(title, author, imgEl.id, 3);
+                    } else if (type === 'anime') {
+                        fetchAnimeCoverArt(title, imgEl.id, 3);
+                    }
+                    obs.unobserve(imgEl); // Dejamos de observar tras cargar
+                }
+            });
+        }, { rootMargin: '200px' });
 
         // --- MOTOR IMÁGENES ANILIST OPTIMIZADO ANTI-BANEO ---
         function fetchAnimeCoverArt(title, targetImgId, retries = 3) {
@@ -1930,12 +1950,16 @@
                         setTimeout(() => fetchAnimeCoverArt(title, targetImgId, retries - 1), 2000);
                     }
                 });
-            }, 50); 
+            }, 50 + Math.random() * 150); 
         }
 
-        function fetchMangaCoverArt(title, targetImgId, retries = 3) {
-            const cacheKey = `manga_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-            const cachedUrl = localStorage.getItem(cacheKey);
+        // --- FUNCIÓN SOLUCIÓN AUTORES MANGA ---
+        function fetchMangaCoverArt(title, author, targetImgId, retries = 3) {
+            const safeAuthor = author ? author.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+            const cacheKeyV2 = `manga_cover_v2_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}_${safeAuthor}`;
+            const oldCacheKey = `manga_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+            
+            const cachedUrl = localStorage.getItem(cacheKeyV2) || localStorage.getItem(oldCacheKey);
             const imgEl = document.getElementById(targetImgId);
             
             if (cachedUrl) { 
@@ -1943,25 +1967,49 @@
                 return; 
             }
             
-            const query = `query($search: String) { Page(page:1, perPage:1){ media(search: $search, type: MANGA) { coverImage { large } } } }`;
+            // Buscamos 5 resultados y traemos al staff para poder cruzar datos
+            const query = `query($search: String) { 
+                Page(page:1, perPage:5){ 
+                    media(search: $search, type: MANGA) { 
+                        coverImage { large } 
+                        staff(sort: RELEVANCE, perPage: 3) { nodes { name { full } } }
+                    } 
+                } 
+            }`;
             
             setTimeout(() => {
                 fetchAnilist(query, { search: title }).then(json => {
-                    if(json?.data?.Page?.media?.[0]?.coverImage?.large) {
-                        const imgUrl = json.data.Page.media[0].coverImage.large;
-                        localStorage.setItem(cacheKey, imgUrl);
-                        if(imgEl) imgEl.src = imgUrl;
+                    const medias = json?.data?.Page?.media || [];
+                    if(medias.length > 0) {
+                        let selectedMedia = medias[0]; // Por defecto el primero
+                        
+                        // Si hay autor, buscamos coincidencia en el staff
+                        if (author && author !== 'Desconocido') {
+                            const authorLower = author.toLowerCase();
+                            const match = medias.find(m => 
+                                m.staff?.nodes?.some(n => {
+                                    const staffName = (n.name?.full || '').toLowerCase();
+                                    return staffName.includes(authorLower) || authorLower.includes(staffName);
+                                })
+                            );
+                            if (match) selectedMedia = match;
+                        }
+                        const imgUrl = selectedMedia.coverImage?.large;
+                        if (imgUrl) {
+                            localStorage.setItem(cacheKeyV2, imgUrl);
+                            if(imgEl) imgEl.src = imgUrl;
+                        }
                     }
                 }).catch((err) => {
                     if (err.message === "RATE_LIMIT" && retries > 0) {
-                        setTimeout(() => fetchMangaCoverArt(title, targetImgId, retries - 1), 2000);
+                        setTimeout(() => fetchMangaCoverArt(title, author, targetImgId, retries - 1), 2000);
                     }
                 });
-            }, 50); 
+            }, 50 + Math.random() * 150); 
         }
 
         function fetchStudioLogoArt(studioName, targetImgId, index) {
-            // Anilist no provee logos de estudio, mantenemos el SVG visualmente bonito.
+            // Anilist no provee logos de estudio.
         }
 
         function updateScoreData(val) { document.getElementById('scoreVal').innerText = val; }
@@ -2224,7 +2272,7 @@
             document.body.appendChild(script);
         }
 
-        // NUEVA FUNCIÓN PARA RELLENAR LOS DROPDOWNS
+        // FUNCIONES PARA RELLENAR LOS DROPDOWNS
         function populateMangaFilterDropdowns(data) {
             const yearSelect = document.getElementById('mangaFilterYear');
             const authorSelect = document.getElementById('mangaFilterAuthor');
@@ -2407,14 +2455,13 @@
                 const submitBtn = document.getElementById('mangaSubmitBtn'), statusMsg = document.getElementById('mangaStatusMsg');
                 submitBtn.disabled = true; submitBtn.innerText = "Registrando Manga...";
 
-                // Obtenemos el valor del nuevo input "Author"
                 const authorVal = document.getElementById('author').value.trim() || "Desconocido";
 
                 const payload = { 
                     manga: document.getElementById('manga').value, 
                     year: parseInt(document.getElementById('mangaYear').value), 
-                    Author: authorVal,             // Rellena tu nueva columna "Author" en Sheets
-                    serialization: authorVal,      // Truco: Mantiene el enrutamiento a "FULL LIST MANGA" en el Apps Script
+                    Author: authorVal,             
+                    serialization: authorVal,      
                     score: parseInt(document.getElementById('mangaScore').value) 
                 };
 
@@ -2484,7 +2531,7 @@
                 featuredContainer.innerHTML += `
                     <div class="tm-featured-card anime">
                         <div class="img-container" style="width: 80px; height: 115px; border-radius: 8px;">
-                            <img id="tm-best-anime-img" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
+                            <img id="tm-best-anime-img" data-type="anime" data-title="${bestAnime.anime}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
                         </div>
                         <div style="display:flex; flex-direction:column; gap:5px; overflow:hidden;">
                             <span style="color:var(--neon-cyan); font-weight:bold; font-size:0.75rem;">MEJOR ANIME DEL AÑO</span>
@@ -2494,7 +2541,7 @@
                         </div>
                     </div>
                 `;
-                fetchAnimeCoverArt(bestAnime.anime, 'tm-best-anime-img', 0);
+                globalImageObserver.observe(document.getElementById('tm-best-anime-img'));
             } else {
                 featuredContainer.innerHTML += `<div class="tm-featured-card anime" style="justify-content:center; color:rgba(255,255,255,0.3);">Sin anime este año</div>`;
             }
@@ -2504,7 +2551,7 @@
                 featuredContainer.innerHTML += `
                     <div class="tm-featured-card manga">
                         <div class="img-container" style="width: 80px; height: 115px; border-radius: 8px;">
-                            <img id="tm-best-manga-img" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
+                            <img id="tm-best-manga-img" data-type="manga" data-title="${bestManga.manga}" data-author="${bestManga.author}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
                         </div>
                         <div style="display:flex; flex-direction:column; gap:5px; overflow:hidden;">
                             <span style="color:var(--neon-green); font-weight:bold; font-size:0.75rem;">MEJOR MANGA DEL AÑO</span>
@@ -2514,7 +2561,7 @@
                         </div>
                     </div>
                 `;
-                fetchMangaCoverArt(bestManga.manga, 'tm-best-manga-img', 1);
+                globalImageObserver.observe(document.getElementById('tm-best-manga-img'));
             } else {
                 featuredContainer.innerHTML += `<div class="tm-featured-card manga" style="justify-content:center; color:rgba(255,255,255,0.3);">Sin manga este año</div>`;
             }
@@ -2532,13 +2579,14 @@
             combined.forEach((item, index) => {
                 const imgId = `tm-gallery-img-${index}`;
                 const title = item.type === 'anime' ? item.anime : item.manga;
+                const authorAttr = item.type === 'manga' ? `data-author="${item.author}"` : '';
+                const typeAttr = `data-type="${item.type}"`;
                 const div = document.createElement('div');
                 div.className = `tm-gallery-item ${item.type}`;
-                div.innerHTML = `<img id="${imgId}" title="${title} (${item.score}⭐)" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='130'><rect width='90' height='130' fill='%23111122'/></svg>">`;
+                div.innerHTML = `<img id="${imgId}" ${typeAttr} data-title="${title}" ${authorAttr} title="${title} (${item.score}⭐)" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='130'><rect width='90' height='130' fill='%23111122'/></svg>">`;
                 galleryContainer.appendChild(div);
 
-                if (item.type === 'anime') fetchAnimeCoverArt(title, imgId, index);
-                else fetchMangaCoverArt(title, imgId, index);
+                globalImageObserver.observe(document.getElementById(imgId));
             });
         }
 
@@ -2808,8 +2856,9 @@
             if(topThree.length === 0) { gallery.innerHTML = '<div style="font-size:0.85rem; color:rgba(255,255,255,0.3); padding:10px 5px;">Ningún destacado disponible.</div>'; return; }
             topThree.forEach((anime, idx) => {
                 const imgId = `shelf-img-${idx}`;
-                gallery.insertAdjacentHTML('beforeend', `<div class="anime-poster-card"><div class="poster-rank">#${idx+1}</div><div class="img-container"><img id="${imgId}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='75' height='105'><rect width='75' height='105' fill='%23111122'/></svg>"></div><div class="poster-info"><span class="poster-title" title="${anime.anime}">${anime.anime}</span><span class="poster-studio">${anime.studio || 'Desconocido'} (${anime.year})</span><span class="poster-badge">${anime.score} SCORE</span></div></div>`);
-                fetchAnimeCoverArt(anime.anime, imgId, idx);
+                gallery.insertAdjacentHTML('beforeend', `<div class="anime-poster-card"><div class="poster-rank">#${idx+1}</div><div class="img-container"><img id="${imgId}" data-type="anime" data-title="${anime.anime}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='75' height='105'><rect width='75' height='105' fill='%23111122'/></svg>"></div><div class="poster-info"><span class="poster-title" title="${anime.anime}">${anime.anime}</span><span class="poster-studio">${anime.studio || 'Desconocido'} (${anime.year})</span><span class="poster-badge">${anime.score} SCORE</span></div></div>`);
+                const imgEl = document.getElementById(imgId);
+                if(imgEl) globalImageObserver.observe(imgEl);
             });
         }
 
@@ -2869,7 +2918,7 @@
                 card.className = 'detail-card';
                 card.innerHTML = `
                     <div class="img-container" style="width:70px; height:98px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.5);">
-                        <img id="${cardId}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='98'><rect width='70' height='98' fill='%23111122'/></svg>">
+                        <img id="${cardId}" data-type="anime" data-title="${item.anime}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='98'><rect width='70' height='98' fill='%23111122'/></svg>">
                     </div>
                     <div class="detail-info">
                         <span class="detail-title" title="${item.anime}">${item.anime}</span>
@@ -2879,7 +2928,8 @@
                     </div>
                 `;
                 container.appendChild(card);
-                fetchAnimeCoverArt(item.anime, cardId, index);
+                const imgEl = document.getElementById(cardId);
+                if(imgEl) globalImageObserver.observe(imgEl);
             });
         }
 
@@ -2931,18 +2981,6 @@
                 return;
             }
 
-            const observer = new IntersectionObserver((entries, obs) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const imgElement = entry.target;
-                        const mangaTitle = imgElement.getAttribute('data-title');
-                        const imgId = imgElement.id;
-                        fetchMangaCoverArt(mangaTitle, imgId, 3);
-                        obs.unobserve(imgElement);
-                    }
-                });
-            }, { rootMargin: '100px' });
-
             filtered.forEach((item, index) => {
                 const imgId = `manga-cover-${index}-${item.year}`;
                 const roundedScore = Math.round(item.score);
@@ -2953,7 +2991,7 @@
                 book.innerHTML = `
                     <div class="manga-book-inner">
                         <div class="manga-book-front">
-                            <img id="${imgId}" data-title="${item.manga}" loading="lazy" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='175'><rect width='120' height='175' fill='%23111122'/></svg>">
+                            <img id="${imgId}" data-type="manga" data-title="${item.manga}" data-author="${item.author}" loading="lazy" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='175'><rect width='120' height='175' fill='%23111122'/></svg>">
                         </div>
                         <div class="manga-book-back">
                             <div class="manga-back-title" title="${item.manga}">${item.manga}</div>
@@ -2966,14 +3004,9 @@
                 container.appendChild(book);
                 
                 const imgEl = document.getElementById(imgId);
-                if(imgEl) observer.observe(imgEl);
+                if(imgEl) globalImageObserver.observe(imgEl);
             });
         }
-
-            // --- MÓDULOS AVANZADOS (TOP 150, ESTUDIOS, RANKING ANUAL, FAVORITOS) ---
-        let _currentTop150 = [];
-        let _savedTop150 = JSON.parse(localStorage.getItem('saved_top150_data')) || [];
-        let dragSrcIndexTop150 = null;
 
         function openTop150() {
             document.getElementById('top150ClosedState').style.display = 'none';
@@ -3143,17 +3176,6 @@
                 return; 
             }
 
-            const observer = new IntersectionObserver((entries, obs) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const imgEl = entry.target;
-                        const animeTitle = imgEl.getAttribute('data-anime');
-                        fetchAnimeCoverArt(animeTitle, imgEl.id, 3);
-                        obs.unobserve(imgEl);
-                    }
-                });
-            }, { rootMargin: '100px' });
-
             eligibleStudios.forEach((studio, index) => {
                 const imgId = `studio-best-img-${index}`;
                 let scoreTone = 'red'; 
@@ -3166,7 +3188,7 @@
                         <div class="studio-card-rank">#${index + 1}</div>
                         
                         <div class="img-container" style="width: 60px; height: 85px; flex-shrink: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-                            <img id="${imgId}" data-anime="${studio.bestAnime}" loading="lazy" class="img-thumb" style="width:100%; height:100%; object-fit:cover;" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='85'><rect width='60' height='85' fill='%23111122'/></svg>">
+                            <img id="${imgId}" data-type="anime" data-title="${studio.bestAnime}" loading="lazy" class="img-thumb" style="width:100%; height:100%; object-fit:cover;" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='85'><rect width='60' height='85' fill='%23111122'/></svg>">
                         </div>
                         
                         <div class="studio-details" style="margin-left: 10px; overflow: hidden;">
@@ -3180,10 +3202,8 @@
                     </div>
                 `);
                 
-                setTimeout(() => {
-                    const imgEl = document.getElementById(imgId);
-                    if(imgEl) observer.observe(imgEl);
-                }, 0);
+                const imgEl = document.getElementById(imgId);
+                if(imgEl) globalImageObserver.observe(imgEl);
             });
             
             document.getElementById('studiosLoader').style.display = 'none'; 
@@ -3225,7 +3245,7 @@
                 const card = document.createElement('div'); card.className = 'draggable-item'; card.setAttribute('draggable', 'true'); card.dataset.index = index;
                 card.innerHTML = `
                     <div class="drag-handle">⋮⋮</div><div class="rank-pos-badge ${badgeClass}">${displayPos}</div>
-                    <div class="img-container" style="width: 48px; height: 68px; flex-shrink: 0; border-radius: 8px;"><img id="${imgId}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='68'><rect width='48' height='68' fill='%23111122'/></svg>"></div>
+                    <div class="img-container" style="width: 48px; height: 68px; flex-shrink: 0; border-radius: 8px;"><img id="${imgId}" data-type="anime" data-title="${item.name}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='68'><rect width='48' height='68' fill='%23111122'/></svg>"></div>
                     <span style="flex-grow:1; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.name}">${item.name}</span>
                     <span style="font-weight:bold; color:var(--neon-magenta); font-size:0.9rem; padding-right:10px;">${item.score}⭐</span>
                     <button class="btn-remove-item" onclick="removeAnimeFromAnnualRanking('${item.id}')" title="Eliminar">✕</button>
@@ -3238,7 +3258,10 @@
                     if (dragSrcIndex !== null && dragSrcIndex !== targetIndex) { const movedItem = _annualRanking.splice(dragSrcIndex, 1)[0]; _annualRanking.splice(targetIndex, 0, movedItem); localStorage.setItem('annual_ranking_data', JSON.stringify(_annualRanking)); renderAnnualRankingList(); }
                 });
                 card.addEventListener('dragend', () => { card.classList.remove('dragging'); dragSrcIndex = null; });
-                listContainer.appendChild(card); fetchAnimeCoverArt(item.name, imgId, index);
+                listContainer.appendChild(card); 
+                
+                const imgEl = document.getElementById(imgId);
+                if (imgEl) globalImageObserver.observe(imgEl);
             });
         }
 
@@ -3251,8 +3274,11 @@
                 const currentRank = index + 1; let metalTierClass = 'fav-bronze';
                 if (currentRank <= 10) metalTierClass = 'fav-gold'; else if (currentRank <= 20) metalTierClass = 'fav-silver';
                 const imgId = `fav-poster-img-${favItem.id}`, card = document.createElement('div'); card.className = `fav-item ${metalTierClass}`;
-                card.innerHTML = `<div class="fav-badge-rank">${currentRank}</div><div class="img-container" style="width: 100px; height: 145px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.6);"><img id="${imgId}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='145'><rect width='100' height='145' fill='%23111122'/></svg>"></div><div class="fav-title-text" title="${favItem.name}">${favItem.name}</div>`;
-                container.appendChild(card); fetchAnimeCoverArt(favItem.name, imgId, index);
+                card.innerHTML = `<div class="fav-badge-rank">${currentRank}</div><div class="img-container" style="width: 100px; height: 145px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.6);"><img id="${imgId}" data-type="anime" data-title="${favItem.name}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='145'><rect width='100' height='145' fill='%23111122'/></svg>"></div><div class="fav-title-text" title="${favItem.name}">${favItem.name}</div>`;
+                container.appendChild(card); 
+                
+                const imgEl = document.getElementById(imgId);
+                if (imgEl) globalImageObserver.observe(imgEl);
             });
         }
 
