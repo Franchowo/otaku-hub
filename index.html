@@ -1906,107 +1906,153 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzB8Q9DPl0z2mukInsy
             }
         }
 
-        // --- OBSERVADOR GLOBAL DE IMÁGENES (LAZY LOADING) ---
-        const globalImageObserver = new IntersectionObserver((entries, obs) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const imgEl = entry.target;
-                    const type = imgEl.getAttribute('data-type');
-                    const title = imgEl.getAttribute('data-title');
-                    
-                    if (type === 'manga') {
-                        const author = imgEl.getAttribute('data-author');
-                        fetchMangaCoverArt(title, author, imgEl.id, 3);
-                    } else if (type === 'anime') {
-                        fetchAnimeCoverArt(title, imgEl.id, 3);
-                    }
-                    obs.unobserve(imgEl); // Dejamos de observar tras cargar
+        // --- NUEVO SISTEMA DE COLA MULTI-HILO (BATCHING) 4.0 ---
+const anilistQueue = [];
+let isProcessingQueue = false;
+const FALLBACK_COVER = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='85'%3E%3Crect width='60' height='85' fill='%23111122' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2300f0ff' font-family='sans-serif' font-size='20' font-weight='bold'%3E?%3C/text%3E%3C/svg%3E";
+
+// OBSERVADOR GLOBAL CON RENOVACIÓN DE CACHÉ V4
+const globalImageObserver = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            try {
+                const imgEl = entry.target;
+                const type = imgEl.getAttribute('data-type');
+                let title = imgEl.getAttribute('data-title') || '';
+                const author = imgEl.getAttribute('data-author') || '';
+                
+                title = title.replace(/undefined|null/gi, '').trim();
+                if(!title) {
+                    imgEl.src = FALLBACK_COVER;
+                    obs.unobserve(imgEl);
+                    return;
+                }
+
+                const safeTitle = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const safeAuthor = author.toLowerCase().replace(/[^a-z0-9]/g, '');
+                
+                // 🌟 CLAVE: Subimos a "v4" para forzar recarga de los homónimos erróneos
+                const cacheKey = type === 'anime' ? `anime_cover_v4_${safeTitle}` : `manga_cover_v4_${safeTitle}_${safeAuthor}`;
+                const cachedUrl = localStorage.getItem(cacheKey);
+
+                if (cachedUrl) {
+                    imgEl.src = cachedUrl;
+                } else {
+                    anilistQueue.push({ el: imgEl, type, title, author, cacheKey });
+                    processAnilistQueue();
+                }
+            } catch(e) { console.error("Error al encolar:", e); }
+            obs.unobserve(entry.target);
+        }
+    });
+}, { rootMargin: '800px' });
+
+// PROCESADOR DE BATCHING CON ALGORITMO DE AUTORES
+async function processAnilistQueue() {
+    if (isProcessingQueue || anilistQueue.length === 0) return;
+    isProcessingQueue = true;
+
+    while (anilistQueue.length > 0) {
+        while(anilistQueue.length > 0 && anilistQueue[0].el.src && !anilistQueue[0].el.src.includes('data:image/svg+xml')) {
+            anilistQueue.shift();
+        }
+        if(anilistQueue.length === 0) break;
+
+        const currentType = anilistQueue[0].type;
+        const batchSize = 10; 
+        const batch = [];
+
+        for (let i = 0; i < anilistQueue.length; i++) {
+            if (anilistQueue[i].type === currentType) {
+                batch.push(anilistQueue.splice(i, 1)[0]);
+                i--;
+            }
+            if (batch.length >= batchSize) break;
+        }
+
+        if(batch.length === 0) continue;
+
+        try {
+            let queryDef = [];
+            let queryBody = [];
+            let variables = {};
+
+            batch.forEach((task, index) => {
+                queryDef.push(`$s${index}: String`);
+                variables[`s${index}`] = task.title;
+
+                if (currentType === 'anime') {
+                    queryBody.push(`q${index}: Page(page:1, perPage:3) { media(search: $s${index}, type: ANIME, sort: SEARCH_MATCH) { coverImage { large } } }`);
+                } else {
+                    // 🌟 CLAVE: Aumentamos a 8 resultados posibles y 5 autores para atrapar obras ocultas
+                    queryBody.push(`q${index}: Page(page:1, perPage:8) { media(search: $s${index}, type: MANGA, sort: SEARCH_MATCH) { coverImage { large } staff(sort: RELEVANCE, perPage: 5) { nodes { name { full } } } } }`);
                 }
             });
-        }, { rootMargin: '200px' });
 
-        // --- MOTOR IMÁGENES ANILIST OPTIMIZADO ANTI-BANEO ---
-        function fetchAnimeCoverArt(title, targetImgId, retries = 3) {
-            const cacheKey = `anime_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-            const cachedUrl = localStorage.getItem(cacheKey);
-            const imgEl = document.getElementById(targetImgId);
-            
-            if (cachedUrl) { 
-                if (imgEl) imgEl.src = cachedUrl; 
-                return; 
-            }
-            
-            const query = `query($search: String) { Page(page:1, perPage:1){ media(search: $search, type: ANIME) { coverImage { large } } } }`;
-            
-            setTimeout(() => {
-                fetchAnilist(query, { search: title }).then(json => {
-                    if(json?.data?.Page?.media?.[0]?.coverImage?.large) {
-                        const imgUrl = json.data.Page.media[0].coverImage.large;
-                        localStorage.setItem(cacheKey, imgUrl);
-                        if(imgEl) imgEl.src = imgUrl;
-                    }
-                }).catch((err) => {
-                    if (err.message === "RATE_LIMIT" && retries > 0) {
-                        setTimeout(() => fetchAnimeCoverArt(title, targetImgId, retries - 1), 2000);
-                    }
-                });
-            }, 50 + Math.random() * 150); 
-        }
+            const megaQuery = `query(${queryDef.join(', ')}) { ${queryBody.join(' ')} }`;
+            const json = await fetchAnilist(megaQuery, variables);
 
-        // --- FUNCIÓN SOLUCIÓN AUTORES MANGA ---
-        function fetchMangaCoverArt(title, author, targetImgId, retries = 3) {
-            const safeAuthor = author ? author.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
-            const cacheKeyV2 = `manga_cover_v2_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}_${safeAuthor}`;
-            const oldCacheKey = `manga_cover_${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-            
-            const cachedUrl = localStorage.getItem(cacheKeyV2) || localStorage.getItem(oldCacheKey);
-            const imgEl = document.getElementById(targetImgId);
-            
-            if (cachedUrl) { 
-                if (imgEl) imgEl.src = cachedUrl; 
-                return; 
-            }
-            
-            // Buscamos 5 resultados y traemos al staff para poder cruzar datos
-            const query = `query($search: String) { 
-                Page(page:1, perPage:5){ 
-                    media(search: $search, type: MANGA) { 
-                        coverImage { large } 
-                        staff(sort: RELEVANCE, perPage: 3) { nodes { name { full } } }
-                    } 
-                } 
-            }`;
-            
-            setTimeout(() => {
-                fetchAnilist(query, { search: title }).then(json => {
-                    const medias = json?.data?.Page?.media || [];
-                    if(medias.length > 0) {
-                        let selectedMedia = medias[0]; // Por defecto el primero
+            batch.forEach((task, index) => {
+                let imgUrl = null;
+                const medias = json?.data?.[`q${index}`]?.media || [];
+
+                if (medias.length > 0) {
+                    if (currentType === 'anime') {
+                        const validMedia = medias.find(m => m.coverImage?.large);
+                        imgUrl = validMedia ? validMedia.coverImage.large : null;
+                    } else {
+                        // Por defecto, coge el primer resultado que tenga imagen
+                        let selectedMedia = medias.find(m => m.coverImage?.large) || medias[0];
                         
-                        // Si hay autor, buscamos coincidencia en el staff
-                        if (author && author !== 'Desconocido') {
-                            const authorLower = author.toLowerCase();
-                            const match = medias.find(m => 
-                                m.staff?.nodes?.some(n => {
+                        if (task.author && task.author !== 'Desconocido') {
+                            const rawTargetAuthor = task.author.toLowerCase();
+                            // Separamos el nombre del autor por palabras para búsqueda cruzada
+                            const authorTokens = rawTargetAuthor.replace(/[^a-z0-9\s]/g, '').split(' ').filter(t => t.length > 2);
+                            
+                            const match = medias.find(m => {
+                                if (!m.coverImage?.large) return false;
+                                return m.staff?.nodes?.some(n => {
                                     const staffName = (n.name?.full || '').toLowerCase();
-                                    return staffName.includes(authorLower) || authorLower.includes(staffName);
-                                })
-                            );
+                                    
+                                    // 1. Coincidencia directa completa (Ej: "NON" en "NON")
+                                    if (staffName.includes(rawTargetAuthor) || rawTargetAuthor.includes(staffName)) return true;
+                                    
+                                    // 2. Coincidencia por tokens cruzados (Evita fallo "Kentarou Miura" vs "Miura Kentarou")
+                                    if (authorTokens.length > 0 && authorTokens.every(token => staffName.includes(token))) return true;
+                                    
+                                    return false;
+                                });
+                            });
+                            
+                            // Si el algoritmo encontró al autor exacto entre los 8 mangas, lo selecciona
                             if (match) selectedMedia = match;
                         }
-                        const imgUrl = selectedMedia.coverImage?.large;
-                        if (imgUrl) {
-                            localStorage.setItem(cacheKeyV2, imgUrl);
-                            if(imgEl) imgEl.src = imgUrl;
-                        }
+                        imgUrl = selectedMedia?.coverImage?.large;
                     }
-                }).catch((err) => {
-                    if (err.message === "RATE_LIMIT" && retries > 0) {
-                        setTimeout(() => fetchMangaCoverArt(title, author, targetImgId, retries - 1), 2000);
-                    }
+                }
+
+                const finalUrl = imgUrl || FALLBACK_COVER;
+                localStorage.setItem(task.cacheKey, finalUrl);
+                if(task.el) task.el.src = finalUrl;
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 800)); 
+
+        } catch (err) {
+            if (err.message === "RATE_LIMIT") {
+                anilistQueue.unshift(...batch);
+                await new Promise(resolve => setTimeout(resolve, 4000));
+            } else {
+                batch.forEach(task => {
+                    localStorage.setItem(task.cacheKey, FALLBACK_COVER);
+                    if(task.el) task.el.src = FALLBACK_COVER;
                 });
-            }, 50 + Math.random() * 150); 
+            }
         }
+    }
+
+    isProcessingQueue = false;
+}
 
         function fetchStudioLogoArt(studioName, targetImgId, index) {
             // Anilist no provee logos de estudio.
