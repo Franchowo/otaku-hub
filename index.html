@@ -1004,36 +1004,6 @@
             .gacha-card { flex-direction: column; align-items: center; text-align: center; }
             .gacha-tags { justify-content: center; }
         }
-
-/* --- VENTANA FLOTANTE DE IMÁGENES (ZOOM) --- */
-        .hover-overlay {
-            position: fixed;
-            display: none;
-            z-index: 9999;
-            pointer-events: none; /* Evita que el ratón interactúe con el popup */
-            background: rgba(4, 4, 12, 0.95);
-            padding: 8px;
-            border-radius: 12px;
-            border: 1px solid var(--neon-cyan);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 240, 255, 0.2);
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
-            backdrop-filter: blur(5px);
-        }
-
-        .hover-overlay.visible {
-            display: block;
-            opacity: 1;
-        }
-
-        .hover-overlay img {
-            width: 250px; /* Tamaño de la imagen ampliada */
-            height: auto;
-            border-radius: 8px;
-            object-fit: cover;
-            display: block;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
     </style>
 </head>
 
@@ -3939,63 +3909,6 @@ async function processAnilistQueue() {
             }
         }
 
-// --- SISTEMA DE AMPLIACIÓN FLOTANTE (ZOOM HOVER) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const overlay = document.getElementById('imageHoverOverlay');
-            const overlayImg = document.getElementById('hoverOverlayImg');
-
-            // Detectar cuando el ratón entra en una imagen
-            document.body.addEventListener('mouseover', (e) => {
-                if (e.target && e.target.classList.contains('img-thumb')) {
-                    const src = e.target.getAttribute('src');
-                    
-                    // Solo mostramos si hay una imagen real (evitamos el SVG de carga por defecto)
-                    if (src && !src.includes('data:image/svg+xml')) {
-                        overlayImg.src = src;
-                        overlay.classList.add('visible');
-                    }
-                }
-            });
-
-            // Hacer que la ventana siga al ratón
-            document.body.addEventListener('mousemove', (e) => {
-                if (overlay.classList.contains('visible')) {
-                    let x = e.clientX + 20; // 20px a la derecha del cursor
-                    let y = e.clientY + 20; // 20px debajo del cursor
-
-                    const overlayRect = overlay.getBoundingClientRect();
-                    const windowWidth = window.innerWidth;
-                    const windowHeight = window.innerHeight;
-
-                    // Prevenir que el panel se salga por el borde derecho
-                    if (x + overlayRect.width > windowWidth) {
-                        x = e.clientX - overlayRect.width - 20;
-                    }
-                    
-                    // Prevenir que el panel se salga por el borde inferior
-                    if (y + overlayRect.height > windowHeight) {
-                        y = e.clientY - overlayRect.height - 20;
-                    }
-
-                    overlay.style.left = `${x}px`;
-                    overlay.style.top = `${y}px`;
-                }
-            });
-
-            // Ocultar cuando el ratón sale de la imagen
-            document.body.addEventListener('mouseout', (e) => {
-                if (e.target && e.target.classList.contains('img-thumb')) {
-                    overlay.classList.remove('visible');
-                    // Retraso opcional para limpiar la fuente y evitar parpadeos
-                    setTimeout(() => {
-                        if (!overlay.classList.contains('visible')) {
-                            overlayImg.src = '';
-                        }
-                    }, 200);
-                }
-            });
-        });
-
         window.onload = () => {
             if (state.songs.length > 0) {
                 if (state.pool && state.pool.length > 0) { goToStep(4); renderDuel(); }
@@ -4008,11 +3921,5 @@ async function processAnilistQueue() {
             window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('OTAKU HUB App instalada correctamente.', reg.scope)).catch(err => console.log('Error al instalar la app:', err)); });
         }
     </script>
-
-<!-- VENTANA FLOTANTE PARA IMÁGENES -->
-    <div id="imageHoverOverlay" class="hover-overlay">
-        <img id="hoverOverlayImg" src="" alt="Ampliación">
-    </div>
-
 </body>
 </html>
