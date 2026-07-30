@@ -1026,6 +1026,8 @@
         <button class="tab-btn icon-only" id="tabBtn-calificadorView" onclick="switchView('calificadorView')" title="Calificador Anime">🎯</button>
         <button class="tab-btn icon-only" id="tabBtn-planificadorView" onclick="switchView('planificadorView')" title="Planificador">📅</button>
         <button class="tab-btn icon-only" id="tabBtn-gachaView" onclick="switchView('gachaView')" title="Gacha Otaku">🎰</button>
+<!-- NUEVO BOTÓN DE ROTACIÓN -->
+        <button class="tab-btn icon-only" id="tabBtn-rotate" onclick="toggleLandscape()" title="Modo Horizontal / Pantalla Completa" style="border-left: 1px solid var(--glass-border); margin-left: 5px; padding-left: 15px;">📱🔄</button>
     </nav>
 
     <div class="container hub-mode" id="mainContainer">
@@ -3926,6 +3928,32 @@ async function processAnilistQueue() {
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('OTAKU HUB App instalada correctamente.', reg.scope)).catch(err => console.log('Error al instalar la app:', err)); });
+        }
+
+// --- SISTEMA DE ROTACIÓN Y PANTALLA COMPLETA ---
+        async function toggleLandscape() {
+            try {
+                if (!document.fullscreenElement) {
+                    // 1. Solicitamos entrar en pantalla completa (requisito de seguridad de los navegadores)
+                    await document.documentElement.requestFullscreen();
+                    
+                    // 2. Intentamos bloquear la pantalla en modo horizontal
+                    if (screen.orientation && screen.orientation.lock) {
+                        await screen.orientation.lock("landscape");
+                    }
+                } else {
+                    // Si ya estamos en pantalla completa, salimos y liberamos la orientación
+                    if (document.exitFullscreen) {
+                        await document.exitFullscreen();
+                    }
+                    if (screen.orientation && screen.orientation.unlock) {
+                        screen.orientation.unlock();
+                    }
+                }
+            } catch (err) {
+                console.warn("Rotación forzada no soportada:", err);
+                alert("⚠️ Tu dispositivo o navegador actual (como iOS Safari) no permite forzar la rotación automáticamente. Por favor, gira el dispositivo físicamente.");
+            }
         }
     </script>
 </body>
