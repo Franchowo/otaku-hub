@@ -1004,6 +1004,46 @@
             .gacha-card { flex-direction: column; align-items: center; text-align: center; }
             .gacha-tags { justify-content: center; }
         }
+/* --- ADAPTACIÓN AUTOMÁTICA A ROTACIÓN FÍSICA (MODO HORIZONTAL) --- */
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding: 10px 0; /* Reducimos los márgenes verticales */
+            }
+            
+            /* Convertimos el menú en un carrusel deslizable horizontalmente para no perder altura */
+            .nav-tabs {
+                flex-wrap: nowrap; /* Evita que los botones salten de línea */
+                overflow-x: auto;  /* Permite deslizar con el dedo */
+                justify-content: flex-start;
+                padding: 8px 15px;
+                margin-bottom: 15px;
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch; /* Deslizamiento suave en iOS */
+            }
+            
+            /* Ocultamos la barra de scroll antiestética en el menú horizontal */
+            .nav-tabs::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .container {
+                padding: 15px 20px; /* Aprovechamos más el espacio interno */
+                width: 98%;
+            }
+            
+            h1, h2 {
+                font-size: 1.4rem;
+                margin-bottom: 15px;
+            }
+            
+            /* Ajustamos los grids principales para que muestren más elementos a lo ancho */
+            .hub-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .stats-grid-extended {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
     </style>
 </head>
 
