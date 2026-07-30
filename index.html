@@ -3336,10 +3336,17 @@ async function processAnilistQueue() {
                 const rowItems = _annualRanking.filter(item => parseInt(item.score) === score), rowBlock = document.createElement('div'); rowBlock.className = 'tierlist-row';
                 let itemsHTML = '';
                 rowItems.forEach(anime => {
-                    const cacheKey = `anime_cover_${anime.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-                    const imgUrl = localStorage.getItem(cacheKey) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='48' height='48' fill='%23111122'/></svg>";
-                    itemsHTML += `<div class="tierlist-square-poster" title="${anime.name}"><img src="${imgUrl}" alt=""></div>`;
-                });
+    const cacheKey = `anime_cover_v4_${anime.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    let imgUrl = localStorage.getItem(cacheKey) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='48' height='48' fill='%23111122'/></svg>";
+    
+    // --- NUEVO: Evitar bloqueo de caché CORS forzando una petición fresca ---
+    if (imgUrl.startsWith('http')) {
+        imgUrl += (imgUrl.includes('?') ? '&' : '?') + 'nocache=' + Date.now();
+    }
+    
+    // --- MODIFICADO: Añadido crossorigin="anonymous" al tag de la imagen ---
+    itemsHTML += `<div class="tierlist-square-poster" title="${anime.name}"><img src="${imgUrl}" crossorigin="anonymous" alt=""></div>`;
+});
                 rowBlock.innerHTML = `<div class="tierlist-row-label" style="background-color: ${colorPalette[score]};">${score}</div><div class="tierlist-row-items">${itemsHTML}</div>`;
                 container.appendChild(rowBlock);
             }
