@@ -3471,29 +3471,44 @@ function saveStudiosSnapshot() {
         }
 
         function openTierlistModal() {
-            const container = document.getElementById('tierlistRowsContainer'); if(!container) return; container.innerHTML = '';
-            const colorPalette = { 10: '#6f42c1', 9: '#4a76a8', 8: '#17a2b8', 7: '#28a745', 6: '#7cb342', 5: '#ffc107', 4: '#ff9800', 3: '#fb8c00', 2: '#e53935', 1: '#c62828' };
+    const container = document.getElementById('tierlistRowsContainer'); if(!container) return; container.innerHTML = '';
+    const colorPalette = { 10: '#6f42c1', 9: '#4a76a8', 8: '#17a2b8', 7: '#28a745', 6: '#7cb342', 5: '#ffc107', 4: '#ff9800', 3: '#fb8c00', 2: '#e53935', 1: '#c62828' };
 
-            for (let score = 10; score >= 1; score--) {
-                const rowItems = _annualRanking.filter(item => parseInt(item.score) === score), rowBlock = document.createElement('div'); rowBlock.className = 'tierlist-row';
-                let itemsHTML = '';
-                rowItems.forEach(anime => {
-    const cacheKey = `anime_cover_v4_${anime.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-    let imgUrl = localStorage.getItem(cacheKey) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='48' height='48' fill='%23111122'/></svg>";
-    
-    // --- NUEVO: Evitar bloqueo de caché CORS forzando una petición fresca ---
-    if (imgUrl.startsWith('http')) {
-        imgUrl += (imgUrl.includes('?') ? '&' : '?') + 'nocache=' + Date.now();
-    }
-    
-    // --- MODIFICADO: Añadido crossorigin="anonymous" al tag de la imagen ---
-    itemsHTML += `<div class="tierlist-square-poster" title="${anime.name}"><img src="${imgUrl}" crossorigin="anonymous" alt=""></div>`;
-});
-                rowBlock.innerHTML = `<div class="tierlist-row-label" style="background-color: ${colorPalette[score]};">${score}</div><div class="tierlist-row-items">${itemsHTML}</div>`;
-                container.appendChild(rowBlock);
+    for (let score = 10; score >= 1; score--) {
+        const rowItems = _annualRanking.filter(item => parseInt(item.score) === score);
+        const rowBlock = document.createElement('div'); rowBlock.className = 'tierlist-row';
+        let itemsHTML = '';
+        
+        rowItems.forEach(anime => {
+            const safeTitle = anime.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            
+            // 1. Buscamos el estudio en _masterData para reconstruir la clave v5
+            let studio = '';
+            const foundAnime = _masterData.find(a => a.anime.toLowerCase() === anime.name.toLowerCase());
+            if (foundAnime && foundAnime.studio) studio = foundAnime.studio;
+            const safeStudio = studio.toLowerCase().replace(/[^a-z0-9]/g, '');
+            
+            // 2. Construimos la clave v5 (añadimos un fallback a v4 por seguridad)
+            const cacheKeyV5 = `anime_cover_v5_${safeTitle}_${safeStudio}`;
+            const cacheKeyV4 = `anime_cover_v4_${safeTitle}`;
+            
+            let imgUrl = localStorage.getItem(cacheKeyV5) || 
+                         localStorage.getItem(cacheKeyV4) || 
+                         "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='48' height='48' fill='%23111122'/></svg>";
+            
+            // 3. Forzamos recarga limpia para evitar bloqueos de CORS en el html2canvas
+            if (imgUrl.startsWith('http')) {
+                imgUrl += (imgUrl.includes('?') ? '&' : '?') + 'nocache=' + Date.now();
             }
-            document.getElementById('tierlistModalWrapper').style.display = 'flex';
-        }
+            
+            itemsHTML += `<div class="tierlist-square-poster" title="${anime.name}"><img src="${imgUrl}" crossorigin="anonymous" alt=""></div>`;
+        });
+        
+        rowBlock.innerHTML = `<div class="tierlist-row-label" style="background-color: ${colorPalette[score]};">${score}</div><div class="tierlist-row-items">${itemsHTML}</div>`;
+        container.appendChild(rowBlock);
+    }
+    document.getElementById('tierlistModalWrapper').style.display = 'flex';
+}
 
         function closeTierlistModal() { document.getElementById('tierlistModalWrapper').style.display = 'none'; }
 
