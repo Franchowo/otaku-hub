@@ -2654,11 +2654,11 @@ async function processAnilistQueue() {
             document.getElementById('tmKpiStudio').innerText = topStudio;
 
             const featuredContainer = document.getElementById('tmFeaturedContainer');
-            featuredContainer.innerHTML = '';
-            
+            let featuredHTML = ''; // Construimos el HTML en memoria primero
+
             if (bestAnime) {
                 const neonClass = `score-neon-${Math.round(bestAnime.score)}`;
-                featuredContainer.innerHTML += `
+                featuredHTML += `
                     <div class="tm-featured-card anime">
                         <div class="img-container" style="width: 80px; height: 115px; border-radius: 8px;">
                             <img id="tm-best-anime-img" data-type="anime" data-title="${bestAnime.anime}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
@@ -2671,14 +2671,13 @@ async function processAnilistQueue() {
                         </div>
                     </div>
                 `;
-                globalImageObserver.observe(document.getElementById('tm-best-anime-img'));
             } else {
-                featuredContainer.innerHTML += `<div class="tm-featured-card anime" style="justify-content:center; color:rgba(255,255,255,0.3);">Sin anime este año</div>`;
+                featuredHTML += `<div class="tm-featured-card anime" style="justify-content:center; color:rgba(255,255,255,0.3);">Sin anime este año</div>`;
             }
 
             if (bestManga) {
                 const neonClass = `score-neon-${Math.round(bestManga.score)}`;
-                featuredContainer.innerHTML += `
+                featuredHTML += `
                     <div class="tm-featured-card manga">
                         <div class="img-container" style="width: 80px; height: 115px; border-radius: 8px;">
                             <img id="tm-best-manga-img" data-type="manga" data-title="${bestManga.manga}" data-author="${bestManga.author}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
@@ -2691,10 +2690,16 @@ async function processAnilistQueue() {
                         </div>
                     </div>
                 `;
-                globalImageObserver.observe(document.getElementById('tm-best-manga-img'));
             } else {
-                featuredContainer.innerHTML += `<div class="tm-featured-card manga" style="justify-content:center; color:rgba(255,255,255,0.3);">Sin manga este año</div>`;
+                featuredHTML += `<div class="tm-featured-card manga" style="justify-content:center; color:rgba(255,255,255,0.3);">Sin manga este año</div>`;
             }
+
+            // Inyectamos el HTML de golpe
+            featuredContainer.innerHTML = featuredHTML;
+
+            // Ahora que el HTML está firme, activamos la búsqueda de las portadas
+            if (bestAnime) globalImageObserver.observe(document.getElementById('tm-best-anime-img'));
+            if (bestManga) globalImageObserver.observe(document.getElementById('tm-best-manga-img'));
 
             const galleryContainer = document.getElementById('tmGalleryContainer');
             galleryContainer.innerHTML = '';
