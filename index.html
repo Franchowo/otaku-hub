@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>OTAKU HUB - Control Center</title>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#030308">
@@ -1933,24 +1933,41 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzB8Q9DPl0z2mukInsy
 
         const FALLBACK_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='85'%3E%3Crect width='60' height='85' fill='%23111122' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2300f0ff' font-family='sans-serif' font-size='20' font-weight='bold'%3E?%3C/text%3E%3C/svg%3E";
 
-        // --- HELPER CENTRAL PARA ANILIST (GraphQL) CON MANEJO DE ERRORES ---
-        async function fetchAnilist(query, variables = {}) {
+        // --- HELPER CENTRAL PARA ANILIST (GraphQL) CON MANEJO DE ERRORES Y PROXY ---
+async function fetchAnilist(query, variables = {}) {
+    const url = 'https://graphql.anilist.co';
+    const options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ query, variables })
+    };
+
+    try {
+        // Intento 1: Conexión directa
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            if (response.status === 429) throw new Error("RATE_LIMIT");
+            if (response.status === 404) return { data: null };
+            throw new Error("API_ERROR");
+        }
+        return await response.json();
+    } catch (e) {
+        // Intento 2: Bypass de CORS si se abre el archivo como file:///
+        if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+            console.warn("Bloqueo CORS detectado. Usando proxy...");
             try {
-                const response = await fetch('https://graphql.anilist.co', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({ query, variables })
-                });
-                if (!response.ok) {
-                    if (response.status === 429) throw new Error("RATE_LIMIT");
-                    if (response.status === 404) return { data: null };
-                    throw new Error("API_ERROR");
-                }
-                return await response.json();
-            } catch (e) {
-                throw e;
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+                const proxyResponse = await fetch(proxyUrl, options);
+                if (!proxyResponse.ok) throw new Error("API_ERROR_PROXY");
+                return await proxyResponse.json();
+            } catch (proxyError) {
+                console.error("El proxy también falló:", proxyError);
+                throw proxyError;
             }
         }
+        throw e;
+    }
+}
 
         // --- NUEVO SISTEMA DE COLA MULTI-HILO (BATCHING) 4.0 ---
 const anilistQueue = [];
@@ -2490,7 +2507,7 @@ async function processAnilistQueue() {
                         title { romaji }
                         startDate { year }
                         coverImage { large }
-                        staff(sort: RELEVANCE, perPage: 1) { nodes { name { full } } }
+                        staff(perPage: 1) { nodes { name { full } } }
                     }
                 }
             }`;
@@ -3544,9 +3561,10 @@ function saveStudiosSnapshot() {
                     animeBaseName = randomAnime.anime;
                     recomStatus.innerText = `Extrayendo recomendaciones basadas en "${animeBaseName}"...`;
                     
-                    const gql = `query($search: String) { Media(search: $search, type: ANIME) { recommendations(sort: RATING_DESC, perPage: 12) { nodes { mediaRecommendation { title { romaji } coverImage { large } } } } } }`;
-                    const res = await fetchAnilist(gql, { search: animeBaseName });
-                    const recs = res?.data?.Media?.recommendations?.nodes?.map(n => n.mediaRecommendation).filter(Boolean) || [];
+                    // CÓDIGO CORREGIDO ANIME
+const gql = `query($search: String) { Page(page: 1, perPage: 1) { media(search: $search, type: ANIME) { recommendations(sort: RATING_DESC, perPage: 12) { nodes { mediaRecommendation { title { romaji } coverImage { large } } } } } } }`;
+const res = await fetchAnilist(gql, { search: animeBaseName });
+const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.mediaRecommendation).filter(Boolean) || [];
                     recomAnimes = recs.filter(a => a && a.title && !myAnimeNames.includes(a.title.romaji.toLowerCase())).slice(0, 6);
                 } catch(e) {}
             }
@@ -3571,9 +3589,10 @@ function saveStudiosSnapshot() {
                     mangaBaseName = randomManga.manga;
                     recomStatus.innerText = `Buscando lecturas similares a: "${mangaBaseName}"...`;
                     
-                    const gql = `query($search: String) { Media(search: $search, type: MANGA) { recommendations(sort: RATING_DESC, perPage: 12) { nodes { mediaRecommendation { title { romaji } coverImage { large } } } } } }`;
-                    const res = await fetchAnilist(gql, { search: mangaBaseName });
-                    const recs = res?.data?.Media?.recommendations?.nodes?.map(n => n.mediaRecommendation).filter(Boolean) || [];
+                    // CÓDIGO CORREGIDO MANGA
+const gql = `query($search: String) { Page(page: 1, perPage: 1) { media(search: $search, type: MANGA) { recommendations(sort: RATING_DESC, perPage: 12) { nodes { mediaRecommendation { title { romaji } coverImage { large } } } } } } }`;
+const res = await fetchAnilist(gql, { search: mangaBaseName });
+const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.mediaRecommendation).filter(Boolean) || [];
                     recomMangas = recs.filter(m => m && m.title && !myMangaNames.includes(m.title.romaji.toLowerCase())).slice(0, 6);
                 } catch(e) {}
             }
