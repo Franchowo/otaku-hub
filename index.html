@@ -3263,11 +3263,33 @@ async function processAnilistQueue() {
             });
         }
 
+// --- NUEVA FUNCIÓN PARA ALTERNAR PORTADAS DE ESTUDIOS ---
+        window.cycleStudioCover = function(event, studioName) {
+            event.stopPropagation(); // Evita que se haga clic en la tarjeta y nos lleve al filtro
+            let topAnimes = window.studioTopAnimesMap[studioName];
+            if (!topAnimes || topAnimes.length <= 1) return;
+
+            let prefs = JSON.parse(localStorage.getItem('studio_cover_prefs')) || {};
+            let current = prefs[studioName] || topAnimes[0];
+            let currentIndex = topAnimes.indexOf(current);
+            if (currentIndex === -1) currentIndex = 0;
+
+            // Avanzamos al siguiente anime empatado
+            let nextIndex = (currentIndex + 1) % topAnimes.length;
+            prefs[studioName] = topAnimes[nextIndex];
+            localStorage.setItem('studio_cover_prefs', JSON.stringify(prefs));
+
+            // Recargamos la vista para aplicar el cambio
+            renderTopStudiosView();
+        };
+
         function renderTopStudiosView() {
             const container = document.getElementById('studiosGridContainer'); 
             container.innerHTML = '';
             
             let studioMap = {};
+            let prefs = JSON.parse(localStorage.getItem('studio_cover_prefs')) || {};
+            window.studioTopAnimesMap = {}; // Mapa global para el ciclo de portadas
             
             _masterData.forEach(item => {
                 if(!item.studio || item.studio === 'Desconocido') return;
@@ -3279,7 +3301,7 @@ async function processAnilistQueue() {
                         studioMap[studioName] = { 
                             sum: item.score, 
                             count: 1, 
-                            bestAnime: item.anime, 
+                            topAnimes: [item.anime], // Ahora guardamos un array
                             maxScore: item.score 
                         };
                     } else {
@@ -3287,18 +3309,34 @@ async function processAnilistQueue() {
                         studioMap[studioName].count += 1;
                         if(item.score > studioMap[studioName].maxScore) {
                             studioMap[studioName].maxScore = item.score;
-                            studioMap[studioName].bestAnime = item.anime;
+                            studioMap[studioName].topAnimes = [item.anime]; // Nuevo líder
+                        } else if (item.score === studioMap[studioName].maxScore) {
+                            // Empate en nota máxima, lo añadimos a la lista si no está ya
+                            if (!studioMap[studioName].topAnimes.includes(item.anime)) {
+                                studioMap[studioName].topAnimes.push(item.anime);
+                            }
                         }
                     }
                 });
             });
 
             let eligibleStudios = Object.keys(studioMap).map(name => { 
+                let data = studioMap[name];
+                window.studioTopAnimesMap[name] = data.topAnimes;
+
+                // Verificamos si hay una preferencia guardada y si sigue siendo válida (es decir, si sigue siendo nota máxima)
+                let selectedBest = data.topAnimes[0];
+                if (prefs[name] && data.topAnimes.includes(prefs[name])) {
+                    selectedBest = prefs[name];
+                }
+
                 return { 
                     name: name, 
-                    count: studioMap[name].count, 
-                    avg: parseFloat((studioMap[name].sum / studioMap[name].count).toFixed(2)),
-                    bestAnime: studioMap[name].bestAnime
+                    count: data.count, 
+                    avg: parseFloat((data.sum / data.count).toFixed(2)),
+                    bestAnime: selectedBest,
+                    topAnimes: data.topAnimes,
+                    maxScore: data.maxScore
                 }; 
             }).filter(s => s.count >= 5);
             
@@ -3339,24 +3377,20 @@ async function processAnilistQueue() {
                 // --- LÓGICA VISUAL: BEST 10, WORST 10 Y CLARIDAD ---
                 let rankBadgeStyle = "font-size: 1.35rem; font-weight: 900;";
                 let rankIcon = "";
-                let rankColor = "rgba(255, 255, 255, 0.5)"; // Color neutro, mucho más visible que antes
+                let rankColor = "rgba(255, 255, 255, 0.5)"; 
 
                 if (index < 10) {
-                    // BEST 10
                     rankColor = "var(--metal-gold)";
                     rankIcon = "🏆";
                     rankBadgeStyle += ` color: ${rankColor}; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);`;
                 } else if (index >= Math.max(10, totalStudios - 10)) {
-                    // WORST 10 (Usamos Math.max para evitar que se solape con el Top 10 si hay muy pocos estudios)
                     rankColor = "var(--neon-red)";
                     rankIcon = "🔻";
                     rankBadgeStyle += ` color: ${rankColor}; text-shadow: 0 0 10px rgba(255, 0, 51, 0.4);`;
                 } else {
-                    // NORMAL
                     rankBadgeStyle += ` color: ${rankColor};`;
                 }
 
-                // Cálculos de Diferencia Visual respecto al Snapshot
                 let rankDiffHtml = '';
                 let avgDiffHtml = '';
                 let pastData = savedSnapshot[studio.name];
@@ -3378,16 +3412,24 @@ async function processAnilistQueue() {
                     avgDiffHtml = `<span style="color: var(--neon-cyan); font-size: 0.75rem; font-weight: bold;">(NEW)</span>`;
                 }
 
+                // Generador del botón de ciclo (solo si hay más de 1 anime empatado con la nota máxima)
+                let cycleBtnHtml = '';
+                if (studio.topAnimes.length > 1) {
+                    const safeStudioName = studio.name.replace(/'/g, "\\'");
+                    cycleBtnHtml = `<div onclick="cycleStudioCover(event, '${safeStudioName}')" style="position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.75); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 10px; border: 1px solid var(--neon-cyan); backdrop-filter: blur(4px); transition: transform 0.2s;" onmouseover="this.style.transform='rotate(90deg)'" onmouseout="this.style.transform='rotate(0deg)'" title="Clic para cambiar portada (${studio.topAnimes.length} opciones con nota ${studio.maxScore})">🔄</div>`;
+                }
+
                 container.insertAdjacentHTML('beforeend', `
                     <div class="studio-card" onclick="filterByStudioDirect('${studio.name}')">
                         
-                        <!-- NUEVO POSICIONAMIENTO Y ESTILOS EN LÍNEA -->
                         <div class="studio-card-rank" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; position: absolute; top: 12px; right: 15px; z-index: 2;">
                             <div style="${rankBadgeStyle}">${rankIcon} #${index + 1}</div>
                             <div style="line-height: 1; font-family: 'Segoe UI', Arial, sans-serif; text-shadow: none;">${rankDiffHtml}</div>
                         </div>
                         
-                        <div class="img-container" style="width: 60px; height: 85px; flex-shrink: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                        <!-- Contenedor de imagen modificado con relative y cycleBtnHtml -->
+                        <div class="img-container" style="position: relative; width: 60px; height: 85px; flex-shrink: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                            ${cycleBtnHtml}
                             <img id="${imgId}" data-type="anime" data-title="${studio.bestAnime}" loading="lazy" class="img-thumb" style="width:100%; height:100%; object-fit:cover;" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='85'><rect width='60' height='85' fill='%23111122'/></svg>">
                         </div>
                         
@@ -3395,7 +3437,7 @@ async function processAnilistQueue() {
                             <span class="studio-card-name" title="${studio.name}">${studio.name}</span>
                             <span class="studio-card-count" style="margin-bottom:2px;">${studio.count} animes</span>
                             
-                            <span style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Tu obra favorita: ${studio.bestAnime}">👑 ${studio.bestAnime}</span>
+                            <span style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Obra destacada: ${studio.bestAnime}">👑 ${studio.bestAnime}</span>
                             
                             <div style="display: flex; align-items: center; gap: 6px; margin-top: auto;">
                                 <span class="studio-card-badge ${scoreTone}" style="margin:0; align-self:center;">${studio.avg.toFixed(2)} MEDIA</span>
