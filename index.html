@@ -1789,7 +1789,7 @@
 
             <div id="calificadorResultsGrid" class="recom-grid" style="margin-top: 20px;"></div>
 
-            <div id="calificadorTrackerSection" style="display: none; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; margin-top: 25px;">
+            <div id="calificadorTrackerSection" style="display: none; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; margin-top: 25px; position: relative;">
                 <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
                     <div class="img-container" style="width: 120px; height: 170px; flex-shrink: 0; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.6);">
                         <img id="calificadorAnimeCover" class="img-thumb" src="" alt="Portada">
@@ -1801,11 +1801,11 @@
                         <div class="stats-grid-extended" style="grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div class="kpi-card cyan" style="padding: 10px;">
                                 <div class="kpi-num" id="calificadorAverageScore">0,00</div>
-                                <div class="kpi-label">Media Calculada</div>
+                                <div class="kpi-label">Nota Media Progresiva</div>
                             </div>
                             <div class="kpi-card" id="calificadorCandidateBadge" style="padding: 10px; border-color: var(--glass-border); transition: all 0.3s;">
                                 <div class="kpi-num" id="calificadorTensCount" style="color: rgba(255,255,255,0.3);">0</div>
-                                <div class="kpi-label">Episodios Perfectos (10)</div>
+                                <div class="kpi-label">Hitos Excelentes (>8.5)</div>
                             </div>
                         </div>
 
@@ -1813,10 +1813,30 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 25px; max-height: 400px; overflow-y: auto; padding-right: 10px;" id="calificadorEpisodeList">
+                <!-- Lista de Hitos -->
+                <div style="margin-top: 25px; max-height: 450px; overflow-y: auto; padding-right: 10px; display: flex; flex-direction: column; gap: 10px;" id="calificadorEpisodeList">
+                </div>
+
+                <!-- Modal Flotante de Formulario de Evaluación -->
+                <div id="calificadorFormModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+                    <div style="background: var(--bg-color); border: 1px solid var(--neon-cyan); border-radius: 20px; padding: 30px; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; box-shadow: 0 0 40px rgba(0,240,255,0.15);">
+                        <h3 id="calificadorFormTitle" style="color: var(--neon-cyan); margin-top: 0; margin-bottom: 5px; text-align: center; font-size: 1.4rem;">Punto de Estado</h3>
+                        <p id="calificadorFormDesc" style="text-align: center; color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 25px;">Evalúa los parámetros para actualizar la nota media.</p>
+                        
+                        <div id="calificadorFormQuestions" style="display: flex; flex-direction: column; gap: 15px;"></div>
+                        
+                        <div style="text-align: center; margin-top: 25px; font-size: 1.3rem; font-weight: 800; color: var(--neon-magenta); background: rgba(255,0,127,0.05); padding: 15px; border-radius: 12px; border: 1px dashed rgba(255,0,127,0.3);">
+                            Nota del Hito: <span id="calificadorFormLiveScore">0.0</span> <span style="font-size:1rem;">⭐</span>
+                        </div>
+                        
+                        <div style="display: flex; gap: 12px; margin-top: 25px;">
+                            <button class="main-btn" style="background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green)); color: #000; margin-top: 0;" onclick="submitCalificadorForm()">💾 Registrar Evaluación</button>
+                            <button class="btn-reset" style="padding: 14px; border-radius: 10px; width: 50%; font-weight: bold;" onclick="closeCalificadorForm()">✕ Cancelar</button>
+                        </div>
                     </div>
+                </div>
             </div>
-        </div>
+        </div> <!-- ESTE ES EL DIV QUE FALTABA PARA CERRAR EL CALIFICADOR -->
 
         <div id="planificadorView" class="view">
             <h2>📅 Planificador Estacional</h2>
@@ -3729,9 +3749,13 @@ const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.med
             if (validProgress.length === 0) { section.style.display = 'none'; return; }
             section.style.display = 'block';
             validProgress.forEach(anime => {
-                const completed = anime.scores.filter(s => s !== null && s !== "").length;
+                // Compatible con el nuevo formato de objetos
+                const completed = anime.scores.filter(s => s && s.completed).length;
+                const totalHitos = anime.scores.length || 1;
+                const pct = (completed / totalHitos) * 100;
+                
                 const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer';
-                card.innerHTML = `<div class="recom-card-img-container" style="position:relative;"><img src="${anime.cover}" onerror="this.src='${FALLBACK_IMG}';"><div style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(255,255,255,0.2);"><div style="width:${(completed / anime.episodes) * 100}%; height:100%; background:var(--neon-cyan);"></div></div></div><span class="recom-card-title" title="${anime.title}">${anime.title}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">${completed}/${anime.episodes} Evaluados</span><button class="clear-cache-btn" style="border:none; color:var(--neon-red); margin-top:5px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCalificadorProgress('${anime.id}')">Eliminar</button>`;
+                card.innerHTML = `<div class="recom-card-img-container" style="position:relative;"><img src="${anime.cover}" onerror="this.src='${FALLBACK_IMG}';"><div style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(255,255,255,0.2);"><div style="width:${pct}%; height:100%; background:var(--neon-cyan);"></div></div></div><span class="recom-card-title" title="${anime.title}">${anime.title}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">Progreso: ${Math.round(pct)}%</span><button class="clear-cache-btn" style="border:none; color:var(--neon-red); margin-top:5px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCalificadorProgress('${anime.id}')">Eliminar</button>`;
                 card.onclick = () => { document.getElementById('calificadorResultsGrid').innerHTML = ''; loadCalificadorTracker(anime.title, anime.episodes, anime.cover, anime.scores, anime.id); };
                 grid.appendChild(card);
             });
@@ -3748,44 +3772,211 @@ const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.med
             document.getElementById('calificadorResultsGrid').innerHTML = ''; document.getElementById('calificadorSearchInput').value = '';
             const trackerSection = document.getElementById('calificadorTrackerSection'); trackerSection.style.display = 'block'; trackerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             
-            document.getElementById('calificadorAnimeTitle').innerText = title; document.getElementById('calificadorAnimeMeta').innerText = `${episodes} Capítulos Registrados`; document.getElementById('calificadorAnimeCover').src = imgUrl;
+            document.getElementById('calificadorAnimeTitle').innerText = title; 
+            document.getElementById('calificadorAnimeMeta').innerText = `${episodes} Capítulos Registrados`; 
+            document.getElementById('calificadorAnimeCover').src = imgUrl;
 
-            const list = document.getElementById('calificadorEpisodeList'); list.innerHTML = '';
             _calificadorEpisodesCount = episodes;
-            
-            if (existingScores && Array.isArray(existingScores)) {
-                _calificadorCurrentScores = [...existingScores];
-                while (_calificadorCurrentScores.length < episodes) _calificadorCurrentScores.push(null);
-                _calificadorCurrentScores.length = episodes; 
-            } else { _calificadorCurrentScores = new Array(episodes).fill(null); }
-            
             _calificadorCurrentId = id || 'calif-' + Date.now();
 
-            for (let i = 0; i < episodes; i++) {
-                const item = document.createElement('div'); item.className = 'list-item'; item.style.cursor = 'default'; item.style.display = 'flex'; item.style.justifyContent = 'space-between'; item.style.alignItems = 'center'; item.style.padding = '12px 20px';
-                const displayScore = _calificadorCurrentScores[i] !== null && _calificadorCurrentScores[i] !== "" ? _calificadorCurrentScores[i].toString().replace('.', ',') : '';
-                item.innerHTML = `<span style="font-weight: 600; color: #fff;">Episodio ${i + 1}</span><div style="display: flex; align-items: center; gap: 10px;"><span style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">Nota:</span><input type="text" placeholder="-" value="${displayScore}" style="width: 70px; padding: 8px; text-align: center; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: var(--neon-cyan); font-weight: bold;" onchange="updateCalificadorScore(${i}, this.value)" onfocus="this.style.borderColor='var(--neon-cyan)'" onblur="this.style.borderColor='var(--glass-border)'"></div>`;
-                list.appendChild(item);
+            // Lógica de cálculo de Puntos de Estado (Hitos) cada 3 episodios
+            let milestones = [];
+            for (let i = 3; i <= episodes; i += 3) {
+                milestones.push({ ep: i, isFinal: i === episodes });
             }
+            // Si el total no es múltiplo de 3, añadimos un hito final extra para el resto
+            if (episodes % 3 !== 0 && episodes > 0) {
+                milestones.push({ ep: episodes, isFinal: true });
+            }
+
+            // Inicializamos o recuperamos datos asegurando el nuevo formato JSON
+            if (existingScores && Array.isArray(existingScores) && existingScores.length > 0 && typeof existingScores[0] === 'object') {
+                _calificadorCurrentScores = [...existingScores];
+            } else {
+                _calificadorCurrentScores = milestones.map(m => ({
+                    ep: m.ep,
+                    isFinal: m.isFinal,
+                    completed: false,
+                    score: 0,
+                    answers: m.isFinal ? [5,5,5,5] : [3,3,3,3] // Valores predeterminados neutros
+                }));
+            }
+
+            renderCalificadorList();
             calculateCalificadorStats(); 
         }
 
-        function updateCalificadorScore(index, value) {
-            let numStr = value.toString().replace(',', '.'); _calificadorCurrentScores[index] = (numStr === '' || isNaN(numStr)) ? null : parseFloat(numStr); calculateCalificadorStats();
+        function renderCalificadorList() {
+            const list = document.getElementById('calificadorEpisodeList'); list.innerHTML = '';
+            
+            _calificadorCurrentScores.forEach((cp, index) => {
+                const isFinal = cp.isFinal;
+                const prevEp = index === 0 ? 1 : _calificadorCurrentScores[index-1].ep + 1;
+                const title = isFinal ? `🏆 PUNTO DE ESTADO FINAL (Hasta Ep. ${cp.ep})` : `📍 Punto de Estado (Eps. ${prevEp} - ${cp.ep})`;
+                const btnText = cp.completed ? `Editar Nota (${cp.score.toFixed(1)}⭐)` : 'Rellenar Formulario 📝';
+                
+                let btnStyle = cp.completed 
+                    ? 'background: rgba(0, 255, 102, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(0,255,102,0.1);' 
+                    : 'background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan); border: 1px solid var(--neon-cyan);';
+                
+                if(isFinal && !cp.completed) btnStyle = 'background: rgba(255, 170, 0, 0.1); color: var(--neon-yellow); border: 1px solid var(--neon-yellow); box-shadow: 0 0 10px rgba(255,170,0,0.1);';
+
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.style.display = 'flex'; item.style.justifyContent = 'space-between'; item.style.alignItems = 'center'; item.style.padding = '16px 20px';
+                item.style.background = cp.completed ? 'rgba(0, 255, 102, 0.02)' : 'rgba(255, 255, 255, 0.01)';
+                item.style.borderColor = cp.completed ? 'rgba(0, 255, 102, 0.15)' : 'var(--glass-border)';
+
+                item.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <span style="font-weight: 700; color: ${isFinal ? 'var(--neon-yellow)' : '#fff'}; font-size: 0.95rem;">${title}</span>
+                        <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">${cp.completed ? 'Formulario guardado ✔️' : 'Evaluación pendiente...'}</span>
+                    </div>
+                    <button class="btn-icon" style="width: auto; padding: 10px 18px; font-size: 0.85rem; font-weight: bold; border-radius: 10px; transition: 0.3s; ${btnStyle}" onclick="openCalificadorForm(${index})" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${btnText}</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        let _currentFormIndex = null;
+        let _tempCalificadorAnswers = [];
+
+        function openCalificadorForm(index) {
+            _currentFormIndex = index;
+            const cp = _calificadorCurrentScores[index];
+            const modal = document.getElementById('calificadorFormModal');
+            document.getElementById('calificadorFormTitle').innerText = cp.isFinal ? `Evaluación Definitiva Final` : `Evaluación Intermedia (Ep. ${cp.ep})`;
+            document.getElementById('calificadorFormDesc').innerText = cp.isFinal ? "Selecciona cómo sentiste el cierre de la obra." : "Selecciona cómo sentiste este bloque de episodios.";
+            
+            // Iniciar valores temporales para interactividad
+            if (!cp.completed) {
+                _tempCalificadorAnswers = [7.5, 7.5, 7.5, 7.5]; // Por defecto marcado en "Bien"
+            } else {
+                _tempCalificadorAnswers = [...cp.answers];
+                // Parche de compatibilidad por si había notas antiguas guardadas sobre 5
+                if (!cp.isFinal && _tempCalificadorAnswers.some(v => v <= 5)) {
+                    _tempCalificadorAnswers = _tempCalificadorAnswers.map(v => v * 2); 
+                }
+            }
+
+            renderFormQuestions();
+            modal.style.display = 'flex';
+        }
+
+        function renderFormQuestions() {
+            if (_currentFormIndex === null) return;
+            const cp = _calificadorCurrentScores[_currentFormIndex];
+            const questionsEl = document.getElementById('calificadorFormQuestions'); 
+            questionsEl.innerHTML = '';
+
+            const questions = cp.isFinal ? [
+                "📜 Resolución de la trama",
+                "🎭 Cierre de personajes",
+                "💖 Impacto emocional",
+                "🎨 Calidad técnica y sonora"
+            ] : [
+                "🎢 Ritmo y entretenimiento",
+                "🧠 Interés de la historia",
+                "🔥 Ganas de seguir viendo",
+                "🎨 Animación general"
+            ];
+
+            // Botones cualitativos con equivalencia numérica interna ampliada a 5 opciones (Mínimo 0)
+            const options = [
+                { label: '🤩 Brutal', val: 10, color: 'var(--neon-magenta)' },
+                { label: '🙂 Bien', val: 7.5, color: 'var(--neon-green)' },
+                { label: '🥱 Meh', val: 5, color: 'var(--neon-yellow)' },
+                { label: '👎 Mal', val: 2.5, color: '#ff6600' },
+                { label: '🤮 Basura', val: 0, color: 'var(--neon-red)' }
+            ];
+
+            questions.forEach((q, i) => {
+                const currentVal = _tempCalificadorAnswers[i];
+                
+                let btnsHTML = options.map(opt => {
+                    // Tolerancia más ajustada (1.2) por tener 5 botones
+                    const isSelected = Math.abs(currentVal - opt.val) <= 1.2; 
+                    const bg = isSelected ? opt.color : 'rgba(0,0,0,0.3)';
+                    const textCol = isSelected ? '#000' : opt.color;
+                    const border = isSelected ? opt.color : 'rgba(255,255,255,0.1)';
+                    const shadow = isSelected ? `box-shadow: 0 0 10px ${opt.color}60;` : '';
+                    const scale = isSelected ? 'transform: scale(1.05);' : 'transform: scale(1);';
+
+                    return `<button type="button" 
+                            style="flex:1; padding:10px 1px; border-radius:8px; border:1px solid ${border}; 
+                                   background:${bg}; color:${textCol}; font-weight:800; font-size:0.75rem; 
+                                   cursor:pointer; transition:all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); ${shadow} ${scale}" 
+                            onclick="_tempCalificadorAnswers[${i}] = ${opt.val}; renderFormQuestions();">
+                            ${opt.label}
+                            </button>`;
+                }).join('');
+
+                questionsEl.innerHTML += `
+                    <div style="background: rgba(255,255,255,0.02); padding: 18px 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);">
+                        <label style="color: #fff; font-weight: bold; font-size: 0.95rem; margin-bottom: 12px; display:block; text-align:center;">${q}</label>
+                        <div style="display:flex; gap:8px; width:100%;">${btnsHTML}</div>
+                    </div>
+                `;
+            });
+
+            updateCalificadorLiveScore();
+        }
+
+        function updateCalificadorLiveScore() {
+            if (_currentFormIndex === null) return;
+            // Suma las notas matemáticas generadas por los botones
+            const sum = _tempCalificadorAnswers.reduce((a, b) => a + b, 0);
+            const calcScore = sum / 4; 
+            document.getElementById('calificadorFormLiveScore').innerText = calcScore.toFixed(1);
+        }
+
+        function submitCalificadorForm() {
+            if (_currentFormIndex === null) return;
+            const cp = _calificadorCurrentScores[_currentFormIndex];
+            
+            cp.answers = [..._tempCalificadorAnswers];
+            cp.score = _tempCalificadorAnswers.reduce((a, b) => a + b, 0) / 4;
+            cp.completed = true;
+
+            closeCalificadorForm();
+            renderCalificadorList();
+            calculateCalificadorStats();
+        }
+
+        function closeCalificadorForm() {
+            document.getElementById('calificadorFormModal').style.display = 'none';
+            _currentFormIndex = null;
         }
 
         function calculateCalificadorStats() {
-            const validScores = _calificadorCurrentScores.filter(score => score !== null && score !== "");
-            let average = 0, perfectTens = 0;
-            if (validScores.length > 0) {
-                const sum = validScores.reduce((acc, curr) => acc + parseFloat(curr), 0); average = (sum / validScores.length).toFixed(2); perfectTens = validScores.filter(score => parseFloat(score) === 10).length;
-            }
-            document.getElementById('calificadorAverageScore').innerText = average.toString().replace('.', ',');
-            const badge = document.getElementById('calificadorCandidateBadge'), tensCount = document.getElementById('calificadorTensCount');
-            tensCount.innerText = perfectTens;
+            const completedCPs = _calificadorCurrentScores.filter(cp => cp.completed);
+            let average = 0, perfectHits = 0;
 
-            if (perfectTens > 6) { badge.className = 'kpi-card magenta'; badge.style.borderColor = 'var(--neon-magenta)'; badge.style.boxShadow = '0 0 15px rgba(255, 0, 127, 0.2)'; tensCount.style.color = '#fff'; tensCount.innerText = perfectTens + ' 🌟 ¡CANDIDATO 10!'; } 
-            else { badge.className = 'kpi-card'; badge.style.borderColor = 'var(--glass-border)'; badge.style.boxShadow = 'none'; tensCount.style.color = 'rgba(255,255,255,0.3)'; }
+            if (completedCPs.length > 0) {
+                const sum = completedCPs.reduce((acc, curr) => acc + curr.score, 0);
+                average = sum / completedCPs.length;
+                // Nueva regla: Todo Hito que supere el 8.5 (al menos dos Brutal y dos Bien)
+                perfectHits = completedCPs.filter(cp => cp.score > 8.5).length;
+            }
+
+            document.getElementById('calificadorAverageScore').innerText = average.toFixed(2).replace('.', ',');
+            
+            const badge = document.getElementById('calificadorCandidateBadge');
+            const tensCount = document.getElementById('calificadorTensCount');
+            tensCount.innerText = perfectHits;
+
+            if (perfectHits > 0) {
+                badge.className = 'kpi-card magenta'; 
+                badge.style.borderColor = 'var(--neon-magenta)'; 
+                badge.style.boxShadow = '0 0 15px rgba(255, 0, 127, 0.2)';
+                tensCount.style.color = '#fff'; 
+                tensCount.innerText = perfectHits + ' 🌟 ¡EXCELENTE!';
+            } else {
+                badge.className = 'kpi-card'; 
+                badge.style.borderColor = 'var(--glass-border)'; 
+                badge.style.boxShadow = 'none';
+                tensCount.style.color = 'rgba(255,255,255,0.3)';
+            }
         }
 
         function saveCurrentCalificadorToCloud() {
