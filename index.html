@@ -3953,9 +3953,26 @@ const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.med
             let average = 0, perfectHits = 0;
 
             if (completedCPs.length > 0) {
-                const sum = completedCPs.reduce((acc, curr) => acc + curr.score, 0);
-                average = sum / completedCPs.length;
-                // Nueva regla: Todo Hito que supere el 8.5 (al menos dos Brutal y dos Bien)
+                // Separamos los hitos intermedios del hito final
+                const intermediateCPs = completedCPs.filter(cp => !cp.isFinal);
+                const finalCP = completedCPs.find(cp => cp.isFinal);
+
+                let avgIntermediate = 0;
+                if (intermediateCPs.length > 0) {
+                    const sumInt = intermediateCPs.reduce((acc, curr) => acc + curr.score, 0);
+                    avgIntermediate = sumInt / intermediateCPs.length;
+                }
+
+                // Cálculo con pesos: 50% Intermedios / 50% Final
+                if (finalCP && intermediateCPs.length > 0) {
+                    average = (avgIntermediate * 0.5) + (finalCP.score * 0.5);
+                } else if (finalCP) {
+                    average = finalCP.score;
+                } else {
+                    average = avgIntermediate; // Si aún no hay final, muestra la media en curso
+                }
+
+                // Nueva regla: Todo Hito que supere el 8.5
                 perfectHits = completedCPs.filter(cp => cp.score > 8.5).length;
             }
 
