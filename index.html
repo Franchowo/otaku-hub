@@ -4053,22 +4053,39 @@ const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.med
             
             try {
                 let allAnime = [], page = 1, hasNextPage = true;
-                const gql = `query($season: MediaSeason, $seasonYear: Int, $page: Int) {
-                    Page(page: $page, perPage: 50) {
-                        pageInfo { hasNextPage }
-                        media(season: $season, seasonYear: $seasonYear, type: ANIME, format: TV) {
-                            id title { romaji } coverImage { large }
-                        }
-                    }
-                }`;
+                // Reemplaza la consulta 'gql' existente por esta:
+const gql = `query($season: MediaSeason, $seasonYear: Int, $page: Int) {
+    Page(page: $page, perPage: 50) {
+        pageInfo { hasNextPage }
+        media(season: $season, seasonYear: $seasonYear, type: ANIME, format: TV) {
+            id 
+            title { romaji } 
+            coverImage { large }
+            relations {
+                edges {
+                    relationType
+                }
+            }
+        }
+    }
+}`;
 
                 while (hasNextPage) {
                     const data = await fetchAnilist(gql, { season: seasonStr, seasonYear: year, page: page });
                     const medias = data?.data?.Page?.media || [];
                     
-                    medias.forEach(m => {
-                        allAnime.push({ mal_id: m.id, title: m.title.romaji, images: { jpg: { large_image_url: m.coverImage?.large } } });
-                    });
+                    // Reemplaza el bloque medias.forEach por este:
+medias.forEach(m => {
+    // Si el anime tiene una precuela en sus relaciones, significa que es una secuela.
+    const isSequel = m.relations && m.relations.edges && m.relations.edges.some(edge => edge.relationType === 'PREQUEL');
+    
+    allAnime.push({ 
+        mal_id: m.id, 
+        title: m.title.romaji, 
+        images: { jpg: { large_image_url: m.coverImage?.large } },
+        isSequel: isSequel // Guardamos la propiedad
+    });
+});
                     
                     hasNextPage = data?.data?.Page?.pageInfo?.hasNextPage;
                     if (hasNextPage) { page++; await new Promise(r => setTimeout(r, 400)); }
@@ -4110,9 +4127,31 @@ const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.med
                 if (currentFilter !== 'all' && status !== currentFilter) return; 
                 visibleCount++;
 
-                const card = document.createElement('div'); card.className = `plan-card plan-status-${status}`;
-                card.innerHTML = `<div class="plan-card-img"><img src="${cover}" alt="cover" onerror="this.src='${FALLBACK_IMG}';"></div><div class="plan-card-info"><span class="plan-card-title" title="${title}">${title}</span><select class="plan-card-select" onchange="updateSeasonPlanStatus('${malId}', this.value)"><option value="default" ${status==='default'?'selected':''}>⚪ Sin marcar</option><option value="visto" ${status==='visto'?'selected':''}>🟣 Lo he visto</option><option value="interesa" ${status==='interesa'?'selected':''}>🟢 Me interesa</option><option value="sin_prisa" ${status==='sin_prisa'?'selected':''}>🟡 Sin prisa</option><option value="poco_interes" ${status==='poco_interes'?'selected':''}>🔴 Poco interés</option><option value="no_ver" ${status==='no_ver'?'selected':''}>⚫ NO quiero verlo</option></select></div>`;
-                grid.appendChild(card);
+                // Reemplaza el bloque donde se define "const card" y su "innerHTML" por este:
+const card = document.createElement('div'); 
+card.className = `plan-card plan-status-${status}`;
+
+// Generamos la etiqueta visual si es secuela
+const sequelBadge = anime.isSequel ? '<span style="background: var(--neon-purple); color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; position: absolute; top: 8px; left: 8px; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">SECUELA</span>' : '';
+
+card.innerHTML = `
+    <div class="plan-card-img">
+        ${sequelBadge}
+        <img src="${cover}" alt="cover" onerror="this.src='${FALLBACK_IMG}';">
+    </div>
+    <div class="plan-card-info">
+        <span class="plan-card-title" title="${title}">${title}</span>
+        <select class="plan-card-select" onchange="updateSeasonPlanStatus('${malId}', this.value)">
+            <option value="default" ${status==='default'?'selected':''}>⚪ Sin marcar</option>
+            <option value="visto" ${status==='visto'?'selected':''}>🟣 Lo he visto</option>
+            <option value="interesa" ${status==='interesa'?'selected':''}>🟢 Me interesa</option>
+            <option value="sin_prisa" ${status==='sin_prisa'?'selected':''}>🟡 Sin prisa</option>
+            <option value="poco_interes" ${status==='poco_interes'?'selected':''}>🔴 Poco interés</option>
+            <option value="no_ver" ${status==='no_ver'?'selected':''}>⚫ NO quiero verlo</option>
+        </select>
+    </div>
+`;
+grid.appendChild(card);
             });
 
             if (visibleCount === 0 && _currentSeasonData.length > 0 && filterElement) {
