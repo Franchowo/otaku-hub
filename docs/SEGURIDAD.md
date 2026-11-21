@@ -74,6 +74,30 @@ listas. Aun así, si lo prefieres privado:
   la clave), o desplegar desde un repo privado en Cloudflare Pages / Netlify /
   Vercel.
 
+## Recordar el dispositivo
+Tras introducir la clave correcta, el dispositivo la recuerda y no vuelve a
+pedirla (se guarda en `localStorage` y se pide al navegador almacenamiento
+persistente para que no la borre). Solo se vuelve a pedir si pulsas 🔒, si
+borras los datos del sitio o si usas incógnito.
+
+> 📱 En iPhone/iPad, Safari borra los datos de webs que no visitas en 7 días.
+> Para evitarlo, instala la app con **Compartir → Añadir a pantalla de inicio**.
+
+## Bloqueo por intentos fallidos
+Tras **3 claves incorrectas**, ese dispositivo/navegador queda bloqueado
+**30 días** (lo configuran `MAX_FAILED_ATTEMPTS` y `LOCKOUT_MS` en
+`js/core/auth.js`).
+
+- Es **por dispositivo** a propósito: Apps Script no puede distinguir quién
+  hace cada petición, así que un bloqueo en el servidor permitiría que
+  cualquier desconocido te bloqueara **a ti** fallando 3 veces.
+- Es un freno para quien coja tu móvil u ordenador, no la protección
+  principal: alguien puede saltárselo con incógnito o borrando los datos del
+  sitio. Lo que de verdad impide adivinar la clave es que sea **larga y
+  aleatoria** (32+ caracteres): probarla a ciegas llevaría millones de años.
+- Si te bloqueas tú por error: borra los datos del sitio en ese navegador
+  (Configuración del sitio → Borrar datos) o entra desde otro navegador.
+
 ## Si alguna vez se filtra la clave
 Cambia el valor de `OTAKU_HUB_KEY` en las Propiedades del script (efecto
 inmediato, sin redesplegar) y vuelve a introducirla en tus dispositivos.
