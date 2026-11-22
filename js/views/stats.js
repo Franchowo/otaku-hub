@@ -197,12 +197,7 @@ function filterByScore(scoreValue) {
 }
 
 function filterByStudioDirect(studioName) {
-    switchView('statsView');
-    setTimeout(() => {
-        document.getElementById('filterStudio').value = studioName;
-        _activeFilters.studio = studioName;
-        applyFiltersAndRender();
-    }, 50);
+    switchView('statsView', { estudio: studioName });
 }
 
 function resetFilters() {
@@ -538,6 +533,14 @@ function applyMangaFilters() {
         if(imgEl) globalImageObserver.observe(imgEl);
     });
 }
+
+// El TOP 150 en edición difiere del último guardado.
+registerLeaveGuard('top150View', {
+    isDirty: () => document.getElementById('top150OpenState').style.display === 'block'
+        && JSON.stringify(_currentTop150.map(i => i.name)) !== JSON.stringify(readStoredJSON('saved_top150_data', []).map(i => i.name)),
+    message: 'Has cambiado el TOP 150 y no lo has guardado con "Guardar Top 150".',
+    discard: () => { document.getElementById('top150OpenState').style.display = 'none'; }
+});
 
 function openTop150() {
     document.getElementById('top150ClosedState').style.display = 'none';

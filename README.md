@@ -30,7 +30,8 @@ otaku-hub/
 │   │   ├── ui.js              # toast(), confirmDialog(), temporadas y fechas
 │   │   ├── auth.js            # Clave de acceso + pantalla de bloqueo
 │   │   ├── state.js           # Estado global compartido
-│   │   ├── router.js          # Cambio de vistas (switchView)
+│   │   ├── router.js          # Rutas (#/vista), navegación agrupada y hub
+│   │   ├── search.js          # Búsqueda global (🔍 / Ctrl+K)
 │   │   ├── pwa.js             # Registro del Service Worker
 │   │   └── fullscreen.js      # Rotación / pantalla completa
 │   ├── services/

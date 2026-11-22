@@ -175,6 +175,8 @@ function showLockScreen(message) {
             requestPersistentStorage();
             overlay.remove();
             document.body.classList.remove('auth-locked');
+            // Cargar los datos de la vista actual con la clave ya guardada.
+            if (typeof reloadActiveView === 'function') reloadActiveView();
             return;
         }
         if (result === 'denied') {
