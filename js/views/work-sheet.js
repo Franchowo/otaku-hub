@@ -224,6 +224,6 @@ async function deleteWorkSheet(type, key) {
 
 // Tras editar/borrar, las filas cambian: se recarga la lista afectada.
 function refreshAfterWorkChange(type) {
-    if (type === 'manga') _mangaData = []; else _masterData = [];
-    reloadActiveView();
+    invalidateList(type === 'manga' ? 'manga' : 'master');
+    refreshCurrentView();
 }

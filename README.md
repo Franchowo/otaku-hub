@@ -38,6 +38,7 @@ otaku-hub/
 │   ├── services/
 │   │   ├── anilist.js         # Cliente GraphQL de AniList
 │   │   ├── image-queue.js     # Cola de portadas (batching + caché)
+│   │   ├── local-store.js     # IndexedDB: copia de las hojas y cola sin conexión
 │   │   ├── sheets-api.js      # sheetsRead()/sheetsWrite(): acceso único a Sheets
 │   │   ├── anilist-link.js    # Vincular obras registradas con su ID de AniList
 │   │   ├── sheets-fetchers.js # Lecturas maestras desde Sheets
@@ -64,6 +65,15 @@ Los scripts se cargan en orden al final de `index.html` (scripts clásicos que
 comparten el ámbito global, por eso los `onclick="..."` del HTML siguen
 funcionando). Si añades un archivo nuevo, inclúyelo también en la lista
 `APP_SHELL` de `sw.js` y sube la versión de `CACHE_NAME`.
+
+## Sin conexión
+- La última copia de tus listas se guarda en el dispositivo (IndexedDB): la app
+  la muestra al instante al abrirse y la actualiza cuando responde Sheets. Sin
+  red, sigues viendo tus datos (con un aviso de la fecha de la copia).
+- Lo que registres o edites sin conexión queda en cola (⏳ en la cabecera) y se
+  envía solo al volver la red.
+- El Service Worker guarda la app, las portadas, la fuente y html2canvas.
+- Cerrar sesión (🔒) borra la copia de tus listas de ese dispositivo.
 
 ## Desarrollo local
 

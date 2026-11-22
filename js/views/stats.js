@@ -143,16 +143,17 @@ function processFavoritesData() {
     });
 }
 
+// "Recargar" a mano: siempre desde Sheets, sin la copia local.
 function reloadStatsData() {
-    _masterData = [];
+    invalidateList('master');
     const activeView = document.querySelector('.view.active').id;
     if(activeView === 'studiosView') { initMasterDataFetch(() => renderTopStudiosView()); }
     else if(activeView === 'detailView') { initMasterDataFetch(() => renderDetailView()); }
     else if(activeView === 'mangaLibraryView') { initMangaDataFetch(true); }
     else if(activeView === 'annualRankingView') { initMasterDataFetch(() => initAnnualRankingFetch(() => renderAnnualRankingView())); }
     else if(activeView === 'favoritesView') { initFavoritesDataFetch(true); }
-    else if(activeView === 'timeMachineView') { _mangaData = []; initTimeMachineDataFetch(); }
-    else if(activeView === 'recommendationsView') { _mangaData = []; initRecommendationsFetch(); }
+    else if(activeView === 'timeMachineView') { invalidateList('manga'); initTimeMachineDataFetch(); }
+    else if(activeView === 'recommendationsView') { invalidateList('manga'); initRecommendationsFetch(); }
     else if(activeView === 'top150View') { initMasterDataFetch(() => initTop150Fetch()); }
     else if(activeView === 'calificadorView') { initCalificadorFetch(); }
     else if(activeView === 'planificadorView') { initPlanificadorFetch(); }
@@ -678,7 +679,7 @@ function exportTop150Image() {
     const origMaxHeight = listContainer.style.maxHeight, origOverflow = listContainer.style.overflowY;
     listContainer.style.maxHeight = 'none'; listContainer.style.overflowY = 'visible'; captureTitle.style.display = 'block';
 
-    html2canvas(target, { scale: 2, useCORS: true, backgroundColor: "#030308", logging: false }).then(canvas => {
+    loadHtml2Canvas().then(h2c => h2c(target, { scale: 2, useCORS: true, backgroundColor: "#030308", logging: false })).then(canvas => {
         listContainer.style.maxHeight = origMaxHeight; listContainer.style.overflowY = origOverflow; captureTitle.style.display = 'none';
         handles.forEach(el => el.style.display = ''); removes.forEach(el => el.style.display = '');
         const link = document.createElement('a'); link.download = 'TOP150_Actualizado.png'; link.href = canvas.toDataURL('image/png'); link.click();
