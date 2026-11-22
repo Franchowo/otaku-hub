@@ -24,6 +24,11 @@ cuanto despliegas.
 - Una acción desconocida **ya no registra un anime vacío**, y `updateTab` ya no
   puede vaciar FULL LIST.
 
+## Qué trae la versión 5
+- **Importar desde AniList** (Inicio → Tus datos): registra de una vez las obras
+  que tienes como "Completado" en tu perfil público de AniList, con su nota,
+  temporada, estudio/autor, la fórmula de reseña y su AniList ID.
+
 ## Qué trae la versión 4
 - **Historial del Ranking Anual**: al pulsar **📦 Archivar año**, la lista se
   guarda en una pestaña `RANKING_ANUAL_<año>` y empiezas una nueva. Los años

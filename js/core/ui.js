@@ -45,6 +45,8 @@ function toast(message, { type = 'info', action = null, duration } = {}) {
     closeBtn.addEventListener('click', close);
     el.appendChild(closeBtn);
 
+    // Como mucho 3 avisos a la vez: el más antiguo deja sitio al nuevo.
+    while (region.children.length >= 3) region.firstElementChild.remove();
     region.appendChild(el);
     // Los errores y los avisos con "Deshacer" duran más para dar tiempo a leerlos.
     const ms = duration ?? (action ? 7000 : type === 'error' ? 8000 : 3500);
