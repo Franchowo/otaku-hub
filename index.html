@@ -16,170 +16,26 @@
 
     <body>
 
-    <nav class="nav-tabs" aria-label="Secciones">
-        <button class="tab-btn active" id="tabBtn-hubView" onclick="switchView('hubView')">Hub Central</button>
-        <button class="tab-btn icon-only" id="tabBtn-formView" onclick="switchView('formView')" title="Registrar Anime" aria-label="Registrar Anime">📥</button>
-        <button class="tab-btn icon-only" id="tabBtn-mangaFormView" onclick="switchView('mangaFormView')" title="Registrar Manga" aria-label="Registrar Manga">📖</button>
-        <button class="tab-btn icon-only" id="tabBtn-detailView" onclick="switchView('detailView')" title="Detalle Anime" aria-label="Detalle Anime">👁️</button>
-        <button class="tab-btn icon-only" id="tabBtn-mangaLibraryView" onclick="switchView('mangaLibraryView')" title="Librería Manga" aria-label="Librería Manga">📚</button>
-        <button class="tab-btn icon-only" id="tabBtn-statsView" onclick="switchView('statsView')" title="Panel Analítico" aria-label="Panel Analítico">📊</button>
-        <button class="tab-btn icon-only" id="tabBtn-timeMachineView" onclick="switchView('timeMachineView')" title="Cápsula Tiempo" aria-label="Cápsula Tiempo">⏳</button>
-        <button class="tab-btn icon-only" id="tabBtn-studiosView" onclick="switchView('studiosView')" title="Ranking Estudios" aria-label="Ranking Estudios">🏢</button>
-        <button class="tab-btn icon-only" id="tabBtn-top150View" onclick="switchView('top150View')" title="TOP 150" aria-label="TOP 150">💯</button>
-        <button class="tab-btn icon-only" id="tabBtn-annualRankingView" onclick="switchView('annualRankingView')" title="Ranking Anual" aria-label="Ranking Anual">🏆</button>
-        <button class="tab-btn icon-only" id="tabBtn-favoritesView" onclick="switchView('favoritesView')" title="Lista Favoritos" aria-label="Lista Favoritos">👑</button>
-        <button class="tab-btn icon-only" id="tabBtn-rankerView" onclick="switchView('rankerView')" title="Opening Ranker" aria-label="Opening Ranker">⚔️</button>
-        <button class="tab-btn icon-only" id="tabBtn-recommendationsView" onclick="switchView('recommendationsView')" title="Sistema Recomendaciones" aria-label="Sistema Recomendaciones">💡</button>
-        <button class="tab-btn icon-only" id="tabBtn-calificadorView" onclick="switchView('calificadorView')" title="Calificador Anime" aria-label="Calificador Anime">🎯</button>
-        <button class="tab-btn icon-only" id="tabBtn-planificadorView" onclick="switchView('planificadorView')" title="Planificador" aria-label="Planificador">📅</button>
-        <button class="tab-btn icon-only" id="tabBtn-gachaView" onclick="switchView('gachaView')" title="Gacha Otaku" aria-label="Gacha Otaku">🎰</button>
-<!-- NUEVO BOTÓN DE ROTACIÓN -->
-        <button class="tab-btn icon-only" id="tabBtn-rotate" onclick="toggleLandscape()" title="Modo Horizontal / Pantalla Completa" aria-label="Modo Horizontal / Pantalla Completa" style="border-left: 1px solid var(--glass-border); margin-left: 5px; padding-left: 15px;">📱🔄</button>
-        <button class="tab-btn icon-only" id="tabBtn-logout" onclick="otakuLogout()" title="Cerrar sesión en este dispositivo" aria-label="Cerrar sesión en este dispositivo">🔒</button>
-    </nav>
+    <a class="skip-link" href="#mainContainer">Saltar al contenido</a>
+    <header class="app-header">
+        <a class="app-brand" href="#/" aria-label="OTAKU HUB, inicio">OTAKU&nbsp;HUB</a>
+        <nav class="group-nav" id="groupNav" aria-label="Secciones"></nav>
+        <div class="header-actions">
+            <button type="button" class="icon-btn" onclick="openGlobalSearch()" title="Buscar (Ctrl+K)" aria-label="Buscar en tu colección">🔍</button>
+            <button type="button" class="icon-btn" onclick="toggleLandscape()" title="Pantalla completa / horizontal" aria-label="Pantalla completa u horizontal">⛶</button>
+            <button type="button" class="icon-btn" onclick="otakuLogout()" title="Cerrar sesión en este dispositivo" aria-label="Cerrar sesión">🔒</button>
+        </div>
+    </header>
+    <nav class="subnav" id="subNav" hidden></nav>
+    <nav class="bottom-nav" id="bottomNav" aria-label="Secciones"></nav>
 
-    <div class="container hub-mode" id="mainContainer">
+    <main class="container hub-mode" id="mainContainer" tabindex="-1">
         
         <div id="hubView" class="view active">
             <h1>OTAKU HUB</h1>
             <div class="hub-subtitle">Tu anime y manga, en un solo sitio</div>
-            
-            <div class="hub-grid">
-                <div class="hub-card cyan" role="button" tabindex="0" onclick="switchView('formView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">📥</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Registrar Anime</span>
-                        <span class="hub-card-desc">Indexa nuevas series consultando la API de AniList.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card green" role="button" tabindex="0" onclick="switchView('mangaFormView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">📖</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Registrar Manga</span>
-                        <span class="hub-card-desc">Inserta volúmenes en tu pestaña FULL LIST MANGA.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card cyan" role="button" tabindex="0" onclick="switchView('detailView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">👁️</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Detalle Anime</span>
-                        <span class="hub-card-desc">Visualiza y filtra tu colección en una cuadrícula.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card green" role="button" tabindex="0" onclick="switchView('mangaLibraryView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">📚</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Librería Manga</span>
-                        <span class="hub-card-desc">Estantería virtual 3D inmersiva para tus lecturas.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card magenta" role="button" tabindex="0" onclick="switchView('statsView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">📊</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Panel Analítico</span>
-                        <span class="hub-card-desc">Explora métricas, años, temporadas y curvas.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-                
-                <div class="hub-card yellow" role="button" tabindex="0" onclick="switchView('timeMachineView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">⏳</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Cápsula Tiempo</span>
-                        <span class="hub-card-desc">Viaja al pasado. Descubre tus mejores obras y medias por año.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card purple" role="button" tabindex="0" onclick="switchView('studiosView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">🏢</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Ranking Estudios</span>
-                        <span class="hub-card-desc">Clasificación de productoras con 5 o más animes.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-                
-                <div class="hub-card cyan" role="button" tabindex="0" onclick="switchView('top150View')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">💯</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">TOP 150</span>
-                        <span class="hub-card-desc">Salón de la fama extendido. Gestiona tus cambios.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card green" role="button" tabindex="0" onclick="switchView('annualRankingView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">🏆</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Ranking Anual</span>
-                        <span class="hub-card-desc">Organiza tus series en un TOP interactivo drag&drop.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card purple" role="button" tabindex="0" onclick="switchView('favoritesView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">👑</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Favoritos</span>
-                        <span class="hub-card-desc">Enlace directo a tu hoja FAVS con portadas XL.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card yellow" role="button" tabindex="0" onclick="switchView('rankerView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">⚔️</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Opening Ranker</span>
-                        <span class="hub-card-desc">Algoritmia ELO y duelos uno contra uno.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card yellow" role="button" tabindex="0" onclick="switchView('recommendationsView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">💡</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Recomendaciones</span>
-                        <span class="hub-card-desc">Motor predictivo basado en tus obras favoritas.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card cyan" role="button" tabindex="0" onclick="switchView('calificadorView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">🎯</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Calificador Anime</span>
-                        <span class="hub-card-desc">Puntúa episodio a episodio y descubre candidatos a nota 10.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card purple" role="button" tabindex="0" onclick="switchView('planificadorView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">📅</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Planificador</span>
-                        <span class="hub-card-desc">Sigue tus intereses por año y temporada con portadas y colores.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-
-                <div class="hub-card magenta" role="button" tabindex="0" onclick="switchView('gachaView')">
-                    <div class="hub-icon-wrapper" aria-hidden="true">🎰</div>
-                    <div class="hub-text-content">
-                        <span class="hub-card-title">Gacha Otaku</span>
-                        <span class="hub-card-desc">Tira de la ruleta y descubre tu próxima obra maestra.</span>
-                    </div>
-                    <div class="hub-arrow" aria-hidden="true">→</div>
-                </div>
-            </div>
+            <div class="hub-summary" id="hubSummary" aria-live="polite"></div>
+            <div id="hubGroups"></div>
         </div>
         
         <div id="formView" class="view">
@@ -897,11 +753,12 @@
             </div>
         </div>
 
-    </div>
+    </main>
 
     <script src="js/config.js"></script>
     <script src="js/core/utils.js"></script>
     <script src="js/core/ui.js"></script>
+    <script src="js/core/search.js"></script>
     <script src="js/core/auth.js"></script>
     <script src="js/core/state.js"></script>
     <script src="js/services/anilist.js"></script>

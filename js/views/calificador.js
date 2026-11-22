@@ -96,7 +96,16 @@ async function deleteCalificadorProgress(id) {
     }
 }
 
+// Hay evaluaciones registradas en el formulario que aún no se han guardado.
+let _calificadorDirty = false;
+registerLeaveGuard('calificadorView', {
+    isDirty: () => _calificadorDirty,
+    message: 'Has evaluado hitos que aún no has guardado con "Guardar Progreso Actual".',
+    discard: () => { _calificadorDirty = false; }
+});
+
 function loadCalificadorTracker(title, episodes, imgUrl, existingScores = null, id = null) {
+    _calificadorDirty = false;
     document.getElementById('calificadorResultsGrid').innerHTML = ''; document.getElementById('calificadorSearchInput').value = '';
     const trackerSection = document.getElementById('calificadorTrackerSection'); trackerSection.style.display = 'block'; trackerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
@@ -268,6 +277,7 @@ function submitCalificadorForm() {
     cp.score = _tempCalificadorAnswers.reduce((a, b) => a + b, 0) / 4;
     cp.completed = true;
     cp.scale = CALIFICADOR_SCALE;
+    _calificadorDirty = true;
 
     closeCalificadorForm();
     renderCalificadorList();
@@ -338,6 +348,7 @@ function saveCurrentCalificadorToCloud() {
     btn.innerText = "Sincronizando... ⏳"; btn.disabled = true;
 
     syncCalificadorToCloud({ upsert: animeData }, result => {
+        _calificadorDirty = false;
         btn.innerText = savedLabel(result, "¡Progreso Guardado! ✔️"); setTimeout(() => { btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false; }, 2000);
     }, err => {
         // Antes el botón se quedaba bloqueado en "Sincronizando..." para siempre.
