@@ -55,7 +55,7 @@ function renderTimeMachine(year) {
     if (bestAnime) {
         const neonClass = `score-neon-${Math.round(bestAnime.score)}`;
         featuredHTML += `
-            <div class="tm-featured-card anime">
+            <div class="tm-featured-card anime" ${workSheetAttrs(bestAnime, 'anime')}>
                 <div class="img-container" style="width: 80px; height: 115px; border-radius: 8px;">
                     <img id="tm-best-anime-img" data-type="anime" data-title="${esc(bestAnime.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
                 </div>
@@ -74,7 +74,7 @@ function renderTimeMachine(year) {
     if (bestManga) {
         const neonClass = `score-neon-${Math.round(bestManga.score)}`;
         featuredHTML += `
-            <div class="tm-featured-card manga">
+            <div class="tm-featured-card manga" ${workSheetAttrs(bestManga, 'manga')}>
                 <div class="img-container" style="width: 80px; height: 115px; border-radius: 8px;">
                     <img id="tm-best-manga-img" data-type="manga" data-title="${esc(bestManga.manga)}" data-author="${esc(bestManga.author)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
                 </div>
@@ -114,6 +114,9 @@ function renderTimeMachine(year) {
         const typeAttr = `data-type="${item.type}"`;
         const div = document.createElement('div');
         div.className = `tm-gallery-item ${item.type}`;
+        div.setAttribute('role', 'button'); div.tabIndex = 0;
+        div.setAttribute('aria-label', `Abrir ficha de ${title}`);
+        div.addEventListener('click', () => openWorkSheet(item.type, workKey(item, item.type)));
         div.innerHTML = `<img id="${imgId}" ${typeAttr} data-title="${esc(title)}" ${authorAttr} title="${esc(title)} (${esc(item.score)}⭐)" alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='130'><rect width='90' height='130' fill='%23111122'/></svg>">`;
         galleryContainer.appendChild(div);
 
@@ -382,7 +385,7 @@ function renderTopShelfGallery(filteredData) {
     if(topThree.length === 0) { gallery.innerHTML = '<div style="font-size:0.85rem; color:rgba(255,255,255,0.6); padding:10px 5px;">Ningún destacado disponible.</div>'; return; }
     topThree.forEach((anime, idx) => {
         const imgId = `shelf-img-${idx}`;
-        gallery.insertAdjacentHTML('beforeend', `<div class="anime-poster-card"><div class="poster-rank">#${idx+1}</div><div class="img-container"><img id="${imgId}" data-type="anime" data-title="${esc(anime.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='75' height='105'><rect width='75' height='105' fill='%23111122'/></svg>"></div><div class="poster-info"><span class="poster-title" title="${esc(anime.anime)}">${esc(anime.anime)}</span><span class="poster-studio">${esc(anime.studio || 'Desconocido')} (${esc(anime.year)})</span><span class="poster-badge">${esc(anime.score)} SCORE</span></div></div>`);
+        gallery.insertAdjacentHTML('beforeend', `<div class="anime-poster-card" ${workSheetAttrs(anime, 'anime')}><div class="poster-rank">#${idx+1}</div><div class="img-container"><img id="${imgId}" data-type="anime" data-title="${esc(anime.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='75' height='105'><rect width='75' height='105' fill='%23111122'/></svg>"></div><div class="poster-info"><span class="poster-title" title="${esc(anime.anime)}">${esc(anime.anime)}</span><span class="poster-studio">${esc(anime.studio || 'Desconocido')} (${esc(anime.year)})</span><span class="poster-badge">${esc(anime.score)} SCORE</span></div></div>`);
         const imgEl = document.getElementById(imgId);
         if(imgEl) globalImageObserver.observe(imgEl);
     });
@@ -391,7 +394,7 @@ function renderTopShelfGallery(filteredData) {
 function renderDataTable(data) {
     const tbody = document.getElementById('rawTableBody'); document.getElementById('tableCount').innerText = `${data.length} procesados`; tbody.innerHTML = '';
     if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.6);">Sin coincidencias.</td></tr>'; return; }
-    data.forEach(item => { tbody.insertAdjacentHTML('beforeend', `<tr><td style="font-weight:600; color:#fff;" title="${esc(item.anime)}">${esc(item.anime)}</td><td>${esc(seasonLabel(item.season))}</td><td>${esc(item.year)}</td><td title="${esc(item.studio)}">${esc(item.studio)}</td><td style="font-weight:bold; color:var(--neon-magenta);">${esc(item.score)}</td></tr>`); });
+    data.forEach(item => { tbody.insertAdjacentHTML('beforeend', `<tr class="clickable-row" ${workSheetAttrs(item, 'anime')}><td style="font-weight:600; color:#fff;" title="${esc(item.anime)}">${esc(item.anime)}</td><td>${esc(seasonLabel(item.season))}</td><td>${esc(item.year)}</td><td title="${esc(item.studio)}">${esc(item.studio)}</td><td style="font-weight:bold; color:var(--neon-magenta);">${esc(item.score)}</td></tr>`); });
 }
 
 function renderDetailView() {
@@ -442,6 +445,9 @@ function applyDetailFilters() {
 
         const card = document.createElement('div');
         card.className = 'detail-card';
+        card.setAttribute('role', 'button'); card.tabIndex = 0;
+        card.setAttribute('aria-label', `Abrir ficha de ${item.anime}`);
+        card.addEventListener('click', () => openWorkSheet('anime', workKey(item, 'anime')));
         card.innerHTML = `
             <div class="img-container" style="width:70px; height:98px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.5);">
                 <img id="${cardId}" data-type="anime" data-title="${esc(item.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='98'><rect width='70' height='98' fill='%23111122'/></svg>">
@@ -514,6 +520,9 @@ function applyMangaFilters() {
 
         const book = document.createElement('div');
         book.className = 'manga-book';
+        book.setAttribute('role', 'button'); book.tabIndex = 0;
+        book.setAttribute('aria-label', `Abrir ficha de ${item.manga}`);
+        book.addEventListener('click', () => openWorkSheet('manga', workKey(item, 'manga')));
         book.innerHTML = `
             <div class="manga-book-inner">
                 <div class="manga-book-front">
@@ -625,6 +634,18 @@ function getTrackingBadgeHTML(animeName, currentIndex) {
     return `<span class="track-badge track-same">=</span>`;
 }
 
+makeSortable(document.getElementById('top150ListContainer'), {
+    itemSelector: '.top150-item', handleSelector: '.drag-handle',
+    onMove: (from, to) => { moveInArray(_currentTop150, from, to); renderTop150List(); }
+});
+
+async function moveTop150ToPosition(index) {
+    const item = _currentTop150[index];
+    const pos = await promptNumberDialog({ title: 'Mover a posición', message: `¿A qué posición mueves "${item.name}"? (1-${_currentTop150.length})`, value: index + 1, max: _currentTop150.length, confirmText: 'Mover' });
+    if (pos === null || pos - 1 === index) return;
+    moveInArray(_currentTop150, index, pos - 1); renderTop150List();
+}
+
 function renderTop150List() {
     const container = document.getElementById('top150ListContainer'); document.getElementById('top150Counter').innerText = `${_currentTop150.length} / 150`;
     if (!container) return; container.innerHTML = '';
@@ -636,20 +657,13 @@ function renderTop150List() {
         if (currentPos <= 30) tierClass = 'rank-tier-purple'; else if (currentPos <= 60) tierClass = 'rank-tier-blue'; else if (currentPos <= 90) tierClass = 'rank-tier-green'; else if (currentPos <= 120) tierClass = 'rank-tier-orange'; else if (currentPos <= 150) tierClass = 'rank-tier-red';
         const trackingBadge = getTrackingBadgeHTML(item.name, index);
 
-        const card = document.createElement('div'); card.className = `top150-item ${tierClass}`; card.setAttribute('draggable', 'true'); card.dataset.index = index;
+        const card = document.createElement('div'); card.className = `top150-item ${tierClass}`; card.dataset.index = index;
         card.innerHTML = `
-            <div class="drag-handle" style="font-size: 0.9rem; padding-right: 0;">⋮⋮</div>
-            <div class="top150-pos">${currentPos}</div><div class="top150-title" title="${esc(item.name)}">${esc(item.name)}</div>${trackingBadge}<div class="top150-score">${esc(item.score)}⭐</div>
+            <button type="button" class="drag-handle" style="font-size: 0.9rem; padding-right: 0;" aria-label="Mover ${esc(item.name)}: arrastra o usa las flechas ↑↓">⋮⋮</button>
+            <button type="button" class="top150-pos" onclick="moveTop150ToPosition(${index})" title="Mover a otra posición" aria-label="Posición ${currentPos}. Mover a otra posición">${currentPos}</button><div class="top150-title" title="${esc(item.name)}">${esc(item.name)}</div>${trackingBadge}<div class="top150-score">${esc(item.score)}⭐</div>
             <button class="btn-remove-item" onclick="removeAnimeFromTop150(${jsArg(item.id)})" title="Eliminar" style="font-size: 0.9rem; padding: 2px 6px;">✕</button>
         `;
 
-        card.addEventListener('dragstart', (e) => { dragSrcIndexTop150 = index; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-        card.addEventListener('dragover', (e) => { e.preventDefault(); });
-        card.addEventListener('drop', (e) => {
-            e.preventDefault(); const targetIndex = parseInt(card.dataset.index);
-            if (dragSrcIndexTop150 !== null && dragSrcIndexTop150 !== targetIndex) { const movedItem = _currentTop150.splice(dragSrcIndexTop150, 1)[0]; _currentTop150.splice(targetIndex, 0, movedItem); renderTop150List(); }
-        });
-        card.addEventListener('dragend', () => { card.classList.remove('dragging'); dragSrcIndexTop150 = null; });
         container.appendChild(card);
     });
 }

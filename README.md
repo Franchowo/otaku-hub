@@ -32,6 +32,7 @@ otaku-hub/
 │   │   ├── state.js           # Estado global compartido
 │   │   ├── router.js          # Rutas (#/vista), navegación agrupada y hub
 │   │   ├── search.js          # Búsqueda global (🔍 / Ctrl+K)
+│   │   ├── sortable.js        # Reordenar listas con dedo, ratón o teclado
 │   │   ├── pwa.js             # Registro del Service Worker
 │   │   └── fullscreen.js      # Rotación / pantalla completa
 │   ├── services/
@@ -49,7 +50,8 @@ otaku-hub/
 │       ├── calificador.js
 │       ├── planificador.js
 │       ├── ranker.js          # Opening Ranker
-│       └── gacha.js
+│       ├── gacha.js
+│       └── work-sheet.js      # Ficha de obra: datos de AniList, editar y borrar
 ├── apps-script/
 │   ├── Auth.gs                # Guardia de autenticación para Apps Script
 │   └── Code.gs                # Lecturas/escrituras en Sheets (backend v2)

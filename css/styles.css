@@ -1322,3 +1322,71 @@ a.hub-card { text-decoration: none; color: inherit; }
 .search-empty { padding: 14px; color: var(--text-muted); }
 .search-hint { margin: var(--space-2) 0 0; font-size: 0.75rem; color: var(--text-subtle); text-align: center; }
 @media (hover: none) { .search-hint { display: none; } }
+
+/* =====================================================================
+   FASE 2C — FICHA DE OBRA, LISTAS REORDENABLES Y TÁCTIL
+   ===================================================================== */
+
+/* Asas de arrastre: ahora son botones (teclado) y no hacen scroll al arrastrar (táctil). */
+button.drag-handle {
+    background: transparent; border: none; font-family: inherit; line-height: 1;
+    min-width: 36px; min-height: 40px; padding: 0 4px; border-radius: var(--radius-sm);
+    touch-action: none; user-select: none; cursor: grab;
+}
+button.drag-handle:active { cursor: grabbing; }
+.draggable-item.dragging, .top150-item.dragging { opacity: 0.6; box-shadow: 0 0 0 2px var(--neon-cyan); }
+button.rank-pos-badge, button.top150-pos { font-family: inherit; cursor: pointer; border: none; color: inherit; background-color: transparent; }
+button.rank-pos-badge.top-10 { background-color: initial; }
+button.rank-pos-badge:hover, button.top150-pos:hover { text-decoration: underline; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover td { background: rgba(0, 240, 255, 0.05); }
+.manga-book, .tm-gallery-item, .tm-featured-card, .anime-poster-card, .detail-card { cursor: pointer; }
+
+/* En pantallas táctiles no hay hover: sin zooms "pegados" ni libros girados.
+   Tocar abre la ficha, que muestra la misma información. */
+@media (hover: none) {
+    .list-item:hover .img-thumb, .anime-poster-card:hover .img-thumb, .draggable-item:hover .img-thumb,
+    .fav-item:hover .img-thumb, .detail-card:hover .img-thumb,
+    .recom-card:hover .recom-card-img-container img, .plan-card:hover .plan-card-img img { transform: none; }
+    .anime-poster-card:hover, .detail-card:hover { transform: none; }
+    .manga-book:hover .manga-book-inner { transform: none; box-shadow: none; }
+}
+
+/* --- Ficha de obra: hoja inferior en móvil, ventana centrada en escritorio --- */
+.sheet-overlay {
+    position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center;
+    padding: var(--space-4); background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(3px);
+}
+.work-sheet {
+    position: relative; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; box-sizing: border-box;
+    padding: var(--space-5); border-radius: var(--radius-lg);
+    background: #0b0c14; border: 1px solid rgba(0, 240, 255, 0.3); box-shadow: var(--shadow-md);
+    animation: toastIn 0.2s ease;
+}
+.work-sheet-close { position: absolute; top: 10px; right: 10px; }
+.work-sheet-head { display: flex; gap: var(--space-4); align-items: flex-start; padding-right: 36px; }
+.work-sheet-cover { width: 110px; flex-shrink: 0; aspect-ratio: 2 / 3; border-radius: var(--radius-md); overflow: hidden; background: #111122; box-shadow: var(--shadow-md); }
+.work-sheet-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.work-sheet-info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.work-sheet-kind { font-size: 0.75rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 1px; }
+.work-sheet-title { margin: 0; text-align: left; font-size: 1.25rem; letter-spacing: 0; text-transform: none; color: var(--text-strong); line-height: 1.25; }
+.work-sheet-meta { color: var(--text-muted); font-size: 0.88rem; }
+.work-sheet-score { align-self: flex-start; }
+.work-sheet-anilist { margin: var(--space-4) 0; }
+.work-sheet-skeleton { height: 120px; border-radius: var(--radius-md); }
+.work-sheet-stats { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
+.work-sheet-stats div { flex: 1; min-width: 90px; display: flex; flex-direction: column; padding: 10px; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.04); }
+.work-sheet-stats strong { font-size: 1.2rem; color: var(--text-strong); }
+.work-sheet-stats span { font-size: 0.75rem; color: var(--text-muted); }
+.work-sheet-synopsis { color: var(--text-muted); font-size: 0.88rem; line-height: 1.55; white-space: pre-line; }
+.work-sheet-link { color: var(--neon-cyan); font-weight: 700; font-size: 0.88rem; }
+.work-sheet-note { color: var(--text-subtle); font-size: 0.8rem; line-height: 1.4; }
+.work-sheet-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.work-edit-form .form-group { margin-bottom: var(--space-3); }
+.work-edit-form input, .work-edit-form select { width: 100%; box-sizing: border-box; }
+
+@media (max-width: 640px) {
+    .sheet-overlay { align-items: flex-end; padding: 0; }
+    .work-sheet { max-width: none; max-height: 90vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); }
+    .work-sheet-cover { width: 90px; }
+}
