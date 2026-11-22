@@ -8,7 +8,7 @@
 //   pueden llevar tu clave. La copia de tus datos la gestiona la app en
 //   IndexedDB (js/services/local-store.js).
 // Si añades un archivo a la app, inclúyelo en APP_SHELL y sube CACHE_NAME.
-const CACHE_NAME = 'otaku-hub-v14';
+const CACHE_NAME = 'otaku-hub-v15';
 const COVERS_CACHE = 'otaku-hub-covers';
 const RUNTIME_CACHE = 'otaku-hub-runtime';
 const MAX_COVERS = 800;
