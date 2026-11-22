@@ -120,9 +120,22 @@ async function openCollection(page) {
             const opening = await page.evaluate(() => ({
                 ghost: !!document.querySelector('.fly-ghost'),
                 targetHidden: document.getElementById('workSheetCover').style.opacity === '0',
+                cardHidden: document.querySelector('#detailGridContainer .detail-card img').style.visibility === 'hidden',
                 coverNow: document.getElementById('workSheetCover').src
             }));
-            check('Al abrir la ficha, la portada vuela desde la tarjeta', opening.ghost && opening.targetHidden);
+            check('Al abrir la ficha, la portada vuela desde la tarjeta', opening.ghost && opening.targetHidden && opening.cardHidden);
+            // A mitad de vuelo: se anima tamaño y posición (sin escalar), así la portada no se deforma
+            await page.waitForTimeout(200);
+            const mid = await page.evaluate(() => {
+                const g = document.querySelector('.fly-ghost');
+                const cs = g && getComputedStyle(g);
+                return g && { transform: cs.transform, fit: cs.objectFit, w: g.getBoundingClientRect().width };
+            });
+            check(
+                'La portada vuela sin deformarse (cambia de tamaño, no se estira)',
+                mid && mid.transform === 'none' && mid.fit === 'cover' && mid.w > 70,
+                JSON.stringify(mid)
+            );
             check(
                 'La ficha muestra ya la portada de la tarjeta (sin esperar a AniList)',
                 opening.coverNow.startsWith('https://img.test'),
@@ -134,6 +147,10 @@ async function openCollection(page) {
                 opacity: document.getElementById('workSheetCover').style.opacity
             }));
             check('Al terminar, la copia desaparece y se ve la portada real', !settled.ghost && settled.opacity === '');
+            check(
+                'La tarjeta vuelve a mostrar su portada tras el vuelo',
+                await page.evaluate(() => document.querySelector('#detailGridContainer .detail-card img').style.visibility === '')
+            );
         } else {
             await page.evaluate(() => openWorkSheet('anime', 'row:3'));
             await page.waitForTimeout(600);
@@ -193,6 +210,26 @@ async function openCollection(page) {
                 'Avanzar en el menú entra por la derecha y volver por la izquierda',
                 dirs[0] === 'forward' && dirs[1] === 'back',
                 dirs.join(' / ')
+            );
+
+            // Cascada de tarjetas: solo al entrar en la pantalla, no al filtrar
+            const entering = await page.evaluate(() => document.getElementById('mainContainer').classList.contains('view-entering'));
+            await page.fill('#detailFilterText', 'fri');
+            const afterTyping = await page.evaluate(() => document.getElementById('mainContainer').classList.contains('view-entering'));
+            check('Las tarjetas entran en cascada al llegar, y no se repite al escribir un filtro', entering && !afterTyping);
+
+            // Cambio de tema animado (círculo desde el botón 🌓)
+            await page.evaluate(() => {
+                localStorage.removeItem('otaku_theme');
+                applyTheme('auto');
+            });
+            await page.click('#themeToggle');
+            await page.waitForTimeout(800);
+            const themeNow = await page.evaluate(() => ({ mode: currentThemeMode(), attr: document.documentElement.dataset.theme }));
+            check(
+                'El botón de tema cambia de tema con su animación sin errores',
+                themeNow.mode === 'light' && themeNow.attr === 'light',
+                JSON.stringify(themeNow)
             );
         }
         await context.close();

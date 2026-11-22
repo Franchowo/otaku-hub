@@ -3307,7 +3307,13 @@ button.top150-pos:hover {
     background: var(--surface-1);
     border: 1px solid rgba(0, 240, 255, 0.3);
     box-shadow: var(--shadow-md);
-    animation: toastIn 0.2s ease;
+    animation: sheetPop 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes sheetPop {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
 }
 .work-sheet-close {
     position: absolute;
@@ -4851,14 +4857,18 @@ textarea {
 }
 @media (max-width: 640px) {
     .work-sheet {
-        animation: sheetUp 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+        animation: sheetUp 0.46s cubic-bezier(0.16, 1, 0.3, 1);
     }
 }
 @keyframes sheetUp {
     from {
-        transform: translateY(40%);
-        opacity: 0.4;
+        transform: translateY(100%);
     }
+}
+/* La ficha de obra se anima desde JS (crece desde la tarjeta tocada). */
+.sheet-overlay--js,
+.sheet-overlay--js .work-sheet {
+    animation: none;
 }
 .sheet-overlay--closing {
     pointer-events: none;
@@ -4876,24 +4886,302 @@ textarea {
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
-/* Cambio de pantalla: entra desde el lado hacia el que navegas. */
-.container[data-nav-dir='forward'] .view.active {
-    animation: viewInForward 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+/* Cambio de pantalla: el contenido entra en cascada desde el lado hacia
+   el que navegas (derecha si avanzas en el menú, izquierda si vuelves). */
+.container[data-nav-dir] .view.active {
+    animation: viewFade 0.3s ease;
 }
-.container[data-nav-dir='back'] .view.active {
-    animation: viewInBack 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+@keyframes viewFade {
+    from {
+        opacity: 0;
+    }
+}
+.container[data-nav-dir='forward'] .view.active > :nth-child(-n + 6) {
+    animation: viewInForward 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.container[data-nav-dir='back'] .view.active > :nth-child(-n + 6) {
+    animation: viewInBack 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.view-entering .view.active > :nth-child(2) {
+    animation-delay: 50ms;
+}
+.view-entering .view.active > :nth-child(3) {
+    animation-delay: 100ms;
+}
+.view-entering .view.active > :nth-child(4) {
+    animation-delay: 150ms;
+}
+.view-entering .view.active > :nth-child(5) {
+    animation-delay: 200ms;
+}
+.view-entering .view.active > :nth-child(6) {
+    animation-delay: 250ms;
 }
 @keyframes viewInForward {
     from {
         opacity: 0;
-        transform: translateX(28px);
+        transform: translateX(32px);
     }
 }
 @keyframes viewInBack {
     from {
         opacity: 0;
-        transform: translateX(-28px);
+        transform: translateX(-32px);
     }
+}
+
+/* Tarjetas: al llegar a una pantalla aparecen en cascada (solo al entrar;
+   al filtrar o escribir no se repite). "backwards" para no pisar el hover. */
+.view-entering
+    :is(.detail-card, .manga-book, .recom-card, .plan-card, .anime-poster-card, .hub-card, .kpi-card, .tm-featured-card, .draggable-item) {
+    animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 120ms backwards;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(2) {
+    animation-delay: 155ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(3) {
+    animation-delay: 190ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(4) {
+    animation-delay: 225ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(5) {
+    animation-delay: 260ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(6) {
+    animation-delay: 295ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(7) {
+    animation-delay: 330ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(8) {
+    animation-delay: 365ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(9) {
+    animation-delay: 400ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(10) {
+    animation-delay: 435ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(11) {
+    animation-delay: 470ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(12) {
+    animation-delay: 505ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(13) {
+    animation-delay: 540ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(14) {
+    animation-delay: 575ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(15) {
+    animation-delay: 610ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(16) {
+    animation-delay: 645ms;
+}
+.view-entering
+    :is(
+        .detail-card,
+        .manga-book,
+        .recom-card,
+        .plan-card,
+        .anime-poster-card,
+        .hub-card,
+        .kpi-card,
+        .tm-featured-card,
+        .draggable-item
+    ):nth-child(n + 17) {
+    animation-delay: 650ms;
+}
+@keyframes cardIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.98);
+    }
+}
+
+/* Respuesta al pulsar: las tarjetas y botones se hunden un poco. */
+:is(.detail-card, .anime-poster-card, .recom-card, .hub-card, .tm-featured-card, .studio-work, .fav-item):active {
+    transform: scale(0.98);
+    transition-duration: 0.08s;
+}
+:is(.chip-btn, .btn, .icon-btn, .tab-btn, .group-link):active {
+    transform: scale(0.95);
+}
+:is(.chip-btn, .btn, .icon-btn, .tab-btn, .group-link) {
+    transition:
+        transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 /* Pantallas vacías */
@@ -4917,6 +5205,45 @@ textarea {
     height: auto;
     margin-bottom: var(--space-2);
     overflow: visible;
+}
+.empty-art .es-accent {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: twinkle 2.6s ease-in-out infinite;
+}
+@keyframes emptyFloat {
+    50% {
+        transform: translateY(-5px);
+    }
+}
+@keyframes twinkle {
+    50% {
+        transform: scale(0.75) rotate(20deg);
+        opacity: 0.7;
+    }
+}
+.empty-state > * {
+    animation: emptyUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.empty-state > :nth-child(2) {
+    animation-delay: 60ms;
+}
+.empty-state > :nth-child(3) {
+    animation-delay: 110ms;
+}
+.empty-state > :nth-child(4) {
+    animation-delay: 160ms;
+}
+@keyframes emptyUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+.empty-state > .empty-art {
+    animation:
+        emptyUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards,
+        emptyFloat 5s ease-in-out 0.5s infinite;
 }
 .empty-state--compact .empty-art {
     width: 96px;
@@ -4981,4 +5308,22 @@ textarea {
     .fly-ghost {
         display: none;
     }
+}
+
+/* Cambio de tema: círculo desde el botón (View Transitions) o fundido. */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+.theme-fading,
+.theme-fading *,
+.theme-fading *::before,
+.theme-fading *::after {
+    transition:
+        background-color 0.4s ease,
+        border-color 0.4s ease,
+        color 0.4s ease,
+        fill 0.4s ease,
+        box-shadow 0.4s ease !important;
 }

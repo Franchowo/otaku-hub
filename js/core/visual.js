@@ -54,29 +54,76 @@ function rectOnScreen(r) {
     return r && r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
 }
 
+// Curva "sale rápido y se posa suave" (easeOutExpo aproximada): se usa en
+// todas las animaciones de entrada para que se sientan de la misma familia.
+const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
+const EASE_IN_OUT = 'cubic-bezier(0.65, 0, 0.35, 1)';
+
+const EASINGS = {
+    inOut: t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+    out: t => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t))
+};
+
 // Anima una copia de la imagen `src` desde el rectángulo `from` hasta `to`.
-// No toca el DOM de la app: la copia vive en <body> y se borra al terminar.
-function flyElement(src, from, to, { duration = 320, radiusFrom = 8, radiusTo = 12 } = {}) {
-    if (!src || !rectOnScreen(from) || !rectOnScreen(to) || prefersReducedMotion() || !document.body.animate) return null;
+// `to` puede ser una función: se consulta en cada fotograma, así la copia
+// sigue a su destino aunque este se mueva (la ficha sube o crece al llegar
+// los datos de AniList). Se animan posición y tamaño (no una escala) para
+// que la portada no se deforme; a mitad de camino sube un poco (arco) y su
+// sombra crece, como si se levantara de la tarjeta. La copia vive en <body>
+// y se borra al terminar.
+function flyElement(src, from, to, { duration = 420, radiusFrom = 8, radiusTo = 12, lift = true, easing = 'inOut' } = {}) {
+    const target = typeof to === 'function' ? to : () => to;
+    // Si el destino es fijo, debe verse; si es una función, quien llama ya lo comprobó.
+    if (!src || !rectOnScreen(from) || (typeof to !== 'function' && !rectOnScreen(to)) || prefersReducedMotion()) return null;
     const ghost = document.createElement('img');
     ghost.src = src;
     ghost.alt = '';
     ghost.className = 'fly-ghost';
     ghost.setAttribute('aria-hidden', 'true');
-    Object.assign(ghost.style, { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px` });
     document.body.appendChild(ghost);
-    const sx = from.width / to.width,
-        sy = from.height / to.height;
-    const anim = ghost.animate(
-        [
-            {
-                transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx}, ${sy})`,
-                borderRadius: `${radiusFrom}px`
-            },
-            { transform: 'none', borderRadius: `${radiusTo}px` }
-        ],
-        { duration, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }
-    );
-    const done = anim.finished.catch(() => {}).then(() => ghost.remove());
-    return { anim, done };
+    const ease = EASINGS[easing] || EASINGS.inOut;
+    const lerp = (a, b, k) => a + (b - a) * k;
+    const start = performance.now();
+    const place = now => {
+        const t = Math.min(1, (now - start) / duration);
+        const k = ease(t);
+        const r = target();
+        const bump = Math.sin(Math.PI * t); // 0 → 1 → 0
+        const arc = lift ? Math.min(60, Math.hypot(r.left - from.left, r.top - from.top) * 0.12) * bump : 0;
+        Object.assign(ghost.style, {
+            left: `${lerp(from.left, r.left, k)}px`,
+            top: `${lerp(from.top, r.top, k) - arc}px`,
+            width: `${lerp(from.width, r.width, k)}px`,
+            height: `${lerp(from.height, r.height, k)}px`,
+            borderRadius: `${lerp(radiusFrom, radiusTo, k)}px`,
+            boxShadow: `0 ${Math.round(8 + 22 * bump)}px ${Math.round(16 + 40 * bump)}px rgba(0, 0, 0, ${(0.25 + 0.3 * bump).toFixed(2)})`
+        });
+        return t;
+    };
+    place(start);
+    const done = new Promise(resolve => {
+        const frame = now => {
+            if (place(now) < 1 && ghost.isConnected) requestAnimationFrame(frame);
+            else {
+                ghost.remove();
+                resolve();
+            }
+        };
+        requestAnimationFrame(frame);
+    });
+    return { done };
+}
+
+// Entrada escalonada de elementos (cada uno un poco después del anterior).
+function staggerIn(elements, { delay = 0, step = 45, distance = 10, duration = 460 } = {}) {
+    if (prefersReducedMotion() || !document.body.animate) return;
+    [...elements].forEach((el, i) => {
+        el.animate(
+            [
+                { opacity: 0, transform: `translateY(${distance}px)` },
+                { opacity: 1, transform: 'none' }
+            ],
+            { duration, delay: delay + i * step, easing: EASE_OUT, fill: 'backwards' }
+        );
+    });
 }
