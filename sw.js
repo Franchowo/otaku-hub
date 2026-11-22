@@ -8,7 +8,7 @@
 //   pueden llevar tu clave. La copia de tus datos la gestiona la app en
 //   IndexedDB (js/services/local-store.js).
 // Si añades un archivo a la app, inclúyelo en APP_SHELL y sube CACHE_NAME.
-const CACHE_NAME = 'otaku-hub-v10';
+const CACHE_NAME = 'otaku-hub-v11';
 const COVERS_CACHE = 'otaku-hub-covers';
 const RUNTIME_CACHE = 'otaku-hub-runtime';
 const MAX_COVERS = 800;
@@ -25,6 +25,7 @@ const APP_SHELL = [
   './js/core/ui.js',
   './js/core/search.js',
   './js/core/sortable.js',
+  './js/core/charts.js',
   './js/core/auth.js',
   './js/core/state.js',
   './js/services/anilist.js',
@@ -32,6 +33,7 @@ const APP_SHELL = [
   './js/services/local-store.js',
   './js/services/sheets-api.js',
   './js/services/anilist-link.js',
+  './js/services/anime-meta.js',
   './js/services/cloud-sync.js',
   './js/core/router.js',
   './js/services/sheets-fetchers.js',
@@ -44,6 +46,8 @@ const APP_SHELL = [
   './js/views/ranker.js',
   './js/views/gacha.js',
   './js/views/work-sheet.js',
+  './js/views/insights.js',
+  './js/views/wrapped.js',
   './js/core/pwa.js',
   './js/core/fullscreen.js',
   './assets/icons/icon-192.png',

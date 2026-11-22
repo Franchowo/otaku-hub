@@ -19,6 +19,8 @@ function buildTimeMachine() {
 function renderTimeMachine(year) {
     if(!year) return;
     year = parseInt(year);
+    const wrappedBtn = document.getElementById('btnWrapped');
+    if (wrappedBtn) { wrappedBtn.hidden = false; wrappedBtn.textContent = `🎁 Crear mi Wrapped ${year}`; }
 
     let animesOfYear = _masterData.filter(i => parseInt(i.year) === year);
     let mangasOfYear = _mangaData.filter(i => parseInt(i.year) === year);

@@ -150,7 +150,7 @@
                 }
 
                 container.insertAdjacentHTML('beforeend', `
-                    <div class="studio-card" role="button" tabindex="0" aria-label="Ver estadísticas de ${esc(studio.name)}" onclick="filterByStudioDirect(${jsArg(studio.name)})">
+                    <div class="studio-card" role="button" tabindex="0" aria-label="Ver la página de ${esc(studio.name)}" onclick="openStudioSheet(${jsArg(studio.name)})">
                         
                         <div class="studio-card-rank" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; position: absolute; top: 12px; right: 15px; z-index: 2;">
                             <div style="${rankBadgeStyle}">${rankIcon} #${index + 1}</div>
@@ -438,3 +438,52 @@ function saveStudiosSnapshot() {
                 const downloadLink = document.createElement('a'); downloadLink.download = 'Anime_Tierlist_UHD.png'; downloadLink.href = canvas.toDataURL('image/png'); downloadLink.click();
             }).catch(() => { toast("No se pudo generar la imagen de la tierlist.", { type: 'error' }); });
         }
+
+// ---------------------------------------------------------------------
+// PÁGINA DE ESTUDIO (al tocar un estudio del ranking)
+// ---------------------------------------------------------------------
+function studioWorks(name) {
+    return _masterData.filter(a => a.studio && String(a.studio).split(/,|\s+&\s+|\s+and\s+/i).map(s => s.trim()).includes(name));
+}
+
+function openStudioSheet(name) {
+    const works = studioWorks(name).slice().sort((a, b) => (b.score - a.score) || (b.year - a.year));
+    if (!works.length) return filterByStudioDirect(name);
+    closeWorkSheet();
+    const avg = works.reduce((s, a) => s + (parseFloat(a.score) || 0), 0) / works.length;
+    const best = works[0], worst = works[works.length - 1];
+    const years = works.map(a => parseInt(a.year, 10)).filter(Boolean);
+    const rankInfo = window.currentStudiosData && window.currentStudiosData[name];
+
+    const overlay = document.createElement('div');
+    overlay.id = 'workSheetOverlay';
+    overlay.className = 'sheet-overlay';
+    overlay._previousFocus = document.activeElement;
+    overlay.innerHTML = `
+        <div class="work-sheet" role="dialog" aria-modal="true" aria-labelledby="studioSheetTitle">
+            <button type="button" class="icon-btn work-sheet-close" aria-label="Cerrar" onclick="closeWorkSheet()">✕</button>
+            <span class="work-sheet-kind">🏢 Estudio</span>
+            <h3 id="studioSheetTitle" class="work-sheet-title">${esc(name)}</h3>
+            <div class="stat-row studio-stats">
+                ${statTile(works.length, works.length === 1 ? 'anime visto' : 'animes vistos')}
+                ${statTile(fmt1(avg), 'tu nota media')}
+                ${rankInfo ? statTile(`#${rankInfo.rank}`, 'en tu ranking') : ''}
+                ${years.length ? statTile(Math.min(...years) === Math.max(...years) ? Math.min(...years) : `${Math.min(...years)}–${Math.max(...years)}`, 'años') : ''}
+            </div>
+            <p class="work-sheet-meta studio-extremes">👑 Mejor: <strong>${esc(best.anime)}</strong> (${esc(best.score)}⭐)${works.length > 1 ? ` · 🔻 Peor: <strong>${esc(worst.anime)}</strong> (${esc(worst.score)}⭐)` : ''}</p>
+            <ul class="studio-works">
+                ${works.map(a => `<li><button type="button" class="studio-work" onclick="openWorkSheet('anime', ${jsArg(workKey(a, 'anime'))})">
+                    <span class="studio-work-title">${esc(a.anime)}</span>
+                    <span class="studio-work-meta">${esc(seasonLabel(a.season))} ${esc(a.year || '')}</span>
+                    <span class="detail-score-badge score-neon-${Math.min(10, Math.max(1, Math.round(a.score)))}">${esc(a.score)}</span>
+                </button></li>`).join('')}
+            </ul>
+            <div class="work-sheet-actions">
+                <button type="button" class="chip-btn accent-cyan" onclick="closeWorkSheet(); filterByStudioDirect(${jsArg(name)})">📊 Ver en estadísticas</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeWorkSheet(); });
+    overlay.addEventListener('keydown', e => { if (e.key === 'Escape') closeWorkSheet(); });
+    overlay.querySelector('.work-sheet-close').focus();
+}
