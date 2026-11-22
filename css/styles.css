@@ -1336,9 +1336,14 @@ button.drag-handle {
 }
 button.drag-handle:active { cursor: grabbing; }
 .draggable-item.dragging, .top150-item.dragging { opacity: 0.6; box-shadow: 0 0 0 2px var(--neon-cyan); }
-button.rank-pos-badge, button.top150-pos { font-family: inherit; cursor: pointer; border: none; color: inherit; background-color: transparent; }
-button.rank-pos-badge.top-10 { background-color: initial; }
-button.rank-pos-badge:hover, button.top150-pos:hover { text-decoration: underline; }
+/* Los números de posición son botones ("mover a posición"): solo se quita lo
+   propio del botón; el color de la insignia (verde TOP 10 / rojo OUT) se mantiene. */
+button.rank-pos-badge { font-family: inherit; cursor: pointer; border: none; padding: 0; }
+button.rank-pos-badge.top-10 { background: var(--neon-green); color: #04040a; }
+button.rank-pos-badge.out-zone, .rank-pos-badge.out-zone { background: #c8102e; color: #ffffff; }   /* rojo algo más oscuro: blanco a ≥ 5:1 */
+button.top150-pos { font-family: inherit; cursor: pointer; border: none; padding: 0; color: inherit; background: transparent; }
+button.rank-pos-badge:hover, button.rank-pos-badge:focus-visible { filter: brightness(1.15); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6); }
+button.top150-pos:hover { text-decoration: underline; }
 .clickable-row { cursor: pointer; }
 .clickable-row:hover td { background: rgba(0, 240, 255, 0.05); }
 .manga-book, .tm-gallery-item, .tm-featured-card, .anime-poster-card, .detail-card { cursor: pointer; }

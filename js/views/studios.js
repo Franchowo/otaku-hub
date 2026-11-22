@@ -211,8 +211,16 @@ function saveStudiosSnapshot() {
 
         function localAnnualArchive() { return readStoredJSON('annual_archive', {}); }
 
+        function fillAnnualYearSelect(years) {
+            const select = document.getElementById('annualYearSelect');
+            select.innerHTML = `<option value="current">En curso</option>` + years.map(y => `<option value="${esc(y)}">${esc(y)} (archivado)</option>`).join('');
+            select.value = _annualViewYear;
+        }
+
         async function loadAnnualArchiveYears() {
             const local = Object.keys(localAnnualArchive());
+            // Al instante: "En curso" y lo guardado en el dispositivo; luego, los años de Sheets.
+            fillAnnualYearSelect(local.sort((a, b) => b - a));
             let remote = [];
             try {
                 if ((await getServerVersion()) >= 4) {
@@ -221,9 +229,7 @@ function saveStudiosSnapshot() {
                 }
             } catch (e) { /* sin conexión: solo los años guardados en el dispositivo */ }
             _annualArchiveYears = [...new Set([...remote, ...local])].sort((a, b) => b - a);
-            const select = document.getElementById('annualYearSelect');
-            select.innerHTML = `<option value="current">En curso</option>` + _annualArchiveYears.map(y => `<option value="${esc(y)}">${esc(y)} (archivado)</option>`).join('');
-            select.value = _annualViewYear;
+            fillAnnualYearSelect(_annualArchiveYears);
         }
 
         async function selectAnnualYear(value) {
