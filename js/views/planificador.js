@@ -129,7 +129,10 @@ card.innerHTML = `
         <span class="plan-card-title" title="${esc(title)}">${esc(title)}</span>
         <select class="plan-card-select" onchange="updateSeasonPlanStatus('${malId}', this.value)">
             <option value="default" ${status==='default'?'selected':''}>⚪ Sin marcar</option>
+            <option value="viendo" ${status==='viendo'?'selected':''}>🔵 Viéndolo</option>
+            <option value="pausa" ${status==='pausa'?'selected':''}>⏸️ En pausa</option>
             <option value="visto" ${status==='visto'?'selected':''}>🟣 Lo he visto</option>
+            <option value="abandonado" ${status==='abandonado'?'selected':''}>✖️ Abandonado</option>
             <option value="interesa" ${status==='interesa'?'selected':''}>🟢 Me interesa</option>
             <option value="sin_prisa" ${status==='sin_prisa'?'selected':''}>🟡 Sin prisa</option>
             <option value="poco_interes" ${status==='poco_interes'?'selected':''}>🔴 Poco interés</option>
@@ -233,4 +236,44 @@ grid.appendChild(card);
             _planificadorSavedProgress = _planificadorSavedProgress.filter(p => String(p.id) !== item.id);
             _planificadorSavedProgress.push(item);
             toast(result.queued ? `"${item.title}" se añadirá al Planificador al volver la conexión.` : `"${item.title}" añadido al Planificador (${seasonLabel(season)} ${item.year}).`, { type: 'success' });
+        }
+
+        // ------------------------------------------------------------
+        // PRÓXIMOS EPISODIOS (en el inicio): lo que tienes como "Me interesa"
+        // o "Viéndolo" y está en emisión, ordenado por hora de emisión.
+        // ------------------------------------------------------------
+        function airingLabel(ts) {
+            const d = new Date(ts * 1000), now = new Date();
+            const time = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const days = Math.round((new Date(d.toDateString()) - new Date(now.toDateString())) / 86400000);
+            if (days === 0) return `hoy ${time}`;
+            if (days === 1) return `mañana ${time}`;
+            if (days < 7) return `${d.toLocaleDateString('es-ES', { weekday: 'long' })} ${time}`;
+            return `${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} ${time}`;
+        }
+
+        async function renderUpcomingEpisodes() {
+            const box = document.getElementById('hubUpcoming');
+            if (!box || !getAccessKey()) return;
+            try {
+                const state = _planificadorInitialized ? _planificadorSavedProgress : await sheetsReadOnce('planificador', 'PLANIFICADOR_STATE');
+                const ids = [...new Set((state || []).filter(p => p.status === 'interesa' || p.status === 'viendo').map(p => parseInt(p.id, 10)).filter(Boolean))];
+                if (!ids.length) { box.hidden = true; return; }
+                const json = await fetchAnilist(`query($ids: [Int]) { Page(page: 1, perPage: 12) {
+                    airingSchedules(mediaId_in: $ids, notYetAired: true, sort: TIME) { episode airingAt media { id title { romaji } coverImage { large } } } } }`, { ids: ids.slice(0, 50) });
+                const seen = new Set();
+                const next = (json?.data?.Page?.airingSchedules || []).filter(s => s.media && !seen.has(s.media.id) && seen.add(s.media.id)).slice(0, 6);
+                if (_currentView !== 'hubView') return;
+                if (!next.length) { box.hidden = true; return; }
+                box.hidden = false;
+                box.innerHTML = `<h2 class="hub-group-title">Próximos episodios</h2>
+                    <ul class="upcoming-list">${next.map(s => `
+                        <li class="upcoming-item">
+                            <img src="${esc(s.media.coverImage?.large || FALLBACK_IMG)}" alt="" loading="lazy" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';">
+                            <span class="upcoming-text"><span class="upcoming-title">${esc(s.media.title.romaji)}</span>
+                            <span class="upcoming-meta">Episodio ${esc(s.episode)} · ${esc(airingLabel(s.airingAt))}</span></span>
+                        </li>`).join('')}</ul>`;
+            } catch (e) {
+                box.hidden = true;   // sin conexión o sin planificador: no se muestra nada
+            }
         }

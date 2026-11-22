@@ -15,6 +15,7 @@ async function renderInsightsView() {
     loader.style.display = 'block';
     box.hidden = true;
 
+    if (!_mangaData.length) await new Promise(res => initMangaDataFetch(false, res));
     const meta = await loadMediaMeta('ANIME', linked.map(a => a.anilistId), (done, total) => {
         document.getElementById('insightsLoaderText').textContent = `Consultando AniList… ${done}/${total}`;
     });
@@ -29,7 +30,8 @@ async function renderInsightsView() {
         <section class="insights-section" aria-labelledby="insWorld">${worldSectionHTML(withMeta)}</section>
         <section class="insights-section" aria-labelledby="insGenres">${genresSectionHTML(withMeta)}</section>
         <section class="insights-section" aria-labelledby="insYears">${yearsSectionHTML(_masterData)}</section>
-        <section class="insights-section" aria-labelledby="insSeasons">${seasonsSectionHTML(_masterData)}</section>`;
+        <section class="insights-section" aria-labelledby="insSeasons">${seasonsSectionHTML(_masterData)}</section>
+        <section class="insights-section" aria-labelledby="insAchievements">${achievementsSectionHTML(withMeta)}</section>`;
     loader.style.display = 'none';
     box.hidden = false;
 }
@@ -117,4 +119,51 @@ function seasonsSectionHTML(all) {
         <h3 id="insSeasons" class="insights-title">Tus temporadas</h3>
         <p class="insights-help">Cada casilla es una temporada; cuanto más clara, mejor nota media. Toca una para ver el detalle.</p>
         ${vizHeatmap(rows, SEASON_ORDER, cells, { caption: 'Nota media por temporada (últimos 15 años)', colLabel: seasonLabel })}`;
+}
+
+// ---------------------------------------------------------------------
+// LOGROS (se calculan con tus datos; no se guardan en ningún sitio)
+// ---------------------------------------------------------------------
+function computeAchievements(items) {
+    const all = _masterData, mangas = _mangaData;
+    const count = (arr, fn) => arr.filter(fn).length;
+    const studios = {}, seasons = {}, decades = new Set(), genres = new Set();
+    all.forEach(a => {
+        String(a.studio || '').split(/,|\s+&\s+|\s+and\s+/i).map(s => s.trim()).filter(s => s && s !== 'Desconocido').forEach(s => { studios[s] = (studios[s] || 0) + 1; });
+        const y = parseInt(a.year, 10);
+        if (y) { decades.add(Math.floor(y / 10)); seasons[`${a.season}-${y}`] = (seasons[`${a.season}-${y}`] || 0) + 1; }
+    });
+    items.forEach(a => (a.meta.genres || []).forEach(g => genres.add(g)));
+    const maxOf = obj => Math.max(0, ...Object.values(obj));
+    const avg = all.length ? all.reduce((s, a) => s + (parseFloat(a.score) || 0), 0) / all.length : 0;
+    return [
+        { icon: '📺', name: 'Centenario', desc: '100 animes registrados', value: all.length, goal: 100 },
+        { icon: '🏯', name: 'Leyenda', desc: '500 animes registrados', value: all.length, goal: 500 },
+        { icon: '📚', name: 'Lector voraz', desc: '50 mangas registrados', value: mangas.length, goal: 50 },
+        { icon: '💎', name: 'Ojo para las joyas', desc: '10 animes con un 10', value: count(all, a => parseFloat(a.score) >= 10), goal: 10 },
+        { icon: '🏢', name: 'Fiel a un estudio', desc: '15 animes del mismo estudio', value: maxOf(studios), goal: 15 },
+        { icon: '🗓️', name: 'Temporada a tope', desc: '10 animes de una misma temporada', value: maxOf(seasons), goal: 10 },
+        { icon: '⏳', name: 'Viajero en el tiempo', desc: 'Animes de 4 décadas distintas', value: decades.size, goal: 4 },
+        { icon: '🧭', name: 'Explorador de géneros', desc: '12 géneros distintos (obras vinculadas)', value: genres.size, goal: 12 },
+        { icon: '💯', name: 'Salón de la fama', desc: 'TOP 150 completo', value: readStoredJSON('saved_top150_data', []).length, goal: 150 },
+        { icon: '🧐', name: 'Crítico exigente', desc: 'Media por debajo de 7 con 50+ animes', value: all.length >= 50 && avg < 7 ? 1 : 0, goal: 1, binary: true },
+    ].map(a => ({ ...a, done: a.value >= a.goal }));
+}
+
+function achievementsSectionHTML(items) {
+    const list = computeAchievements(items);
+    const done = list.filter(a => a.done).length;
+    return `
+        <h3 id="insAchievements" class="insights-title">Logros <span class="achv-count">${done} de ${list.length}</span></h3>
+        <ul class="achv-grid">${list.map(a => `
+            <li class="achv${a.done ? ' achv--done' : ''}">
+                <span class="achv-icon" aria-hidden="true">${a.icon}</span>
+                <span class="achv-body">
+                    <span class="achv-name">${esc(a.name)}${a.done ? ' <span class="achv-badge">✓ Conseguido</span>' : ''}</span>
+                    <span class="achv-desc">${esc(a.desc)}</span>
+                    ${a.binary ? '' : `<span class="achv-meter" role="meter" aria-valuemin="0" aria-valuemax="${a.goal}" aria-valuenow="${Math.min(a.value, a.goal)}" aria-label="${esc(a.name)}: ${Math.min(a.value, a.goal)} de ${a.goal}">
+                        <span class="achv-fill" style="width:${Math.min(100, (a.value / a.goal) * 100)}%"></span></span>
+                        <span class="achv-progress">${Math.min(a.value, a.goal)} / ${a.goal}</span>`}
+                </span>
+            </li>`).join('')}</ul>`;
 }

@@ -12,6 +12,7 @@
 
 const VIEW_META = {
     hubView:             { slug: '',                label: 'Inicio',          icon: '🏠' },
+    dataView:            { slug: 'datos',           label: 'Tus datos',       icon: '💾', desc: 'Copia de seguridad e importar desde AniList.' },
     formView:            { slug: 'registrar-anime', label: 'Anime',           icon: '📥', desc: 'Añade un anime a tu lista buscándolo en AniList.' },
     mangaFormView:       { slug: 'registrar-manga', label: 'Manga',           icon: '📖', desc: 'Añade un manga a FULL LIST MANGA.' },
     detailView:          { slug: 'anime',           label: 'Anime',           icon: '👁️', desc: 'Tu colección de anime en cuadrícula, con filtros.' },
@@ -31,7 +32,7 @@ const VIEW_META = {
 };
 
 const NAV_GROUPS = [
-    { id: 'inicio',    label: 'Inicio',    icon: '🏠', views: ['hubView'] },
+    { id: 'inicio',    label: 'Inicio',    icon: '🏠', views: ['hubView', 'dataView'] },
     { id: 'coleccion', label: 'Colección', icon: '📚', views: ['detailView', 'mangaLibraryView', 'favoritesView'] },
     { id: 'analisis',  label: 'Análisis',  icon: '📊', views: ['statsView', 'insightsView', 'timeMachineView', 'studiosView'] },
     { id: 'registrar', label: 'Registrar', icon: '＋', views: ['formView', 'mangaFormView'], primary: true },
@@ -153,6 +154,8 @@ function showView(viewId, params = {}) {
         initCalificadorFetch();
     } else if(viewId === 'planificadorView') {
         initMasterDataFetch(() => initPlanificadorFetch());
+    } else if(viewId === 'dataView') {
+        renderDataView();
     } else if(viewId === 'insightsView') {
         initMasterDataFetch(() => renderInsightsView());
     } else if(viewId === 'rankerView') {
@@ -238,6 +241,7 @@ function renderHub() {
             </section>`).join('');
     }
     renderHubSummary();
+    renderUpcomingEpisodes();
 }
 
 function renderHubSummary() {

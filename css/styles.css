@@ -1610,3 +1610,47 @@ button, input, select, textarea { font-family: inherit; }
     .stat-value { font-size: 1.25rem; }
     .viz-div-row { grid-template-columns: 30% 1fr 40px; gap: 6px; padding: 4px 2px; }
 }
+
+/* =====================================================================
+   FASE 4C — TUS DATOS, PRÓXIMOS EPISODIOS, LOGROS
+   ===================================================================== */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.import-form { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+.import-form input { flex: 1; min-width: 180px; }
+.import-form select { width: auto; }
+.import-summary { color: var(--text-muted); font-size: 0.88rem; }
+.import-toolbar { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); }
+.import-list { list-style: none; margin: 0 0 var(--space-3); padding: 0; max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.import-row { display: grid; grid-template-columns: auto 1fr 70px; gap: var(--space-2); align-items: center; padding: 6px 8px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.03); }
+.import-row label { display: flex; flex-direction: column; min-width: 0; cursor: pointer; }
+.import-title { font-weight: 600; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.import-meta { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.import-score { width: 100%; box-sizing: border-box; padding: 6px; }
+.import-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--neon-cyan); }
+/* Planificador: estados nuevos */
+.plan-status-viendo { border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); }
+.plan-status-viendo .plan-card-select { border-color: var(--neon-cyan); color: var(--neon-cyan); background: rgba(0, 240, 255, 0.1); }
+.plan-status-pausa { border-color: #8f9bb3; }
+.plan-status-pausa .plan-card-select { border-color: #8f9bb3; color: #c3cad8; background: rgba(143, 155, 179, 0.12); }
+.plan-status-abandonado { border-color: #6b6b6b; opacity: 0.6; }
+.plan-status-abandonado .plan-card-select { border-color: #6b6b6b; color: #b5b5b5; background: rgba(107, 107, 107, 0.15); }
+.hub-upcoming { margin-bottom: var(--space-5); }
+.upcoming-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-2); }
+.upcoming-item { display: flex; gap: var(--space-3); align-items: center; padding: 8px; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); }
+.upcoming-item img { width: 38px; height: 54px; object-fit: cover; border-radius: 6px; background: #111122; flex-shrink: 0; }
+.upcoming-text { display: flex; flex-direction: column; min-width: 0; }
+.upcoming-title { font-weight: 600; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upcoming-meta { font-size: 0.8rem; color: var(--neon-cyan); }
+.achv-count { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0; margin-left: 6px; }
+.achv-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-2); }
+.achv { display: flex; gap: var(--space-3); padding: 10px 12px; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); }
+.achv--done { border-color: rgba(57, 135, 229, 0.6); background: rgba(57, 135, 229, 0.08); }
+.achv:not(.achv--done) .achv-icon { filter: grayscale(1); opacity: 0.6; }
+.achv-icon { font-size: 1.6rem; }
+.achv-body { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.achv-name { font-weight: 700; color: var(--text-strong); }
+.achv-badge { font-size: 0.7rem; font-weight: 700; color: var(--text-strong); background: rgba(57, 135, 229, 0.35); border-radius: var(--radius-pill); padding: 1px 6px; margin-left: 4px; white-space: nowrap; }
+.achv-desc { font-size: 0.78rem; color: var(--text-muted); }
+.achv-meter { display: block; height: 6px; border-radius: 3px; background: var(--viz-seq-0); overflow: hidden; margin-top: 4px; }
+.achv-fill { display: block; height: 100%; background: var(--viz-seq-3); border-radius: 3px; }
+.achv-progress { font-size: 0.72rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; }

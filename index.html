@@ -38,9 +38,40 @@
             <h1>OTAKU HUB</h1>
             <div class="hub-subtitle">Tu anime y manga, en un solo sitio</div>
             <div class="hub-summary" id="hubSummary" aria-live="polite"></div>
+            <section class="hub-upcoming" id="hubUpcoming" hidden></section>
             <div id="hubGroups"></div>
         </div>
         
+        <div id="dataView" class="view">
+            <h2>Tus datos</h2>
+            <section class="insights-section" aria-labelledby="dataExportTitle">
+                <h3 id="dataExportTitle" class="insights-title">Copia de seguridad</h3>
+                <p class="insights-help">Descarga todo lo de tu Google Sheets (listas, rankings, planificador, calificador) y lo que la app guarda en este dispositivo.</p>
+                <div class="work-sheet-actions">
+                    <button type="button" class="chip-btn accent-cyan" id="btnBackupJson" onclick="exportFullBackup()">💾 Copia completa (JSON)</button>
+                    <button type="button" class="chip-btn accent-green" onclick="exportCsv('anime')">📄 Anime (CSV)</button>
+                    <button type="button" class="chip-btn accent-green" onclick="exportCsv('manga')">📄 Manga (CSV)</button>
+                </div>
+            </section>
+            <section class="insights-section" aria-labelledby="dataImportTitle">
+                <h3 id="dataImportTitle" class="insights-title">Importar desde AniList</h3>
+                <p class="insights-help">Trae lo que tienes como "Completado" en tu perfil público de AniList y aún no está en tu lista, con su nota y su ID.</p>
+                <form class="import-form" onsubmit="event.preventDefault(); searchAnilistImport();">
+                    <label for="importUser" class="sr-only">Usuario de AniList</label>
+                    <input type="text" id="importUser" placeholder="Tu usuario de AniList" autocomplete="username" autocapitalize="off" spellcheck="false">
+                    <label for="importType" class="sr-only">Tipo</label>
+                    <select id="importType"><option value="ANIME">Anime</option><option value="MANGA">Manga</option></select>
+                    <button type="submit" class="chip-btn accent-cyan">🔎 Buscar</button>
+                </form>
+                <div id="importResults" aria-live="polite"></div>
+            </section>
+            <section class="insights-section" aria-labelledby="dataHiddenTitle">
+                <h3 id="dataHiddenTitle" class="insights-title">Descubrir</h3>
+                <p class="insights-help" id="hiddenCount"></p>
+                <button type="button" class="chip-btn accent-yellow" id="btnResetHidden" onclick="resetHiddenDiscoveries()">↺ Volver a mostrar las ocultas</button>
+            </section>
+        </div>
+
         <div id="formView" class="view">
             <h2>Registrar Anime</h2>
             <form id="animeForm" autocomplete="off">
@@ -721,7 +752,10 @@
                             <label>Filtrar Estado</label>
                             <select id="planStatusFilter" style="font-size: 1.1rem; font-weight: bold; color: var(--neon-magenta); border-color: var(--neon-magenta);" onchange="renderSeasonGrid()">
                                 <option value="all">👁️ Ver Todos</option>
+                                <option value="viendo">🔵 Viéndolo</option>
+                                <option value="pausa">⏸️ En pausa</option>
                                 <option value="visto">🟣 Lo he visto</option>
+                                <option value="abandonado">✖️ Abandonado</option>
                                 <option value="interesa">🟢 Me interesa</option>
                                 <option value="sin_prisa">🟡 Sin prisa</option>
                                 <option value="poco_interes">🔴 Poco interés</option>
@@ -819,6 +853,7 @@
     <script src="js/views/work-sheet.js"></script>
     <script src="js/views/insights.js"></script>
     <script src="js/views/wrapped.js"></script>
+    <script src="js/views/data.js"></script>
     <script src="js/core/pwa.js"></script>
     <script src="js/core/fullscreen.js"></script>
 </body>

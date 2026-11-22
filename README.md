@@ -56,7 +56,8 @@ otaku-hub/
 │       ├── gacha.js
 │       ├── work-sheet.js      # Ficha de obra: datos de AniList, editar y borrar
 │       ├── insights.js        # Tu perfil: tú vs el mundo, géneros, evolución
-│       └── wrapped.js         # Wrapped anual en imagen
+│       ├── wrapped.js         # Wrapped anual en imagen
+│       └── data.js            # Copia de seguridad e importar desde AniList
 ├── apps-script/
 │   ├── Auth.gs                # Guardia de autenticación para Apps Script
 │   └── Code.gs                # Lecturas/escrituras en Sheets (backend v2)

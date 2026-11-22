@@ -26,9 +26,15 @@
  * Versión 4:
  *  - Historial del Ranking Anual: pestañas RANKING_ANUAL_<año> (se leen y se
  *    guardan como las de ranking) y "list_tabs" para saber qué años hay.
+ *
+ * Versión 5:
+ *  - "register_batch": registrar muchas obras de una vez (importar desde
+ *    AniList) en una sola escritura, con el mismo formato y fórmula que el
+ *    registro normal.
  */
 
-var OTAKU_API_VERSION = 4;
+var OTAKU_API_VERSION = 5;
+var MAX_BATCH = 200;
 
 var MANGA_SHEET = 'FULL LIST MANGA';
 var RANKING_TABS = ['TOP150', 'TOP_150', 'RANKING_ANUAL'];
@@ -179,6 +185,7 @@ function dispatchWrite_(data) {
     case 'delete_rows': return deleteRows_(data.sheet, data.ids);
     case 'set_anilist_ids': return setAnilistIds_(data.target, data.items);
     case 'update_entry': return updateEntry_(data);
+    case 'register_batch': return registerBatch_(data);
     case 'delete_entry': return deleteEntry_(data);
     case undefined:
     case null:
@@ -358,6 +365,40 @@ function deleteEntry_(data) {
   var loc = locateEntry_(data);
   loc.sheet.deleteRow(loc.row);
   return { status: 'success' };
+}
+
+// Registro de varias obras a la vez (filas 3…, con el formato de la fila siguiente).
+function registerBatch_(data) {
+  var items = data.items || [];
+  if (items.length === 0) return { status: 'success', inserted: 0 };
+  if (items.length > MAX_BATCH) throw new Error('Máximo ' + MAX_BATCH + ' obras por envío');
+  var isManga = data.target === 'manga';
+  var sheet = isManga ? getOrCreateSheet_(MANGA_SHEET, ['Manga Title', 'Year', 'Serialization', 'Score', 'Review']) : mainAnimeSheet_();
+  var rows = items.map(function (it) {
+    var row = isManga ? [it.manga, it.year, it.author || it.serialization || 'Desconocido', it.score]
+                      : [it.anime, it.season, it.year, it.studio || 'Desconocido', it.score];
+    if (!row[0] || String(row[0]).trim() === '') throw new Error('Hay una obra sin título');
+    return row;
+  });
+  var n = rows.length;
+  var anilistCol = items.some(function (it) { return it.anilistId; }) ? ensureAnilistColumn_(sheet) : 0;
+
+  sheet.insertRowsBefore(3, n);
+  var numColumns = sheet.getLastColumn() || 6;
+  if (sheet.getLastRow() >= 3 + n) {
+    sheet.getRange(3 + n, 1, 1, numColumns).copyTo(sheet.getRange(3, 1, n, numColumns), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+  }
+  sheet.getRange(3, 1, n, rows[0].length).setValues(rows);
+
+  var formulaColumn = isManga ? 5 : 6;
+  var scoreCol = isManga ? 'D' : 'E';
+  var formulas = rows.map(function (_, i) { return ['=SWITCH(' + scoreCol + (3 + i) + '; ' + SCORE_FORMULA_TEXTS + ')']; });
+  sheet.getRange(3, formulaColumn, n, 1).setValues(formulas);
+
+  if (anilistCol) {
+    sheet.getRange(3, anilistCol, n, 1).setValues(items.map(function (it) { return [it.anilistId ? parseInt(it.anilistId, 10) : '']; }));
+  }
+  return { status: 'success', inserted: n };
 }
 
 // Registro de un anime o manga nuevo (fila 3, con el formato de la fila 4).
