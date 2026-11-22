@@ -72,24 +72,24 @@ async function pullGacha() {
         const cover = winner.coverImage?.extraLarge || FALLBACK_IMG;
         const score = winner.averageScore ? (winner.averageScore / 10).toFixed(1) : 'N/A';
         const year = winner.seasonYear || winner.startDate?.year || '????';
-        let description = winner.description || 'Sin sinopsis disponible.';
-        description = description.replace(/<br>/g, '').replace(/<i>/g, '').replace(/<\/i>/g, ''); // Limpiar HTML básico de AniList
+        // La sinopsis de AniList trae HTML: se convierte a texto plano y se escapa.
+        const description = htmlToText(winner.description).trim() || 'Sin sinopsis disponible.';
 
-        const genresHtml = (winner.genres || []).map(g => `<span class="gacha-tag">${g}</span>`).join('');
+        const genresHtml = (winner.genres || []).map(g => `<span class="gacha-tag">${esc(g)}</span>`).join('');
 
         // Renderizar la carta ganadora
         resultContainer.innerHTML = `
             <div class="gacha-card">
-                <img src="${cover}" class="gacha-poster" alt="Portada">
+                <img src="${esc(cover)}" class="gacha-poster" alt="Portada de ${esc(title)}">
                 <div class="gacha-info">
                     <span style="color: var(--neon-magenta); font-weight: bold; font-size: 0.9rem; letter-spacing: 1px;">¡NUEVO DESCUBRIMIENTO!</span>
-                    <div class="gacha-title">${title}</div>
+                    <div class="gacha-title">${esc(title)}</div>
                     <div style="display: flex; gap: 15px; align-items: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; font-weight: bold;">
-                        <span>📅 ${year}</span>
-                        <span>⭐ ${score} / 10 Media Global</span>
+                        <span>📅 ${esc(year)}</span>
+                        <span>⭐ ${esc(score)} / 10 Media Global</span>
                     </div>
                     <div class="gacha-tags">${genresHtml}</div>
-                    <div class="gacha-desc">${description}</div>
+                    <div class="gacha-desc">${esc(description)}</div>
                 </div>
             </div>
         `;

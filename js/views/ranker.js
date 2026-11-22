@@ -14,7 +14,7 @@ function startApp() {
 function renderDiscard() {
     document.getElementById('discard-list').innerHTML = state.songs.map(s => {
         let stateClass = ''; if(s.action === 'keep') stateClass = 'item-keep'; if(s.action === 'discard') stateClass = 'item-discard';
-        return `<div class="list-item ${stateClass}"><span style="flex-grow:1; font-weight:600;">${s.name}</span><div style="display:flex; gap:10px;"><button class="btn-icon btn-keep" onclick="markItem('${s.id}', 'keep')" title="Mantener">✔</button><button class="btn-icon btn-discard" onclick="markItem('${s.id}', 'discard')" title="Descartar">X</button></div></div>`;
+        return `<div class="list-item ${stateClass}"><span style="flex-grow:1; font-weight:600;">${esc(s.name)}</span><div style="display:flex; gap:10px;"><button class="btn-icon btn-keep" onclick="markItem('${s.id}', 'keep')" title="Mantener">✔</button><button class="btn-icon btn-discard" onclick="markItem('${s.id}', 'discard')" title="Descartar">X</button></div></div>`;
     }).join('');
 }
 
@@ -45,8 +45,8 @@ function goToStep(n) { document.querySelectorAll('.screen').forEach(s => s.class
 
 function renderRating() {
     document.getElementById('rating-list').innerHTML = state.songs.map(s => `
-        <div class="list-item"><div class="img-container"><img src="${s.img || FALLBACK_IMG}" class="img-thumb" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div>
-        <span style="flex-grow:1; font-weight:600;">${s.name}</span><div style="display:flex; gap:6px;">${[1,2,3].map(i => `<span class="star ${i <= s.stars ? 'active' : ''}" onclick="setStars('${s.id}', ${i})">★</span>`).join('')}</div></div>`).join('');
+        <div class="list-item"><div class="img-container"><img src="${esc(s.img || FALLBACK_IMG)}" class="img-thumb" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div>
+        <span style="flex-grow:1; font-weight:600;">${esc(s.name)}</span><div style="display:flex; gap:6px;">${[1,2,3].map(i => `<span class="star ${i <= s.stars ? 'active' : ''}" onclick="setStars('${s.id}', ${i})">★</span>`).join('')}</div></div>`).join('');
 }
 
 function setStars(id, val) { const song = state.songs.find(s => String(s.id) === String(id)); if(song) song.stars = val; save(); renderRating(); }
@@ -68,16 +68,16 @@ function renderDuel() {
     if (state.duelsDone >= state.duelsTotal || state.pool.length < 2) {
         state.pool.sort((a,b) => b.elo - a.elo);
         let topHTML = `<h3>🏆 Top Ranking Final</h3>`;
-        state.pool.slice(0, 20).forEach((s, i) => { topHTML += `<div class="list-item"><strong style="color:var(--neon-magenta); font-size:20px; width:35px; text-align:center;">#${i+1}</strong><div class="img-container"><img src="${s.img}" class="img-thumb" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span style="font-weight:600; margin-left:10px;">${s.name}</span></div>`; });
+        state.pool.slice(0, 20).forEach((s, i) => { topHTML += `<div class="list-item"><strong style="color:var(--neon-magenta); font-size:20px; width:35px; text-align:center;">#${i+1}</strong><div class="img-container"><img src="${esc(s.img || FALLBACK_IMG)}" class="img-thumb" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span style="font-weight:600; margin-left:10px;">${esc(s.name)}</span></div>`; });
         box.innerHTML = topHTML; return;
     }
 
     const a = state.pool[0], b = state.pool[1];
     box.innerHTML = `
         <h3 style="text-align:center; margin-bottom:25px;">¿Qué Opening es mejor?</h3>
-        <button class="btn" style="height:auto; display:flex; align-items:center; gap:20px; padding:15px; text-transform:none; letter-spacing:0; text-align:left;" onclick="vote(0)"><div class="img-container" style="width:60px; height:85px;"><img src="${a.img}" class="img-thumb" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span style="flex-grow:1; font-size:1.05rem; font-weight:600;">${a.name}</span></button>
+        <button class="btn" style="height:auto; display:flex; align-items:center; gap:20px; padding:15px; text-transform:none; letter-spacing:0; text-align:left;" onclick="vote(0)"><div class="img-container" style="width:60px; height:85px;"><img src="${esc(a.img || FALLBACK_IMG)}" class="img-thumb" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span style="flex-grow:1; font-size:1.05rem; font-weight:600;">${esc(a.name)}</span></button>
         <div style="text-align:center; margin:15px 0; font-weight:900; color:var(--neon-cyan); letter-spacing:2px; text-shadow:0 0 5px rgba(0,240,255,0.3)">VS</div>
-        <button class="btn" style="height:auto; display:flex; align-items:center; gap:20px; padding:15px; text-transform:none; letter-spacing:0; text-align:left;" onclick="vote(1)"><div class="img-container" style="width:60px; height:85px;"><img src="${b.img}" class="img-thumb" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span style="flex-grow:1; font-size:1.05rem; font-weight:600;">${b.name}</span></button>
+        <button class="btn" style="height:auto; display:flex; align-items:center; gap:20px; padding:15px; text-transform:none; letter-spacing:0; text-align:left;" onclick="vote(1)"><div class="img-container" style="width:60px; height:85px;"><img src="${esc(b.img || FALLBACK_IMG)}" class="img-thumb" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span style="flex-grow:1; font-size:1.05rem; font-weight:600;">${esc(b.name)}</span></button>
     `;
 }
 

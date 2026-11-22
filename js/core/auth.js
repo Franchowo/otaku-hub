@@ -175,6 +175,13 @@ function otakuLogout() {
     showLockScreen('Sesión cerrada en este dispositivo.');
 }
 
+// El servidor rechazó la clave guardada (p. ej. la cambiaste en Apps Script):
+// se borra de este dispositivo y se pide de nuevo. No cuenta como intento fallido.
+function onAccessRevoked() {
+    try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
+    showLockScreen('🔑 Tu clave ya no es válida. Introduce la clave actual.');
+}
+
 // Al cargar: si hay clave guardada, entrar directamente; si no, bloquear.
 if (getAccessKey()) requestPersistentStorage();
 else showLockScreen();

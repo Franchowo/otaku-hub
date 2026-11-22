@@ -1,4 +1,17 @@
 // --- FETCHERS MAESTROS ---
+// Todas las lecturas pasan por sheetsReadOnce (js/services/sheets-api.js):
+// si dos vistas piden la misma hoja a la vez, se reutiliza la petición, y
+// si falla se muestra un error con "Reintentar" en vez de un spinner eterno.
+
+function setLoadersVisible(ids, visible) {
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = visible ? 'block' : 'none';
+    });
+}
+
+const MASTER_LOADERS = ['statsLoader', 'detailLoader', 'studiosLoader', 'annualLoader'];
+
 function initMasterDataFetch(callbackSuccess) {
     if(_masterData.length > 0) {
         if(callbackSuccess) callbackSuccess();
@@ -6,31 +19,17 @@ function initMasterDataFetch(callbackSuccess) {
         return;
     }
 
-    if(document.getElementById('statsLoader')) document.getElementById('statsLoader').style.display = 'block';
-    if(document.getElementById('detailLoader')) document.getElementById('detailLoader').style.display = 'block';
-    if(document.getElementById('studiosLoader')) document.getElementById('studiosLoader').style.display = 'block';
-    if(document.getElementById('annualLoader')) document.getElementById('annualLoader').style.display = 'block';
+    setLoadersVisible(MASTER_LOADERS, true);
 
-    window.handleStatsResponse = function(response) {
-        if(response.status !== 'success') {
-            alert("Error de Sheets: " + (response.message || "Desconocido"));
-            return;
-        }
-        _masterData = response.data;
+    sheetsReadOnce('master', null).then(data => {
+        _masterData = data;
         populateFilterDropdowns(_masterData);
-        
         if(callbackSuccess) callbackSuccess();
         else applyFiltersAndRender();
-        
-        const scriptTag = document.getElementById('jsonpScript');
-        if(scriptTag) scriptTag.remove();
-    };
-
-    const script = document.createElement('script');
-    script.id = 'jsonpScript';
-    script.src = `${sheetsUrl()}callback=handleStatsResponse&_=${new Date().getTime()}`;
-    script.onerror = function() { alert("Error crítico de enlace JSONP. Revisa los permisos."); };
-    document.body.appendChild(script);
+    }).catch(err => {
+        setLoadersVisible(MASTER_LOADERS, false);
+        showViewError(err.message);
+    });
 }
 
 function initFavoritesDataFetch(forceRefresh = false) {
@@ -42,27 +41,14 @@ function initFavoritesDataFetch(forceRefresh = false) {
     document.getElementById('favoritesLoader').style.display = 'block';
     document.getElementById('favoritesContent').style.display = 'none';
 
-    window.handleFavoritesResponse = function(response) {
-        if(response.status !== 'success') {
-            alert("Error al cargar la hoja FAVS: " + (response.message || "Desconocido"));
-            return;
-        }
-        _favsRawData = response.data;
+    sheetsReadOnce('favs', 'FAVS').then(data => {
+        _favsRawData = data;
         processFavoritesData();
         renderFavoritesView();
-        
-        const scriptTag = document.getElementById('jsonpFavsScript');
-        if(scriptTag) scriptTag.remove();
-    };
-
-    const oldScript = document.getElementById('jsonpFavsScript');
-    if(oldScript) oldScript.remove();
-
-    const script = document.createElement('script');
-    script.id = 'jsonpFavsScript';
-    script.src = `${sheetsUrl()}sheet=FAVS&tab=FAVS&sheetName=FAVS&callback=handleFavoritesResponse&_=${new Date().getTime()}`;
-    script.onerror = function() { alert("Error al conectar con la hoja FAVS."); };
-    document.body.appendChild(script);
+    }).catch(err => {
+        document.getElementById('favoritesLoader').style.display = 'none';
+        showViewError(`No se pudo cargar la hoja FAVS. ${err.message}`);
+    });
 }
 
 function initMangaDataFetch(forceRefresh = false, callbackSuccess = null) {
@@ -75,13 +61,8 @@ function initMangaDataFetch(forceRefresh = false, callbackSuccess = null) {
     if(document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'block';
     if(document.getElementById('mangaContent')) document.getElementById('mangaContent').style.display = 'none';
 
-    window.handleMangaResponse = function(response) {
-        if(response.status !== 'success') {
-            alert("Error al cargar la hoja FULL LIST MANGA: " + (response.message || "Desconocido"));
-            return;
-        }
-        
-        _mangaData = response.data.map(item => {
+    sheetsReadOnce('manga', 'FULL LIST MANGA').then(data => {
+        _mangaData = data.map(item => {
             let mangaName = "";
             for(let key in item) {
                 let lowerKey = key.toLowerCase();
@@ -101,19 +82,10 @@ function initMangaDataFetch(forceRefresh = false, callbackSuccess = null) {
 
         if(callbackSuccess) callbackSuccess();
         else renderMangaLibrary();
-        
-        const scriptTag = document.getElementById('jsonpMangaScript');
-        if(scriptTag) scriptTag.remove();
-    };
-
-    const oldScript = document.getElementById('jsonpMangaScript');
-    if(oldScript) oldScript.remove();
-
-    const script = document.createElement('script');
-    script.id = 'jsonpMangaScript';
-    script.src = `${sheetsUrl()}sheet=FULL%20LIST%20MANGA&tab=FULL%20LIST%20MANGA&sheetName=FULL%20LIST%20MANGA&callback=handleMangaResponse&_=${new Date().getTime()}`;
-    script.onerror = function() { alert("Error al conectar con la hoja FULL LIST MANGA."); };
-    document.body.appendChild(script);
+    }).catch(err => {
+        if(document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'none';
+        showViewError(`No se pudo cargar la hoja FULL LIST MANGA. ${err.message}`);
+    });
 }
 
 // FUNCIONES PARA RELLENAR LOS DROPDOWNS
@@ -129,8 +101,8 @@ function populateMangaFilterDropdowns(data) {
     yearSelect.innerHTML = '<option value="all">Todos</option>';
     authorSelect.innerHTML = '<option value="all">Todos</option>';
 
-    years.forEach(y => { yearSelect.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`); });
-    authors.forEach(a => { authorSelect.insertAdjacentHTML('beforeend', `<option value="${a}">${a}</option>`); });
+    years.forEach(y => { yearSelect.insertAdjacentHTML('beforeend', `<option value="${esc(y)}">${esc(y)}</option>`); });
+    authors.forEach(a => { authorSelect.insertAdjacentHTML('beforeend', `<option value="${esc(a)}">${esc(a)}</option>`); });
 }
 
 function initTimeMachineDataFetch() {

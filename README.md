@@ -23,6 +23,7 @@ otaku-hub/
 ├── js/
 │   ├── config.js              # URL del Web App y constantes globales
 │   ├── core/
+│   │   ├── utils.js           # esc()/jsArg() anti-inyección y estado de error de vistas
 │   │   ├── auth.js            # Clave de acceso + pantalla de bloqueo
 │   │   ├── state.js           # Estado global compartido
 │   │   ├── router.js          # Cambio de vistas (switchView)
@@ -31,6 +32,7 @@ otaku-hub/
 │   ├── services/
 │   │   ├── anilist.js         # Cliente GraphQL de AniList
 │   │   ├── image-queue.js     # Cola de portadas (batching + caché)
+│   │   ├── sheets-api.js      # sheetsRead()/sheetsWrite(): acceso único a Sheets
 │   │   ├── sheets-fetchers.js # Lecturas maestras desde Sheets
 │   │   └── cloud-sync.js      # TOP 150, ranking anual, calificador (Sheets)
 │   └── views/                 # Lógica de cada pestaña

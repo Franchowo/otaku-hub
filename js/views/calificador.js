@@ -1,4 +1,31 @@
 // --- CALIFICADOR ---
+// Escala actual de las respuestas: Brutal 10 · Bien 7.5 · Meh 5 · Mal 2.5 · Basura 0.
+const CALIFICADOR_SCALE = 10;
+
+// Los hitos intermedios antiguos se guardaban sobre 5 con enteros 1-5.
+// Los valores 1, 2, 3 y 4 no existen en la escala actual, así que solo se
+// consideran antiguos los hitos sin marca de escala que contengan alguno.
+// (Un hito antiguo con las 4 respuestas a 5 es indistinguible y se deja tal cual.)
+function isLegacyCheckpoint(cp) {
+    return !cp.isFinal && cp.scale !== CALIFICADOR_SCALE && Array.isArray(cp.answers)
+        && cp.answers.some(v => [1, 2, 3, 4].includes(v));
+}
+
+// Repara hitos corrompidos por el bug anterior (respuestas duplicadas por
+// encima de 10): se dividen a la mitad hasta volver a la escala y se recalcula la nota.
+function normalizeCalificadorCheckpoint(cp) {
+    const fixed = { ...cp };
+    if (Array.isArray(fixed.answers) && fixed.answers.length > 0) {
+        let answers = fixed.answers.map(Number);
+        let guard = 0;
+        while (Math.max(...answers) > 10 && guard++ < 5) answers = answers.map(v => v / 2);
+        fixed.answers = answers;
+        if (fixed.completed && (guard > 0 || fixed.score > 10)) {
+            fixed.score = answers.reduce((a, b) => a + b, 0) / answers.length;
+        }
+    }
+    return fixed;
+}
 async function searchAnimeCalificador() {
     const query = document.getElementById('calificadorSearchInput').value.trim();
     if (!query) return;
@@ -21,7 +48,7 @@ async function searchAnimeCalificador() {
             const titleRomaji = anime.title.romaji;
             
             const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer';
-            card.innerHTML = `<div class="recom-card-img-container"><img src="${imgUrl}" onerror="this.src='${FALLBACK_IMG}';"></div><span class="recom-card-title" title="${titleRomaji}">${titleRomaji}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">${epCount} Caps</span>`;
+            card.innerHTML = `<div class="recom-card-img-container"><img src="${esc(imgUrl)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span class="recom-card-title" title="${esc(titleRomaji)}">${esc(titleRomaji)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">${esc(epCount)} Caps</span>`;
             
             card.onclick = () => {
                 const existingAnime = Array.isArray(_calificadorSavedProgress) ? _calificadorSavedProgress.find(a => a && a.title === titleRomaji) : null;
@@ -54,7 +81,7 @@ function renderCalificadorSavedGrid() {
         const pct = (completed / totalHitos) * 100;
         
         const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer';
-        card.innerHTML = `<div class="recom-card-img-container" style="position:relative;"><img src="${anime.cover}" onerror="this.src='${FALLBACK_IMG}';"><div style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(255,255,255,0.2);"><div style="width:${pct}%; height:100%; background:var(--neon-cyan);"></div></div></div><span class="recom-card-title" title="${anime.title}">${anime.title}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">Progreso: ${Math.round(pct)}%</span><button class="clear-cache-btn" style="border:none; color:var(--neon-red); margin-top:5px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCalificadorProgress('${anime.id}')">Eliminar</button>`;
+        card.innerHTML = `<div class="recom-card-img-container" style="position:relative;"><img src="${esc(anime.cover)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"><div style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(255,255,255,0.2);"><div style="width:${pct}%; height:100%; background:var(--neon-cyan);"></div></div></div><span class="recom-card-title" title="${esc(anime.title)}">${esc(anime.title)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">Progreso: ${Math.round(pct)}%</span><button class="clear-cache-btn" style="border:none; color:var(--neon-red); margin-top:5px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCalificadorProgress(${jsArg(anime.id)})">Eliminar</button>`;
         card.onclick = () => { document.getElementById('calificadorResultsGrid').innerHTML = ''; loadCalificadorTracker(anime.title, anime.episodes, anime.cover, anime.scores, anime.id); };
         grid.appendChild(card);
     });
@@ -90,7 +117,7 @@ function loadCalificadorTracker(title, episodes, imgUrl, existingScores = null, 
 
     // Inicializamos o recuperamos datos asegurando el nuevo formato JSON
     if (existingScores && Array.isArray(existingScores) && existingScores.length > 0 && typeof existingScores[0] === 'object') {
-        _calificadorCurrentScores = [...existingScores];
+        _calificadorCurrentScores = existingScores.map(normalizeCalificadorCheckpoint);
     } else {
         _calificadorCurrentScores = milestones.map(m => ({
             ep: m.ep,
@@ -152,8 +179,10 @@ function openCalificadorForm(index) {
         _tempCalificadorAnswers = [7.5, 7.5, 7.5, 7.5]; // Por defecto marcado en "Bien"
     } else {
         _tempCalificadorAnswers = [...cp.answers];
-        // Parche de compatibilidad por si había notas antiguas guardadas sobre 5
-        if (!cp.isFinal && _tempCalificadorAnswers.some(v => v <= 5)) {
+        // Compatibilidad con hitos antiguos guardados sobre 5 (ver isLegacyCheckpoint).
+        // Antes se duplicaba todo si había algún valor <= 5, pero "Meh" (5),
+        // "Mal" (2.5) y "Basura" (0) son valores válidos de la escala actual.
+        if (isLegacyCheckpoint(cp)) {
             _tempCalificadorAnswers = _tempCalificadorAnswers.map(v => v * 2); 
         }
     }
@@ -236,6 +265,7 @@ function submitCalificadorForm() {
     cp.answers = [..._tempCalificadorAnswers];
     cp.score = _tempCalificadorAnswers.reduce((a, b) => a + b, 0) / 4;
     cp.completed = true;
+    cp.scale = CALIFICADOR_SCALE;
 
     closeCalificadorForm();
     renderCalificadorList();
@@ -305,17 +335,24 @@ function saveCurrentCalificadorToCloud() {
     renderCalificadorSavedGrid();
     btn.innerText = "Sincronizando... ⏳"; btn.disabled = true;
 
-    syncCalificadorToCloud(() => {
-        btn.innerText = "¡Progreso Guardado! ✔️"; setTimeout(() => { btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false; }, 2000);
+    syncCalificadorToCloud(result => {
+        btn.innerText = savedLabel(result, "¡Progreso Guardado! ✔️"); setTimeout(() => { btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false; }, 2000);
+    }, err => {
+        // Antes el botón se quedaba bloqueado en "Sincronizando..." para siempre.
+        alert(`No se guardó el progreso: ${err.message}`);
+        btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false;
     });
 }
 
-function syncCalificadorToCloud(callbackSuccess) {
+function syncCalificadorToCloud(callbackSuccess, callbackError) {
     const statusLabel = document.getElementById('calificadorSyncStatus'); if(statusLabel) { statusLabel.innerText = "Sincronizando ⏳"; statusLabel.style.color = "var(--neon-yellow)"; }
     const payload = { action: "save_calificador", payload: _calificadorSavedProgress };
 
-    fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withAuth(payload)) }).then(() => {
-        if(statusLabel) { statusLabel.innerText = "Sincronizado ✔️"; statusLabel.style.color = "var(--neon-green)"; }
-        if(callbackSuccess) callbackSuccess();
-    }).catch(() => { if(statusLabel) { statusLabel.innerText = "Error red ❌"; statusLabel.style.color = "var(--neon-red)"; } });
+    sheetsWrite(payload).then(result => {
+        if(statusLabel) { statusLabel.innerText = result.confirmed ? "Sincronizado ✔️" : "Enviado ✔️ (sin confirmar)"; statusLabel.style.color = "var(--neon-green)"; }
+        if(callbackSuccess) callbackSuccess(result);
+    }).catch(err => {
+        if(statusLabel) { statusLabel.innerText = "No guardado ❌"; statusLabel.title = err.message; statusLabel.style.color = "var(--neon-red)"; }
+        if(callbackError) callbackError(err);
+    });
 }
