@@ -205,14 +205,15 @@ async function fetchCoversById(batch) {
         function updateScoreData(val) { document.getElementById('scoreVal').innerText = val; }
         function updateMangaScoreData(val) { document.getElementById('mangaScoreVal').innerText = val; }
 
-        function clearLocalMemory() {
-            if(confirm("¿Quieres limpiar las imágenes guardadas en caché? (Se volverán a descargar secuencialmente en alta definición la próxima vez)")) {
+        async function clearLocalMemory() {
+            const ok = await confirmDialog({ title: 'Limpiar caché de portadas', message: 'Las portadas se volverán a descargar la próxima vez que las veas.', confirmText: 'Limpiar' });
+            if (ok) {
                 Object.keys(localStorage).forEach(key => {
                     if(key.startsWith('studio_logo_') || key.startsWith('anime_cover_') || key.startsWith('manga_cover_') || key.startsWith('cover_id_')) {
                         localStorage.removeItem(key);
                     }
                 });
-                alert("Caché de imágenes vaciada.");
+                toast('Caché de portadas vaciada.', { type: 'success' });
                 reloadStatsData();
             }
         }

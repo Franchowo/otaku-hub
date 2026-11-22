@@ -79,7 +79,7 @@
             const animeContainer = document.getElementById('recomAnimeGrid'); animeContainer.innerHTML = '';
             document.getElementById('recomAnimeTitle').innerText = animeBaseName === "Top Global" ? "Joyas globales que te faltan por ver" : `Porque te encantó ${animeBaseName}...`;
             
-            if (recomAnimes.length === 0) { animeContainer.innerHTML = '<div style="color:rgba(255,255,255,0.4); text-align:center; grid-column:1/-1;">No hemos podido cargar recomendaciones.</div>'; } 
+            if (recomAnimes.length === 0) { animeContainer.innerHTML = '<div style="color:rgba(255,255,255,0.6); text-align:center; grid-column:1/-1;">No hemos podido cargar recomendaciones.</div>'; } 
             else {
                 recomAnimes.forEach(item => {
                     animeContainer.innerHTML += `<div class="recom-card anime-recom"><div class="recom-card-img-container"><img src="${esc(item.coverImage?.large || FALLBACK_IMG)}" alt="" loading="lazy" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span class="recom-card-title" title="${esc(item.title.romaji)}">${esc(item.title.romaji)}</span></div>`;
@@ -89,7 +89,7 @@
             const mangaContainer = document.getElementById('recomMangaGrid'); mangaContainer.innerHTML = '';
             document.getElementById('recomMangaTitle').innerText = mangaBaseName === "Top Global" ? "Mangas aclamados que debes leer" : `Porque no pudiste soltar ${mangaBaseName}...`;
             
-            if (recomMangas.length === 0) { mangaContainer.innerHTML = '<div style="color:rgba(255,255,255,0.4); text-align:center; grid-column:1/-1;">No hemos podido cargar recomendaciones de manga.</div>'; } 
+            if (recomMangas.length === 0) { mangaContainer.innerHTML = '<div style="color:rgba(255,255,255,0.6); text-align:center; grid-column:1/-1;">No hemos podido cargar recomendaciones de manga.</div>'; } 
             else {
                 recomMangas.forEach(item => {
                     mangaContainer.innerHTML += `<div class="recom-card manga-recom"><div class="recom-card-img-container"><img src="${esc(item.coverImage?.large || FALLBACK_IMG)}" alt="" loading="lazy" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span class="recom-card-title" title="${esc(item.title.romaji)}">${esc(item.title.romaji)}</span></div>`;

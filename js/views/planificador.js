@@ -16,7 +16,7 @@
                     _planificadorSavedProgress = data.map(i => ({ id: String(i.id), year: i.year, season: i.season, title: i.title, cover: i.cover, status: i.status }));
                 }
                 _planificadorInitialized = true;
-                getSafeEl('planificadorGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar"</strong> para cargar los animes.</div>';
+                getSafeEl('planificadorGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar"</strong> para cargar los animes.</div>';
             }).catch(err => {
                 getSafeEl('planificadorLoader').style.display = 'none';
                 // Sin el estado guardado no dejamos editar: guardar sobrescribiría la nube con una lista vacía.
@@ -141,7 +141,7 @@ grid.appendChild(card);
 
             if (visibleCount === 0 && _currentSeasonData.length > 0 && filterElement) {
                 const filterName = filterElement.options[filterElement.selectedIndex].text;
-                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">No hay animes en esta temporada con el estado <strong>"${esc(filterName)}"</strong>.</div>`;
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6); padding: 50px 0; font-size:1.1rem;">No hay animes en esta temporada con el estado <strong>"${esc(filterName)}"</strong>.</div>`;
             }
             if (autoSyncNeeded) setTimeout(() => syncPlanificadorToCloud(), 1000);
         }

@@ -42,7 +42,7 @@ function saveAnnualRankingToCloud() {
         btn.innerText = savedLabel(result, "¡Guardado en Nube! ✔️");
         setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
     }).catch(err => {
-        alert(`${err.message}\nLa lista sigue guardada en este dispositivo.`);
+        toast(`${err.message} La lista sigue guardada en este dispositivo.`, { type: 'error' });
         btn.innerText = originalText; btn.disabled = false;
     });
 }

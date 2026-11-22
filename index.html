@@ -16,168 +16,168 @@
 
     <body>
 
-    <nav class="nav-tabs">
+    <nav class="nav-tabs" aria-label="Secciones">
         <button class="tab-btn active" id="tabBtn-hubView" onclick="switchView('hubView')">Hub Central</button>
-        <button class="tab-btn icon-only" id="tabBtn-formView" onclick="switchView('formView')" title="Registrar Anime">📥</button>
-        <button class="tab-btn icon-only" id="tabBtn-mangaFormView" onclick="switchView('mangaFormView')" title="Registrar Manga">📖</button>
-        <button class="tab-btn icon-only" id="tabBtn-detailView" onclick="switchView('detailView')" title="Detalle Anime">👁️</button>
-        <button class="tab-btn icon-only" id="tabBtn-mangaLibraryView" onclick="switchView('mangaLibraryView')" title="Librería Manga">📚</button>
-        <button class="tab-btn icon-only" id="tabBtn-statsView" onclick="switchView('statsView')" title="Panel Analítico">📊</button>
-        <button class="tab-btn icon-only" id="tabBtn-timeMachineView" onclick="switchView('timeMachineView')" title="Cápsula Tiempo">⏳</button>
-        <button class="tab-btn icon-only" id="tabBtn-studiosView" onclick="switchView('studiosView')" title="Ranking Estudios">🏢</button>
-        <button class="tab-btn icon-only" id="tabBtn-top150View" onclick="switchView('top150View')" title="TOP 150">💯</button>
-        <button class="tab-btn icon-only" id="tabBtn-annualRankingView" onclick="switchView('annualRankingView')" title="Ranking Anual">🏆</button>
-        <button class="tab-btn icon-only" id="tabBtn-favoritesView" onclick="switchView('favoritesView')" title="Lista Favoritos">👑</button>
-        <button class="tab-btn icon-only" id="tabBtn-rankerView" onclick="switchView('rankerView')" title="Opening Ranker">⚔️</button>
-        <button class="tab-btn icon-only" id="tabBtn-recommendationsView" onclick="switchView('recommendationsView')" title="Sistema Recomendaciones">💡</button>
-        <button class="tab-btn icon-only" id="tabBtn-calificadorView" onclick="switchView('calificadorView')" title="Calificador Anime">🎯</button>
-        <button class="tab-btn icon-only" id="tabBtn-planificadorView" onclick="switchView('planificadorView')" title="Planificador">📅</button>
-        <button class="tab-btn icon-only" id="tabBtn-gachaView" onclick="switchView('gachaView')" title="Gacha Otaku">🎰</button>
+        <button class="tab-btn icon-only" id="tabBtn-formView" onclick="switchView('formView')" title="Registrar Anime" aria-label="Registrar Anime">📥</button>
+        <button class="tab-btn icon-only" id="tabBtn-mangaFormView" onclick="switchView('mangaFormView')" title="Registrar Manga" aria-label="Registrar Manga">📖</button>
+        <button class="tab-btn icon-only" id="tabBtn-detailView" onclick="switchView('detailView')" title="Detalle Anime" aria-label="Detalle Anime">👁️</button>
+        <button class="tab-btn icon-only" id="tabBtn-mangaLibraryView" onclick="switchView('mangaLibraryView')" title="Librería Manga" aria-label="Librería Manga">📚</button>
+        <button class="tab-btn icon-only" id="tabBtn-statsView" onclick="switchView('statsView')" title="Panel Analítico" aria-label="Panel Analítico">📊</button>
+        <button class="tab-btn icon-only" id="tabBtn-timeMachineView" onclick="switchView('timeMachineView')" title="Cápsula Tiempo" aria-label="Cápsula Tiempo">⏳</button>
+        <button class="tab-btn icon-only" id="tabBtn-studiosView" onclick="switchView('studiosView')" title="Ranking Estudios" aria-label="Ranking Estudios">🏢</button>
+        <button class="tab-btn icon-only" id="tabBtn-top150View" onclick="switchView('top150View')" title="TOP 150" aria-label="TOP 150">💯</button>
+        <button class="tab-btn icon-only" id="tabBtn-annualRankingView" onclick="switchView('annualRankingView')" title="Ranking Anual" aria-label="Ranking Anual">🏆</button>
+        <button class="tab-btn icon-only" id="tabBtn-favoritesView" onclick="switchView('favoritesView')" title="Lista Favoritos" aria-label="Lista Favoritos">👑</button>
+        <button class="tab-btn icon-only" id="tabBtn-rankerView" onclick="switchView('rankerView')" title="Opening Ranker" aria-label="Opening Ranker">⚔️</button>
+        <button class="tab-btn icon-only" id="tabBtn-recommendationsView" onclick="switchView('recommendationsView')" title="Sistema Recomendaciones" aria-label="Sistema Recomendaciones">💡</button>
+        <button class="tab-btn icon-only" id="tabBtn-calificadorView" onclick="switchView('calificadorView')" title="Calificador Anime" aria-label="Calificador Anime">🎯</button>
+        <button class="tab-btn icon-only" id="tabBtn-planificadorView" onclick="switchView('planificadorView')" title="Planificador" aria-label="Planificador">📅</button>
+        <button class="tab-btn icon-only" id="tabBtn-gachaView" onclick="switchView('gachaView')" title="Gacha Otaku" aria-label="Gacha Otaku">🎰</button>
 <!-- NUEVO BOTÓN DE ROTACIÓN -->
-        <button class="tab-btn icon-only" id="tabBtn-rotate" onclick="toggleLandscape()" title="Modo Horizontal / Pantalla Completa" style="border-left: 1px solid var(--glass-border); margin-left: 5px; padding-left: 15px;">📱🔄</button>
-        <button class="tab-btn icon-only" id="tabBtn-logout" onclick="otakuLogout()" title="Cerrar sesión en este dispositivo">🔒</button>
+        <button class="tab-btn icon-only" id="tabBtn-rotate" onclick="toggleLandscape()" title="Modo Horizontal / Pantalla Completa" aria-label="Modo Horizontal / Pantalla Completa" style="border-left: 1px solid var(--glass-border); margin-left: 5px; padding-left: 15px;">📱🔄</button>
+        <button class="tab-btn icon-only" id="tabBtn-logout" onclick="otakuLogout()" title="Cerrar sesión en este dispositivo" aria-label="Cerrar sesión en este dispositivo">🔒</button>
     </nav>
 
     <div class="container hub-mode" id="mainContainer">
         
         <div id="hubView" class="view active">
             <h1>OTAKU HUB</h1>
-            <div class="hub-subtitle">SISTEMA INTEGRADO DE GESTIÓN Y MÉTRICAS PRO</div>
+            <div class="hub-subtitle">Tu anime y manga, en un solo sitio</div>
             
             <div class="hub-grid">
-                <div class="hub-card cyan" onclick="switchView('formView')">
-                    <div class="hub-icon-wrapper">📥</div>
+                <div class="hub-card cyan" role="button" tabindex="0" onclick="switchView('formView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">📥</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Registrar Anime</span>
                         <span class="hub-card-desc">Indexa nuevas series consultando la API de AniList.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card green" onclick="switchView('mangaFormView')">
-                    <div class="hub-icon-wrapper">📖</div>
+                <div class="hub-card green" role="button" tabindex="0" onclick="switchView('mangaFormView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">📖</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Registrar Manga</span>
                         <span class="hub-card-desc">Inserta volúmenes en tu pestaña FULL LIST MANGA.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card cyan" onclick="switchView('detailView')">
-                    <div class="hub-icon-wrapper">👁️</div>
+                <div class="hub-card cyan" role="button" tabindex="0" onclick="switchView('detailView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">👁️</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Detalle Anime</span>
                         <span class="hub-card-desc">Visualiza y filtra tu colección en una cuadrícula.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card green" onclick="switchView('mangaLibraryView')">
-                    <div class="hub-icon-wrapper">📚</div>
+                <div class="hub-card green" role="button" tabindex="0" onclick="switchView('mangaLibraryView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">📚</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Librería Manga</span>
                         <span class="hub-card-desc">Estantería virtual 3D inmersiva para tus lecturas.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card magenta" onclick="switchView('statsView')">
-                    <div class="hub-icon-wrapper">📊</div>
+                <div class="hub-card magenta" role="button" tabindex="0" onclick="switchView('statsView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">📊</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Panel Analítico</span>
                         <span class="hub-card-desc">Explora métricas, años, temporadas y curvas.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
                 
-                <div class="hub-card yellow" onclick="switchView('timeMachineView')">
-                    <div class="hub-icon-wrapper">⏳</div>
+                <div class="hub-card yellow" role="button" tabindex="0" onclick="switchView('timeMachineView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">⏳</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Cápsula Tiempo</span>
                         <span class="hub-card-desc">Viaja al pasado. Descubre tus mejores obras y medias por año.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card purple" onclick="switchView('studiosView')">
-                    <div class="hub-icon-wrapper">🏢</div>
+                <div class="hub-card purple" role="button" tabindex="0" onclick="switchView('studiosView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">🏢</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Ranking Estudios</span>
                         <span class="hub-card-desc">Clasificación de productoras con 5 o más animes.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
                 
-                <div class="hub-card cyan" onclick="switchView('top150View')">
-                    <div class="hub-icon-wrapper">💯</div>
+                <div class="hub-card cyan" role="button" tabindex="0" onclick="switchView('top150View')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">💯</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">TOP 150</span>
                         <span class="hub-card-desc">Salón de la fama extendido. Gestiona tus cambios.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card green" onclick="switchView('annualRankingView')">
-                    <div class="hub-icon-wrapper">🏆</div>
+                <div class="hub-card green" role="button" tabindex="0" onclick="switchView('annualRankingView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">🏆</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Ranking Anual</span>
                         <span class="hub-card-desc">Organiza tus series en un TOP interactivo drag&drop.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card purple" onclick="switchView('favoritesView')">
-                    <div class="hub-icon-wrapper">👑</div>
+                <div class="hub-card purple" role="button" tabindex="0" onclick="switchView('favoritesView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">👑</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Favoritos</span>
                         <span class="hub-card-desc">Enlace directo a tu hoja FAVS con portadas XL.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card yellow" onclick="switchView('rankerView')">
-                    <div class="hub-icon-wrapper">⚔️</div>
+                <div class="hub-card yellow" role="button" tabindex="0" onclick="switchView('rankerView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">⚔️</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Opening Ranker</span>
                         <span class="hub-card-desc">Algoritmia ELO y duelos uno contra uno.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card yellow" onclick="switchView('recommendationsView')">
-                    <div class="hub-icon-wrapper">💡</div>
+                <div class="hub-card yellow" role="button" tabindex="0" onclick="switchView('recommendationsView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">💡</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Recomendaciones</span>
                         <span class="hub-card-desc">Motor predictivo basado en tus obras favoritas.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card cyan" onclick="switchView('calificadorView')">
-                    <div class="hub-icon-wrapper">🎯</div>
+                <div class="hub-card cyan" role="button" tabindex="0" onclick="switchView('calificadorView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">🎯</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Calificador Anime</span>
                         <span class="hub-card-desc">Puntúa episodio a episodio y descubre candidatos a nota 10.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card purple" onclick="switchView('planificadorView')">
-                    <div class="hub-icon-wrapper">📅</div>
+                <div class="hub-card purple" role="button" tabindex="0" onclick="switchView('planificadorView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">📅</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Planificador</span>
                         <span class="hub-card-desc">Sigue tus intereses por año y temporada con portadas y colores.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
 
-                <div class="hub-card magenta" onclick="switchView('gachaView')">
-                    <div class="hub-icon-wrapper">🎰</div>
+                <div class="hub-card magenta" role="button" tabindex="0" onclick="switchView('gachaView')">
+                    <div class="hub-icon-wrapper" aria-hidden="true">🎰</div>
                     <div class="hub-text-content">
                         <span class="hub-card-title">Gacha Otaku</span>
                         <span class="hub-card-desc">Tira de la ruleta y descubre tu próxima obra maestra.</span>
                     </div>
-                    <div class="hub-arrow">→</div>
+                    <div class="hub-arrow" aria-hidden="true">→</div>
                 </div>
             </div>
         </div>
@@ -186,36 +186,36 @@
             <h2>Registrar Anime</h2>
             <form id="animeForm" autocomplete="off">
                 <div class="form-group">
-                    <label for="anime">Anime Title</label>
+                    <label for="anime">Título del anime</label>
                     <div class="search-wrapper">
                         <input type="text" id="anime" required placeholder="Ej. Chainsaw Man">
-                        <button type="button" id="searchBtn" class="search-btn">🔍</button>
+                        <button type="button" id="searchBtn" class="search-btn" aria-label="Buscar en AniList">🔍</button>
                     </div>
                     <div id="searchResults" class="search-results" style="display: none;"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="season">Season</label>
+                    <label for="season">Temporada</label>
                     <select id="season" required>
-                        <option value="Winter">Winter</option>
-                        <option value="Spring">Spring</option>
-                        <option value="Summer">Summer</option>
-                        <option value="Fall">Fall</option>
+                        <option value="Winter">Invierno</option>
+                        <option value="Spring">Primavera</option>
+                        <option value="Summer">Verano</option>
+                        <option value="Fall">Otoño</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="year">Year</label>
-                    <input type="number" id="year" required min="1950" max="2100" value="2026">
+                    <label for="year">Año</label>
+                    <input type="number" id="year" required min="1950" max="2100" inputmode="numeric">
                 </div>
 
                 <div class="form-group">
-                    <label for="studio">Studio</label>
+                    <label for="studio">Estudio</label>
                     <input type="text" id="studio" required placeholder="Ej. MAPPA">
                 </div>
 
                 <div class="form-group">
-                    <label for="score">Score</label>
+                    <label for="score">Nota</label>
                     <div class="score-container">
                         <input type="range" id="score" min="1" max="10" value="7" oninput="updateScoreData(this.value)">
                         <span class="score-value" id="scoreVal">7</span>
@@ -231,26 +231,26 @@
             <h2>Registrar Manga</h2>
             <form id="mangaForm" autocomplete="off">
                 <div class="form-group">
-                    <label for="manga">Manga Title</label>
+                    <label for="manga">Título del manga</label>
                     <div class="search-wrapper">
                         <input type="text" id="manga" required placeholder="Ej. Darwin Jihen">
-                        <button type="button" id="mangaSearchBtn" class="search-btn">🔍</button>
+                        <button type="button" id="mangaSearchBtn" class="search-btn" aria-label="Buscar en AniList">🔍</button>
                     </div>
                     <div id="mangaSearchResults" class="search-results" style="display: none;"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="mangaYear">Year</label>
-                    <input type="number" id="mangaYear" required min="1950" max="2100" value="2026">
+                    <label for="mangaYear">Año</label>
+                    <input type="number" id="mangaYear" required min="1950" max="2100" inputmode="numeric">
                 </div>
 
                 <div class="form-group">
-                    <label for="author">Author</label>
+                    <label for="author">Autor</label>
                     <input type="text" id="author" required placeholder="Ej. Kentaro Miura">
                 </div>
 
                 <div class="form-group">
-                    <label for="mangaScore">Score</label>
+                    <label for="mangaScore">Nota</label>
                     <div class="score-container">
                         <input type="range" id="mangaScore" min="1" max="10" value="7" oninput="updateMangaScoreData(this.value)">
                         <span class="score-value" id="mangaScoreVal">7</span>
@@ -267,7 +267,7 @@
             
             <div id="detailLoader" class="loader">
                 <div class="spinner"></div>
-                Conectando con base de datos maestra "FULL LIST"...
+                Cargando tu lista de anime…
             </div>
 
             <div id="detailContent" style="display: none;">
@@ -284,10 +284,10 @@
                         <label>Temporada</label>
                         <select id="detailFilterSeason" onchange="applyDetailFilters()">
                             <option value="all">Todas</option>
-                            <option value="Winter">Winter</option>
-                            <option value="Spring">Spring</option>
-                            <option value="Summer">Summer</option>
-                            <option value="Fall">Fall</option>
+                            <option value="Winter">Invierno</option>
+                            <option value="Spring">Primavera</option>
+                            <option value="Summer">Verano</option>
+                            <option value="Fall">Otoño</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -322,7 +322,7 @@
                     </div>
                 </div>
 
-                <div class="filter-status-bar" id="detailStatusBar">Cargando colección histórica...</div>
+                <div class="filter-status-bar" id="detailStatusBar">Cargando…</div>
                 
                 <div class="detail-grid" id="detailGridContainer"></div>
             </div>
@@ -333,7 +333,7 @@
             
             <div id="mangaLoader" class="loader">
                 <div class="spinner" style="border-top-color: var(--neon-green);"></div>
-                Sincronizando volúmenes desde "FULL LIST MANGA"...
+                Cargando tu lista de manga…
             </div>
 
             <div id="mangaContent" style="display: none;">
@@ -367,11 +367,11 @@
                         </select>
                     </div>
                     <div class="btn-action-group">
-                        <button class="btn-reload" style="border-color:var(--neon-green); color:var(--neon-green);" onmouseover="this.style.background='var(--neon-green)'; this.style.color='#000';" onmouseout="this.style.background='rgba(0, 255, 102, 0.1)'; this.style.color='var(--neon-green)';" onclick="reloadStatsData()">🔄 Recargar</button>
+                        <button class="chip-btn accent-green" onclick="reloadStatsData()">🔄 Recargar</button>
                     </div>
                 </div>
 
-                <div class="filter-status-bar" id="mangaStatusBar">Inspeccionando estanterías...</div>
+                <div class="filter-status-bar" id="mangaStatusBar">Cargando…</div>
                 
                 <div class="bookshelf-container" id="mangaLibraryContainer"></div>
             </div>
@@ -382,7 +382,7 @@
             
             <div id="statsLoader" class="loader">
                 <div class="spinner"></div>
-                Desplegando infraestructura de métricas complejas...
+                Cargando tus estadísticas…
             </div>
 
             <div id="statsContent" style="display: none;">
@@ -399,10 +399,10 @@
                         <label>Temporada</label>
                         <select id="filterSeason" onchange="onFilterChange()">
                             <option value="all">Todas</option>
-                            <option value="Winter">Winter</option>
-                            <option value="Spring">Spring</option>
-                            <option value="Summer">Summer</option>
-                            <option value="Fall">Fall</option>
+                            <option value="Winter">Invierno</option>
+                            <option value="Spring">Primavera</option>
+                            <option value="Summer">Verano</option>
+                            <option value="Fall">Otoño</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -417,7 +417,7 @@
                     </div>
                 </div>
 
-                <div class="filter-status-bar" id="filterStatusBar">Mapeando base de datos...</div>
+                <div class="filter-status-bar" id="filterStatusBar">Cargando…</div>
 
                 <div class="stats-grid-extended">
                     <div class="kpi-card">
@@ -449,13 +449,13 @@
                         <div class="kpi-label">Perfil de Crítico</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-num" id="kpiGlobalTotal" style="color: rgba(255,255,255,0.4)">0</div>
+                        <div class="kpi-num" id="kpiGlobalTotal" style="color: rgba(255,255,255,0.6)">0</div>
                         <div class="kpi-label">Universo Histórico</div>
                     </div>
                 </div>
 
                 <div class="top-shelf-section">
-                    <div class="shelf-title">👑 Lo más selecto del segmento <span style="font-size:0.75rem; color:rgba(255,255,255,0.4); text-transform:none;">(Pasa el mouse para ampliar)</span></div>
+                    <div class="shelf-title">👑 Lo más selecto del segmento <span style="font-size:0.75rem; color:rgba(255,255,255,0.6); text-transform:none;">(Pasa el mouse para ampliar)</span></div>
                     <div class="shelf-container" id="topShelfGallery"></div>
                 </div>
 
@@ -495,10 +495,10 @@
                             <thead>
                                 <tr>
                                     <th onclick="toggleSort('anime')">Anime<span id="sortIcon-anime" class="sort-icon">↕</span></th>
-                                    <th onclick="toggleSort('season')">Season<span id="sortIcon-season" class="sort-icon">↕</span></th>
-                                    <th onclick="toggleSort('year')">Year<span id="sortIcon-year" class="sort-icon">↕</span></th>
-                                    <th onclick="toggleSort('studio')">Studio<span id="sortIcon-studio" class="sort-icon">↕</span></th>
-                                    <th onclick="toggleSort('score')" style="color: var(--neon-magenta);">Score<span id="sortIcon-score" class="sort-icon">↕</span></th>
+                                    <th onclick="toggleSort('season')">Temporada<span id="sortIcon-season" class="sort-icon">↕</span></th>
+                                    <th onclick="toggleSort('year')">Año<span id="sortIcon-year" class="sort-icon">↕</span></th>
+                                    <th onclick="toggleSort('studio')">Estudio<span id="sortIcon-studio" class="sort-icon">↕</span></th>
+                                    <th onclick="toggleSort('score')" style="color: var(--neon-magenta);">Nota<span id="sortIcon-score" class="sort-icon">↕</span></th>
                                 </tr>
                             </thead>
                             <tbody id="rawTableBody"></tbody>
@@ -513,7 +513,7 @@
             
             <div id="timeMachineLoader" class="loader">
                 <div class="spinner" style="border-top-color: var(--neon-yellow);"></div>
-                Sincronizando flujos de Anime y Manga para el viaje temporal...
+                Cargando tus listas de anime y manga…
             </div>
 
             <div id="timeMachineContent" style="display: none; width: 100%;">
@@ -561,12 +561,12 @@
                 <p style="margin: 0; color: rgba(255,255,255,0.6); font-size: 0.85rem; line-height: 1.4; flex-grow: 1;">
                     Filtro estricto: Solo casas de animación con <strong style="color:var(--neon-cyan)">5 o más animes registrados</strong>. Co-producciones divididas individualmente.
                 </p>
-                <button class="btn-reload" style="border-color:var(--neon-purple); color:var(--neon-purple); padding: 8px 15px;" onmouseover="this.style.background='var(--neon-purple)'; this.style.color='#fff';" onmouseout="this.style.background='rgba(189, 0, 255, 0.1)'; this.style.color='var(--neon-purple)';" onclick="saveStudiosSnapshot()">💾 Fijar Referencia</button>
+                <button class="chip-btn accent-purple" onclick="saveStudiosSnapshot()">💾 Fijar Referencia</button>
             </div>
             
             <div id="studiosLoader" class="loader">
                 <div class="spinner"></div>
-                Procesando matriz de estudios e historial de progreso...
+                Calculando el ranking de estudios…
             </div>
 
             <div id="studiosContent" style="display: none;">
@@ -593,7 +593,7 @@
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
                         <span id="top150Counter" style="font-size: 0.85rem; color: var(--neon-cyan); font-weight: bold;">0 / 150</span>
-                        <button class="clear-cache-btn" style="padding: 8px 12px; font-weight: bold; border: 1px solid rgba(255,0,51,0.3); color: var(--neon-red); background: rgba(255,0,51,0.02); border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,0,51,0.1)'; this.style.borderColor='var(--neon-red)';" onmouseout="this.style.background='rgba(255,0,51,0.02)'; this.style.borderColor='rgba(255,0,51,0.3)';" onclick="resetTop150()">🗑️ Limpiar</button>
+                        <button class="chip-btn accent-red" onclick="resetTop150()">🗑️ Limpiar</button>
                         <button class="clear-cache-btn" style="border-color:var(--neon-magenta); color:var(--neon-magenta); padding: 8px 12px; font-weight:bold;" onclick="exportTop150Image()">📸 Exportar HD</button>
                         <button class="btn-toggle-top btn-save" onclick="saveTop150()">💾 Guardar Top 150</button>
                     </div>
@@ -611,7 +611,7 @@
             
             <div id="annualLoader" class="loader">
                 <div class="spinner"></div>
-                Sincronizando base de datos local para la ordenación anual...
+                Cargando tu ranking anual…
             </div>
 
             <div id="annualContent" style="display: none;">
@@ -628,10 +628,10 @@
 
                     <div class="panel-header" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <span>Tu Clasificación Anual</span>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="clear-cache-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1px solid var(--neon-green); color: var(--neon-green); background: rgba(0,255,102,0.02); border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,102,0.1)';" onmouseout="this.style.background='rgba(0,255,102,0.02)';" onclick="saveAnnualRankingToCloud()">☁️ Guardar Sheet</button>
-                            <button class="clear-cache-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); background: rgba(0,240,255,0.02); border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,240,255,0.1)';" onmouseout="this.style.background='rgba(0,240,255,0.02)';" onclick="openTierlistModal()">🎨 Exportar Tierlist</button>
-                            <button class="clear-cache-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1px solid rgba(255,0,51,0.3); color: var(--neon-red); background: rgba(255,0,51,0.02); border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,0,51,0.1)'; this.style.borderColor='var(--neon-red)';" onmouseout="this.style.background='rgba(255,0,51,0.02)'; this.style.borderColor='rgba(255,0,51,0.3)';" onclick="resetAnnualRanking()">↺ Reiniciar Año</button>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <button class="chip-btn accent-green chip-btn--sm" onclick="saveAnnualRankingToCloud()">☁️ Guardar Sheet</button>
+                            <button class="chip-btn accent-cyan chip-btn--sm" onclick="openTierlistModal()">🎨 Exportar Tierlist</button>
+                            <button class="chip-btn accent-red chip-btn--sm" onclick="resetAnnualRanking()">↺ Reiniciar Año</button>
                         </div>
                     </div>
 
@@ -645,7 +645,7 @@
             
             <div id="favoritesLoader" class="loader">
                 <div class="spinner"></div>
-                Conectando y descargando datos secuenciales directamente de tu hoja "FAVS"...
+                Cargando tus favoritos…
             </div>
 
             <div id="favoritesContent" style="display: none;">
@@ -653,11 +653,11 @@
                     <div class="panel-header">
                         <span>Bienvenido a tu colección de favoritos</span>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <button class="clear-cache-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); background: rgba(0,240,255,0.02); border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,240,255,0.1)';" onmouseout="this.style.background='rgba(0,240,255,0.02)';" onclick="initFavoritesDataFetch(true)">🔄 Actualizar Lista</button>
+                            <button class="chip-btn accent-cyan chip-btn--sm" onclick="initFavoritesDataFetch(true)">🔄 Actualizar Lista</button>
                             <span id="favCounterBadge" style="font-size:0.75rem; color:var(--metal-gold); letter-spacing:1px;">0 Series Únicas</span>
                         </div>
                     </div>
-                    <p style="color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-top: -5px; margin-bottom: 20px; line-height: 1.4;">
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: -5px; margin-bottom: 20px; line-height: 1.4;">
                         Este listado se lee directamente en tiempo real de la pestaña <strong>"FAVS"</strong> de tu hoja de cálculo, respetando su orden exacto. El <strong>TOP 10</strong> se ilumina en Oro, del <strong>11 al 20</strong> en Plata, y del <strong>21 en adelante</strong> en Bronce.
                         <br><br>
                         <strong style="color: var(--neon-cyan);">📌 Nota:</strong> Los animes que aparecen en esta pestaña reflejan agrupaciones globales de las series, es decir, integran todas sus temporadas de forma consolidada en un solo bloque.
@@ -670,7 +670,7 @@
 
         <div id="tierlistModalWrapper" class="tierlist-modal-overlay" style="display: none;">
             <div class="tierlist-outer-frame" id="tierlistCaptureTarget">
-                <div class="tierlist-canvas-header">COMPLETED ANIME IN THE YEAR</div>
+                <div class="tierlist-canvas-header">ANIMES COMPLETADOS DEL AÑO</div>
                 <div class="tierlist-white-board" id="tierlistRowsContainer"></div>
                 <div class="tierlist-canvas-footer">● ~ ●</div>
             </div>
@@ -713,7 +713,7 @@
             
             <div id="recomLoader" class="loader">
                 <div class="spinner" style="border-top-color: var(--neon-yellow);"></div>
-                <span id="recomStatusBar">Conectando con la API para el análisis de tu perfil...</span>
+                <span id="recomStatusBar">Buscando recomendaciones…</span>
             </div>
 
             <div id="recomContent" style="display: none;">
@@ -721,7 +721,7 @@
                     <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0; max-width: 600px;">
                         El sistema selecciona aleatoriamente obras que has valorado con nota alta y busca sugerencias afines en la base de datos global.
                     </p>
-                    <button class="btn-reload" style="border-color:var(--neon-yellow); color:var(--neon-yellow);" onmouseover="this.style.background='var(--neon-yellow)'; this.style.color='#000';" onmouseout="this.style.background='rgba(255, 170, 0, 0.1)'; this.style.color='var(--neon-yellow)';" onclick="initRecommendationsFetch()">🔄 Recargar Sugerencias</button>
+                    <button class="chip-btn accent-yellow" onclick="initRecommendationsFetch()">🔄 Recargar Sugerencias</button>
                 </div>
 
                 <div class="tm-section-title" id="recomAnimeTitle" style="color:var(--neon-cyan); border-bottom-color: rgba(0,240,255,0.2);">Analizando tus favoritos...</div>
@@ -747,13 +747,13 @@
                 <label style="text-align: center;">Buscar Anime en la API para empezar a calificar</label>
                 <div class="search-wrapper">
                     <input type="text" id="calificadorSearchInput" placeholder="Ej. Jujutsu Kaisen..." onkeypress="if(event.key === 'Enter') searchAnimeCalificador()">
-                    <button type="button" class="search-btn" onclick="searchAnimeCalificador()">🔍</button>
+                    <button type="button" class="search-btn" onclick="searchAnimeCalificador()" aria-label="Buscar anime">🔍</button>
                 </div>
             </div>
 
             <div id="calificadorLoader" class="loader" style="display: none;">
                 <div class="spinner"></div>
-                Procesando datos...
+                Buscando…
             </div>
 
             <div id="calificadorResultsGrid" class="recom-grid" style="margin-top: 20px;"></div>
@@ -773,7 +773,7 @@
                                 <div class="kpi-label">Nota Media Progresiva</div>
                             </div>
                             <div class="kpi-card" id="calificadorCandidateBadge" style="padding: 10px; border-color: var(--glass-border); transition: all 0.3s;">
-                                <div class="kpi-num" id="calificadorTensCount" style="color: rgba(255,255,255,0.3);">0</div>
+                                <div class="kpi-num" id="calificadorTensCount" style="color: rgba(255,255,255,0.6);">0</div>
                                 <div class="kpi-label">Hitos Excelentes (>8.5)</div>
                             </div>
                         </div>
@@ -812,7 +812,7 @@
             
             <div id="planificadorLoader" class="loader" style="display:none;">
                 <div class="spinner"></div>
-                Sincronizando estado de tu planificador con la nube...
+                Cargando tu planificador…
             </div>
 
             <div id="planificadorContent" style="display:none;">
@@ -820,15 +820,15 @@
                     <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
                         <div class="filter-group" style="min-width: 80px;">
                             <label>Año</label>
-                            <input type="number" id="planYearSelect" value="2026" style="font-size: 1.1rem; font-weight: bold; color: var(--neon-cyan);" onchange="loadSeasonPlanificador()">
+                            <input type="number" id="planYearSelect" inputmode="numeric" style="font-size: 1.1rem; font-weight: bold; color: var(--neon-cyan);" onchange="loadSeasonPlanificador()">
                         </div>
                         <div class="filter-group" style="min-width: 140px;">
                             <label>Temporada</label>
                             <select id="planSeasonSelect" style="font-size: 1.1rem; font-weight: bold;" onchange="loadSeasonPlanificador()">
-                                <option value="Winter">❄️ Winter (Invierno)</option>
-                                <option value="Spring">🌸 Spring (Primavera)</option>
-                                <option value="Summer" selected>☀️ Summer (Verano)</option>
-                                <option value="Fall">🍂 Fall (Otoño)</option>
+                                <option value="Winter">❄️ Invierno</option>
+                                <option value="Spring">🌸 Primavera</option>
+                                <option value="Summer">☀️ Verano</option>
+                                <option value="Fall">🍂 Otoño</option>
                             </select>
                         </div>
                         <div class="filter-group" style="min-width: 150px;">
@@ -851,7 +851,7 @@
                 </div>
 
                 <div id="planificadorGrid" class="season-grid">
-                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6); padding: 50px 0; font-size:1.1rem;">
                         Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada para cargar los animes.
                     </div>
                 </div>
@@ -890,7 +890,7 @@
                 
                 <div id="gachaLoader" class="loader" style="display: none; width: 100%;">
                     <div class="spinner" style="border-top-color: var(--neon-magenta);"></div>
-                    <span id="gachaStatusText" style="color: var(--neon-magenta); font-weight: bold;">Mezclando base de datos global...</span>
+                    <span id="gachaStatusText" style="color: var(--neon-magenta); font-weight: bold;">Tirando de la ruleta…</span>
                 </div>
 
                 <div id="gachaResultContainer" style="width: 100%;"></div>
@@ -901,6 +901,7 @@
 
     <script src="js/config.js"></script>
     <script src="js/core/utils.js"></script>
+    <script src="js/core/ui.js"></script>
     <script src="js/core/auth.js"></script>
     <script src="js/core/state.js"></script>
     <script src="js/services/anilist.js"></script>

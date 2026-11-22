@@ -20,6 +20,6 @@
                 }
             } catch (err) {
                 console.warn("Rotación forzada no soportada:", err);
-                alert("⚠️ Tu dispositivo o navegador actual (como iOS Safari) no permite forzar la rotación automáticamente. Por favor, gira el dispositivo físicamente.");
+                toast("Tu navegador (p. ej. Safari en iPhone) no permite girar la pantalla automáticamente. Gira el dispositivo a mano.", { type: 'info', duration: 6000 });
             }
         }

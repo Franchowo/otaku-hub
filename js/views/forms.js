@@ -9,7 +9,7 @@ let _selectedAnimeMedia = null, _selectedMangaMedia = null;
 if(animeInput) animeInput.addEventListener('input', () => { if (_selectedAnimeMedia && animeInput.value !== _selectedAnimeMedia.title) _selectedAnimeMedia = null; });
 
 function performSearch() {
-    const query = animeInput.value.trim(); if (query.length < 3) { alert("Escribe al menos 3 caracteres."); return; }
+    const query = animeInput.value.trim(); if (query.length < 3) { toast("Escribe al menos 3 letras para buscar.", { type: 'error' }); return; }
     searchBtn.innerText = "⏳"; searchBtn.disabled = true;
 
     const gql = `query($search: String) {
@@ -46,7 +46,7 @@ function performSearch() {
             const displayYear = anime.seasonYear || anime.startDate?.year || '????';
             const titleStr = anime.title.romaji;
 
-            item.innerHTML = `<img src="${esc(anime.coverImage?.large || FALLBACK_IMG)}" alt=""><div class="info"><span class="title">${esc(titleStr)}</span><span class="meta">${esc(displayYear)} | ${esc(displaySeasonFormatted)} | Studio: ${esc(studiosText)}</span></div>`;
+            item.innerHTML = `<img src="${esc(anime.coverImage?.large || FALLBACK_IMG)}" alt=""><div class="info"><span class="title">${esc(titleStr)}</span><span class="meta">${esc(displayYear)} · ${esc(seasonLabel(displaySeasonFormatted))} · ${esc(studiosText)}</span></div>`;
             item.addEventListener('click', function() {
                 animeInput.value = titleStr;
                 _selectedAnimeMedia = { id: anime.id, title: titleStr };
@@ -72,7 +72,7 @@ if(mangaInput) mangaInput.addEventListener('keypress', e => { if (e.key === 'Ent
 if(mangaInput) mangaInput.addEventListener('input', () => { if (_selectedMangaMedia && mangaInput.value !== _selectedMangaMedia.title) _selectedMangaMedia = null; });
 
 function performMangaSearch() {
-    const query = mangaInput.value.trim(); if (query.length < 3) { alert("Escribe por lo menos 3 letras."); return; }
+    const query = mangaInput.value.trim(); if (query.length < 3) { toast("Escribe al menos 3 letras para buscar.", { type: 'error' }); return; }
     mangaSearchBtn.innerText = "⏳"; mangaSearchBtn.disabled = true;
 
     const gql = `query($search: String) {
@@ -98,7 +98,7 @@ function performMangaSearch() {
             const titleStr = manga.title.romaji;
             const authorName = manga.staff?.nodes?.[0]?.name?.full || 'Desconocido';
             
-            item.innerHTML = `<img src="${esc(manga.coverImage?.large || FALLBACK_IMG)}" alt=""><div class="info"><span class="title">${esc(titleStr)}</span><span class="meta">${esc(startYear)} | Autor: ${esc(authorName)}</span></div>`;
+            item.innerHTML = `<img src="${esc(manga.coverImage?.large || FALLBACK_IMG)}" alt=""><div class="info"><span class="title">${esc(titleStr)}</span><span class="meta">${esc(startYear)} · ${esc(authorName)}</span></div>`;
             item.addEventListener('click', function() {
                 mangaInput.value = titleStr;
                 _selectedMangaMedia = { id: manga.id, title: titleStr };

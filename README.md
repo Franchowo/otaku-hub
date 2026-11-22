@@ -27,6 +27,7 @@ otaku-hub/
 │   ├── config.js              # URL del Web App y constantes globales
 │   ├── core/
 │   │   ├── utils.js           # esc()/jsArg() anti-inyección y estado de error de vistas
+│   │   ├── ui.js              # toast(), confirmDialog(), temporadas y fechas
 │   │   ├── auth.js            # Clave de acceso + pantalla de bloqueo
 │   │   ├── state.js           # Estado global compartido
 │   │   ├── router.js          # Cambio de vistas (switchView)
