@@ -112,7 +112,12 @@ function renderTimeMachine(year) {
     combined.sort((a, b) => b.score - a.score);
 
     if (combined.length === 0) {
-        galleryContainer.innerHTML = '<div class="tm-empty">No hay datos disponibles para este año.</div>';
+        galleryContainer.innerHTML = emptyStateHTML({
+            art: 'calendar',
+            title: 'Nada registrado en este año',
+            text: 'Elige otro año en el selector o registra lo que viste y leíste entonces.',
+            actions: [{ label: '＋ Registrar anime', onclick: "switchView('formView')", accent: 'magenta' }]
+        });
         return;
     }
 
@@ -558,8 +563,19 @@ function applyDetailFilters() {
     container.innerHTML = '';
 
     if (filtered.length === 0) {
-        container.innerHTML =
-            '<div style="grid-column:1/-1; text-align:center; padding:5px; color:rgba(var(--fg-rgb), 0.6); font-size:0.95rem;">No se han encontrado animes con los criterios seleccionados.</div>';
+        container.innerHTML = _masterData.length
+            ? emptyStateHTML({
+                  art: 'search',
+                  title: 'Ningún anime coincide con estos filtros',
+                  text: 'Prueba con otro año, temporada o nota, o quita los filtros para ver toda tu colección.',
+                  actions: [{ label: '✕ Quitar filtros', onclick: 'resetDetailFilters()' }]
+              })
+            : emptyStateHTML({
+                  art: 'collection',
+                  title: 'Tu colección de anime está vacía',
+                  text: 'Busca en AniList lo que has visto y ponle nota: aquí aparecerá con su portada.',
+                  actions: [{ label: '＋ Añade tu primer anime', onclick: "switchView('formView')", accent: 'magenta' }]
+              });
         return;
     }
 
@@ -589,6 +605,15 @@ function applyDetailFilters() {
         const imgEl = document.getElementById(cardId);
         if (imgEl) globalImageObserver.observe(imgEl);
     });
+}
+
+function resetMangaFilters() {
+    document.getElementById('mangaFilterText').value = '';
+    ['mangaFilterYear', 'mangaFilterAuthor'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = 'all';
+    });
+    applyMangaFilters();
 }
 
 function resetDetailFilters() {
@@ -636,8 +661,19 @@ function applyMangaFilters() {
     container.innerHTML = '';
 
     if (filtered.length === 0) {
-        container.innerHTML =
-            '<div style="width:100%; text-align:center; padding:40px; color:rgba(var(--fg-rgb), 0.6); font-size:0.95rem;">No se han encontrado tomos con estos filtros.</div>';
+        container.innerHTML = _mangaData.length
+            ? emptyStateHTML({
+                  art: 'search',
+                  title: 'Ningún manga coincide con estos filtros',
+                  text: 'Prueba con otro año o autor, o quita los filtros para ver toda tu estantería.',
+                  actions: [{ label: '✕ Quitar filtros', onclick: 'resetMangaFilters()' }]
+              })
+            : emptyStateHTML({
+                  art: 'manga',
+                  title: 'Tu estantería de manga está vacía',
+                  text: 'Registra los mangas que has leído y aparecerán aquí como lomos en una estantería.',
+                  actions: [{ label: '＋ Añade tu primer manga', onclick: "switchView('mangaFormView')", accent: 'magenta' }]
+              });
         return;
     }
 
@@ -835,8 +871,12 @@ function renderTop150List() {
     if (!container) return;
     container.innerHTML = '';
     if (_currentTop150.length === 0) {
-        container.innerHTML =
-            '<div style="grid-column:1/-1; text-align:center; padding:30px; color:rgba(var(--fg-rgb), 0.6); font-size:0.9rem;">El TOP 150 está vacío. Utiliza el buscador superior para añadir obras.</div>';
+        container.innerHTML = emptyStateHTML({
+            art: 'trophy',
+            title: 'Tu TOP 150 está vacío',
+            text: 'Busca arriba las obras que merecen estar en tu salón de la fama y ordénalas arrastrando.',
+            actions: [{ label: '🔍 Buscar obras', onclick: "focusField('top150SearchInput')" }]
+        });
         return;
     }
 

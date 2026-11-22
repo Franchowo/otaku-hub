@@ -96,8 +96,12 @@ function renderTopStudiosView() {
     }
 
     if (eligibleStudios.length === 0) {
-        container.innerHTML =
-            '<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(var(--fg-rgb), 0.6);">No hay estudios individuales con ≥ 5 animes.</div>';
+        container.innerHTML = emptyStateHTML({
+            art: 'studio',
+            title: 'Aún no hay estudios en el ranking',
+            text: 'Un estudio entra cuando tienes 5 o más de sus animes. ¡Sigue registrando!',
+            actions: [{ label: '＋ Registrar anime', onclick: "switchView('formView')", accent: 'magenta' }]
+        });
         document.getElementById('studiosLoader').style.display = 'none';
         document.getElementById('studiosContent').style.display = 'block';
         return;
@@ -457,8 +461,12 @@ function renderAnnualRankingList() {
         return;
     }
     if (_annualRanking.length === 0) {
-        listContainer.innerHTML =
-            '<div style="text-align:center; padding:30px; color:rgba(var(--fg-rgb), 0.6); font-size:0.9rem;">El ranking está vacío. Usa el buscador superior para indexar series.</div>';
+        listContainer.innerHTML = emptyStateHTML({
+            art: 'trophy',
+            title: 'Tu ranking de este año está vacío',
+            text: 'Añade lo que has visto este año con el buscador de arriba y ordénalo de mejor a peor.',
+            actions: [{ label: '🔍 Añadir un anime', onclick: "focusField('annualSearchInput')" }]
+        });
         return;
     }
 
@@ -492,8 +500,12 @@ function renderFavoritesView() {
     document.getElementById('favoritesLoader').style.display = 'none';
     document.getElementById('favoritesContent').style.display = 'block';
     if (_favoritesRanking.length === 0) {
-        container.innerHTML =
-            '<div style="text-align:center; padding:40px; color:rgba(var(--fg-rgb), 0.6); font-size:0.95rem;">Tu pestaña "FAVS" está vacía o el backend no está devolviendo datos de esta pestaña.</div>';
+        container.innerHTML = emptyStateHTML({
+            art: 'heart',
+            title: 'Aún no tienes favoritos',
+            text: 'Escribe tus series favoritas en la pestaña FAVS de tu Google Sheets y aparecerán aquí con portada grande.',
+            actions: [{ label: '↻ Volver a cargar', onclick: 'initFavoritesDataFetch(true)' }]
+        });
         return;
     }
 

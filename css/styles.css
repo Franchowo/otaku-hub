@@ -4790,3 +4790,195 @@ textarea {
         box-shadow: 0 10px 30px rgba(20, 22, 40, 0.1);
     }
 }
+
+/* =====================================================================
+   DETALLES VISUALES: color de portada, transiciones y pantallas vacías
+   ===================================================================== */
+
+/* Ficha teñida con el color dominante de la portada (AniList). El tinte es
+   un fondo suave detrás del texto: los colores del texto no cambian. */
+.work-sheet {
+    --work-tint: 0, 240, 255;
+    isolation: isolate;
+    transition: border-color 0.4s ease;
+}
+.work-sheet::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 260px;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(var(--work-tint), 0.24), rgba(var(--work-tint), 0) 100%);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+}
+.work-sheet--tinted {
+    border-color: rgba(var(--work-tint), 0.55);
+}
+.work-sheet--tinted::before {
+    opacity: 1;
+}
+.work-sheet--tinted .work-sheet-cover {
+    box-shadow:
+        0 10px 28px rgba(var(--work-tint), 0.45),
+        0 0 0 1px rgba(var(--work-tint), 0.35);
+}
+.work-sheet--tinted .work-sheet-stats div {
+    background: rgba(var(--work-tint), 0.1);
+    box-shadow: inset 0 0 0 1px rgba(var(--work-tint), 0.18);
+}
+.work-sheet-cover {
+    transition: box-shadow 0.45s ease;
+}
+:root[data-theme='light'] .work-sheet::before {
+    background: linear-gradient(180deg, rgba(var(--work-tint), 0.18), rgba(var(--work-tint), 0) 100%);
+}
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) .work-sheet::before {
+        background: linear-gradient(180deg, rgba(var(--work-tint), 0.18), rgba(var(--work-tint), 0) 100%);
+    }
+}
+
+/* La ficha entra deslizándose desde abajo en móvil. */
+.sheet-overlay {
+    animation: overlayIn 0.22s ease;
+}
+@keyframes overlayIn {
+    from {
+        background: rgba(var(--shade-rgb), 0);
+    }
+}
+@media (max-width: 640px) {
+    .work-sheet {
+        animation: sheetUp 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+}
+@keyframes sheetUp {
+    from {
+        transform: translateY(40%);
+        opacity: 0.4;
+    }
+}
+.sheet-overlay--closing {
+    pointer-events: none;
+    animation: none;
+}
+
+/* Portada "volando" entre la tarjeta y la ficha. */
+.fly-ghost {
+    position: fixed;
+    z-index: 100001;
+    object-fit: cover;
+    transform-origin: top left;
+    pointer-events: none;
+    will-change: transform;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+/* Cambio de pantalla: entra desde el lado hacia el que navegas. */
+.container[data-nav-dir='forward'] .view.active {
+    animation: viewInForward 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.container[data-nav-dir='back'] .view.active {
+    animation: viewInBack 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes viewInForward {
+    from {
+        opacity: 0;
+        transform: translateX(28px);
+    }
+}
+@keyframes viewInBack {
+    from {
+        opacity: 0;
+        transform: translateX(-28px);
+    }
+}
+
+/* Pantallas vacías */
+.empty-state {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-2);
+    padding: var(--space-6, 40px) var(--space-4);
+    animation: fadeIn 0.35s ease;
+}
+.empty-state--compact {
+    padding: var(--space-4);
+}
+.empty-art {
+    width: 150px;
+    height: auto;
+    margin-bottom: var(--space-2);
+    overflow: visible;
+}
+.empty-state--compact .empty-art {
+    width: 96px;
+}
+.empty-art .es-bg {
+    fill: rgba(var(--fg-rgb), 0.04);
+    stroke: rgba(var(--fg-rgb), 0.08);
+    stroke-dasharray: 3 5;
+}
+.empty-art .es-line,
+.empty-art .es-dot {
+    fill: none;
+    stroke: var(--neon-cyan);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.empty-art .es-thick {
+    stroke-width: 6;
+}
+.empty-art .es-dot {
+    stroke: rgba(var(--fg-rgb), 0.35);
+}
+.empty-art .es-fill {
+    fill: var(--surface-1);
+}
+.empty-art .es-accent {
+    fill: var(--neon-magenta);
+    stroke: var(--neon-magenta);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+.empty-art .es-accent-fill {
+    fill: var(--neon-magenta);
+}
+.empty-art .es-accent:not([d*='z']) {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+.empty-state .empty-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-strong);
+}
+.empty-state .empty-text {
+    margin: 0;
+    max-width: 42ch;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+.empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+@media (prefers-reduced-motion: reduce) {
+    .fly-ghost {
+        display: none;
+    }
+}

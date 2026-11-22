@@ -31,13 +31,55 @@ function closeWorkSheet() {
     const overlay = document.getElementById('workSheetOverlay');
     if (!overlay) return;
     if (overlay._cleanup) overlay._cleanup();
+    animateWorkSheetClose(overlay);
     overlay.remove();
-    if (overlay._previousFocus && overlay._previousFocus.focus) overlay._previousFocus.focus();
+    if (overlay._previousFocus && overlay._previousFocus.focus) overlay._previousFocus.focus({ preventScroll: true });
+}
+
+// Al cerrar: la ficha se desvanece y la portada vuelve volando a su tarjeta.
+// La ficha real se quita al momento (el resto de la app no espera); lo que
+// se anima es una copia sin ids ni foco.
+function animateWorkSheetClose(overlay) {
+    const coverImg = overlay.querySelector('#workSheetCover');
+    // Solo la ficha de obra (el Wrapped y la página de estudio usan la misma ventana).
+    if (!coverImg || prefersReducedMotion() || !document.body.animate) return;
+    const from = coverImg && coverImg.getBoundingClientRect();
+    const origin = overlay._originImg && overlay._originImg.isConnected ? overlay._originImg : null;
+    const ghost = overlay.cloneNode(true);
+    ghost.removeAttribute('id');
+    ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.setAttribute('inert', '');
+    ghost.classList.add('sheet-overlay--closing');
+    document.body.appendChild(ghost);
+    const ghostCover = ghost.querySelector('.work-sheet-cover img');
+    if (origin && ghostCover) ghostCover.style.opacity = '0';
+    ghost
+        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-in' })
+        .finished.catch(() => {})
+        .then(() => ghost.remove());
+    if (origin && coverImg && !coverImg.src.startsWith('data:')) {
+        origin.style.visibility = 'hidden';
+        const flight = flyElement(coverImg.src, from, origin.getBoundingClientRect(), { duration: 260, radiusFrom: 12, radiusTo: 6 });
+        // flyElement va de "from" a "to": aquí el destino es la tarjeta de origen.
+        if (flight) flight.done.then(() => (origin.style.visibility = ''));
+        else origin.style.visibility = '';
+    }
 }
 
 function cachedCoverFor(item, type) {
     if (item.anilistId && localStorage.getItem(`cover_id_${item.anilistId}`)) return localStorage.getItem(`cover_id_${item.anilistId}`);
     return null;
+}
+
+// La imagen de la tarjeta que se ha tocado (para la animación y para
+// mostrar ya su portada en la ficha mientras llegan los datos de AniList).
+function workSheetOriginImg() {
+    const ev = window.event;
+    const el = ev && ev.currentTarget instanceof Element ? ev.currentTarget : document.activeElement;
+    if (!el || el === document.body) return null;
+    const img = el.tagName === 'IMG' ? el : el.querySelector('img');
+    return img && img.complete && img.naturalWidth && /^https?:/.test(img.currentSrc || img.src) ? img : null;
 }
 
 function openWorkSheet(type, key) {
@@ -46,13 +88,16 @@ function openWorkSheet(type, key) {
         toast('No se encontró la obra (recarga la lista).', { type: 'error' });
         return;
     }
+    const originImg = workSheetOriginImg();
+    const previousFocus = document.activeElement;
     closeWorkSheet();
 
     const title = type === 'manga' ? item.manga : item.anime;
     const overlay = document.createElement('div');
     overlay.id = 'workSheetOverlay';
     overlay.className = 'sheet-overlay';
-    overlay._previousFocus = document.activeElement;
+    overlay._previousFocus = previousFocus;
+    overlay._originImg = originImg;
     overlay.innerHTML = `
         <div class="work-sheet" role="dialog" aria-modal="true" aria-labelledby="workSheetTitle">
             <button type="button" class="icon-btn work-sheet-close" aria-label="Cerrar ficha" onclick="closeWorkSheet()">✕</button>
@@ -66,12 +111,55 @@ function openWorkSheet(type, key) {
         if (e.key === 'Escape' && !document.querySelector('.dialog-overlay')) closeWorkSheet();
     });
 
-    renderWorkSheetView(type, item);
-    overlay.querySelector('.work-sheet-close').focus();
+    renderWorkSheetView(type, item, originImg);
+    overlay.querySelector('.work-sheet-close').focus({ preventScroll: true });
+    applyWorkSheetTint(item.anilistId ? cachedCoverColor(item.anilistId) : null);
+    animateWorkSheetOpen(overlay, originImg);
     loadWorkSheetAnilistInfo(type, item, title);
 }
 
-function renderWorkSheetView(type, item) {
+// Al abrir: la portada de la tarjeta vuela hasta su sitio en la ficha.
+function animateWorkSheetOpen(overlay, originImg) {
+    const target = overlay.querySelector('#workSheetCover');
+    if (!originImg || !target) return;
+    const flight = flyElement(originImg.currentSrc || originImg.src, originImg.getBoundingClientRect(), target.getBoundingClientRect(), {
+        duration: 340,
+        radiusFrom: 6,
+        radiusTo: 12
+    });
+    if (!flight) return;
+    target.style.opacity = '0';
+    flight.done.then(() => (target.style.opacity = ''));
+}
+
+// --- Color de la portada ---------------------------------------------
+// AniList da el color dominante de cada portada (coverImage.color). La
+// ficha lo usa de fondo suave, borde y brillo de la portada. Se guarda por
+// obra para que al volver a abrirla salga ya con su color.
+function cachedCoverColor(anilistId) {
+    try {
+        return localStorage.getItem(`cover_color_${anilistId}`);
+    } catch (e) {
+        return null;
+    }
+}
+
+function hexToRgbTriplet(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function applyWorkSheetTint(hex) {
+    const sheet = document.querySelector('#workSheetOverlay .work-sheet');
+    const rgb = hexToRgbTriplet(hex);
+    if (!sheet || !rgb) return;
+    sheet.style.setProperty('--work-tint', rgb.join(', '));
+    sheet.classList.add('work-sheet--tinted');
+}
+
+function renderWorkSheetView(type, item, originImg = document.getElementById('workSheetOverlay')?._originImg || null) {
     const body = document.getElementById('workSheetBody');
     const title = type === 'manga' ? item.manga : item.anime;
     const score = parseFloat(item.score) || 0;
@@ -79,7 +167,7 @@ function renderWorkSheetView(type, item) {
         type === 'manga'
             ? `${esc(item.author || 'Autor desconocido')} · ${esc(item.year || '')}`
             : `${esc(seasonLabel(item.season))} ${esc(item.year || '')} · ${esc(item.studio || 'Estudio desconocido')}`;
-    const cover = cachedCoverFor(item, type);
+    const cover = cachedCoverFor(item, type) || (originImg ? originImg.currentSrc || originImg.src : null);
 
     body.innerHTML = `
         <div class="work-sheet-head">
@@ -115,7 +203,7 @@ async function loadWorkSheetAnilistInfo(type, item, title) {
     const query = `query($id: Int, $search: String, $type: MediaType) {
         Media(id: $id, search: $search, type: $type) {
             id siteUrl format status episodes chapters volumes averageScore genres
-            coverImage { large } description(asHtml: false)
+            coverImage { large color } description(asHtml: false)
             title { romaji english }
         }
     }`;
@@ -131,6 +219,13 @@ async function loadWorkSheetAnilistInfo(type, item, title) {
             return;
         }
 
+        if (media.coverImage?.color) {
+            applyWorkSheetTint(media.coverImage.color);
+            if (item.anilistId)
+                try {
+                    localStorage.setItem(`cover_color_${item.anilistId}`, media.coverImage.color);
+                } catch (e) {}
+        }
         const img = document.getElementById('workSheetCover');
         if (img && media.coverImage?.large && (!img.src || img.src.startsWith('data:'))) img.src = media.coverImage.large;
 

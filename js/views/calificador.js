@@ -44,8 +44,12 @@ async function searchAnimeCalificador() {
 
         const medias = data?.data?.Page?.media || [];
         if (medias.length === 0) {
-            resultsGrid.innerHTML =
-                '<div style="grid-column:1/-1; text-align:center; color:rgba(var(--fg-rgb), 0.6);">No se encontraron resultados.</div>';
+            resultsGrid.innerHTML = emptyStateHTML({
+                art: 'search',
+                title: 'Sin resultados',
+                text: 'Prueba con otro título o con su nombre en japonés.',
+                compact: true
+            });
             return;
         }
 

@@ -28,6 +28,7 @@ otaku-hub/
 │   ├── core/
 │   │   ├── utils.js           # esc()/jsArg() anti-inyección y estado de error de vistas
 │   │   ├── ui.js              # toast(), confirmDialog(), temporadas y fechas
+│   │   ├── visual.js          # Pantallas vacías y animación de portadas
 │   │   ├── auth.js            # Clave de acceso + pantalla de bloqueo
 │   │   ├── state.js           # Estado global compartido
 │   │   ├── router.js          # Rutas (#/vista), navegación agrupada y hub

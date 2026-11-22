@@ -158,7 +158,7 @@ const META = {
             );
             await page.evaluate(() => openStudioSheet('Madhouse'));
             await page.waitForSelector('#studioSheetTitle');
-            const st = (await page.textContent('.work-sheet')).replace(/\s+/g, ' ');
+            const st = (await page.textContent('#workSheetOverlay .work-sheet')).replace(/\s+/g, ' ');
             check(
                 'Página de estudio: Madhouse, 4 animes, mejor y peor',
                 st.includes('Madhouse') &&
