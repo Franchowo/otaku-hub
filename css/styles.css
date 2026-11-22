@@ -1642,3 +1642,9 @@ button, input, select, textarea { font-family: inherit; }
 .achv-meter { display: block; height: 6px; border-radius: 3px; background: var(--viz-seq-0); overflow: hidden; margin-top: 4px; }
 .achv-fill { display: block; height: 100%; background: var(--viz-seq-3); border-radius: 3px; }
 .achv-progress { font-size: 0.72rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+/* Selector de idioma del Wrapped */
+.wrapped-lang { display: inline-flex; padding: 3px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-border); }
+.wrapped-lang button { border: none; cursor: pointer; padding: 6px 14px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.85rem; color: var(--text-muted); background: transparent; }
+.wrapped-lang button[aria-pressed="true"] { color: #001014; background: var(--color-primary); }
+.wrapped-preview img { max-height: calc(100vh - 170px); max-width: min(100%, calc((100vh - 170px) * 9 / 16)); }
+@supports (height: 100dvh) { .wrapped-preview img { max-height: calc(100dvh - 170px); max-width: min(100%, calc((100dvh - 170px) * 9 / 16)); } }

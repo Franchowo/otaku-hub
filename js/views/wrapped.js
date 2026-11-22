@@ -93,7 +93,30 @@ function drawCover(ctx, img, x, y, w, h, r) {
     ctx.restore();
 }
 
-function drawWrapped(data) {
+// Textos de la imagen en cada idioma (la interfaz de la app sigue en español).
+const WRAPPED_TEXT = {
+    es: {
+        subtitle: 'MI AÑO EN ANIME Y MANGA', anime: n => n === 1 ? 'anime' : 'animes', manga: n => n === 1 ? 'manga' : 'mangas',
+        avg: 'nota media', top: n => `MI TOP ${n}`, genre: 'Género del año', studio: 'Estudio del año',
+        take: d => `Mi opinión más ${d > 0 ? 'generosa' : 'dura'}`,
+        genreName: g => (typeof GENRE_LABELS !== 'undefined' && GENRE_LABELS[g]) || g
+    },
+    en: {
+        subtitle: 'MY YEAR IN ANIME & MANGA', anime: () => 'anime', manga: () => 'manga',
+        avg: 'avg. score', top: n => `MY TOP ${n}`, genre: 'Genre of the year', studio: 'Studio of the year',
+        take: d => d > 0 ? 'My most generous take' : 'My harshest take',
+        genreName: g => g   // AniList da los géneros en inglés
+    }
+};
+
+// data: { year, animes, mangas, avg, top: [{ title, score, img }], genre, studio, hot: { title, d } }
+function drawWrapped(data, lang = 'es') {
+    const T = WRAPPED_TEXT[lang] || WRAPPED_TEXT.es;
+    const facts = [];
+    if (data.genre) facts.push({ label: T.genre, value: T.genreName(data.genre), half: true });
+    if (data.studio) facts.push({ label: T.studio, value: data.studio, half: true });
+    if (data.hot) facts.push({ label: T.take(data.hot.d), value: data.hot.title,
+        extra: `${signed(data.hot.d)} vs AniList`, extraColor: data.hot.d > 0 ? '#86b6ef' : '#f19a9a' });
     const canvas = document.createElement('canvas');
     canvas.width = WRAPPED_W; canvas.height = WRAPPED_H;
     const ctx = canvas.getContext('2d');
@@ -115,12 +138,12 @@ function drawWrapped(data) {
     ctx.fillText(String(data.year), P - 8, y);
     y += 70;
     ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = font(600, 38);
-    ctx.fillText('MI AÑO EN ANIME Y MANGA', P, y);
+    ctx.fillText(T.subtitle, P, y);
 
     // Cifras
     y += 50;
     const boxW = (inner - 2 * 28) / 3, boxH = 180;
-    [[data.animes, data.animes === 1 ? 'anime' : 'animes'], [data.mangas, data.mangas === 1 ? 'manga' : 'mangas'], [data.avg, 'nota media']].forEach(([value, label], i) => {
+    [[data.animes, T.anime(data.animes)], [data.mangas, T.manga(data.mangas)], [data.avg, T.avg]].forEach(([value, label], i) => {
         const x = P + i * (boxW + 28);
         ctx.fillStyle = 'rgba(255,255,255,0.08)'; roundRectPath(ctx, x, y, boxW, boxH, 28); ctx.fill();
         ctx.fillStyle = '#ffffff'; ctx.font = font(900, 92); ctx.fillText(fitText(ctx, value, boxW - 60), x + 30, y + 108);
@@ -131,13 +154,13 @@ function drawWrapped(data) {
     // Datos del año, anclados abajo. Género y estudio comparten fila; la
     // opinión ocupa todo el ancho (su diferencia de nota siempre se ve).
     const factH = 118, factGap = 18;
-    const half = data.facts.filter(f => f.half), full = data.facts.filter(f => !f.half);
+    const half = facts.filter(f => f.half), full = facts.filter(f => !f.half);
     const factRows = (half.length ? 1 : 0) + full.length;
     const factsTop = WRAPPED_H - P - factRows * factH - Math.max(0, factRows - 1) * factGap;
 
     // Top: la altura de fila sale del espacio libre, así nunca pisa los datos de abajo.
     ctx.fillStyle = '#ff4fa3'; ctx.font = font(800, 36);
-    ctx.fillText(`MI TOP ${data.top.length}`, P, y);
+    ctx.fillText(T.top(data.top.length), P, y);
     y += 28;
     const gap = 14, n = Math.max(1, data.top.length);
     const rowH = Math.max(84, Math.min(140, Math.floor((factsTop - 48 - y - gap * (n - 1)) / n)));
@@ -206,7 +229,6 @@ async function createWrapped(yearValue) {
         const topGenre = Object.entries(genres).sort((a, b) => b[1] - a[1])[0];
         const diffs = animes.filter(a => meta[a.anilistId] && meta[a.anilistId].averageScore).map(a => ({ a, d: parseFloat(a.score) - meta[a.anilistId].averageScore }));
         const hot = diffs.sort((x, y) => Math.abs(y.d) - Math.abs(x.d))[0];
-        const genreName = g => (typeof GENRE_LABELS !== 'undefined' && GENRE_LABELS[g]) || g;
 
         btn.textContent = 'Descargando portadas… ⏳';
         const urls = await wrappedCoverUrls(top);
@@ -215,20 +237,16 @@ async function createWrapped(yearValue) {
             try { await Promise.all([document.fonts.load(`900 100px Inter`), document.fonts.load(`700 40px Inter`)]); } catch (e) { /* fuente del sistema */ }
         }
 
-        const facts = [];
-        if (topGenre) facts.push({ label: 'Género del año', value: genreName(topGenre[0]), half: true });
-        if (topStudio) facts.push({ label: 'Estudio del año', value: topStudio[0], half: true });
-        if (hot) facts.push({ label: `Mi opinión más ${hot.d > 0 ? 'generosa' : 'dura'}`, value: hot.a.anime,
-            extra: `${signed(hot.d)} vs AniList`, extraColor: hot.d > 0 ? '#86b6ef' : '#f19a9a' });
-
-        const canvas = drawWrapped({
+        // Datos neutros: el texto de cada idioma se pone al dibujar (cambiar de idioma no vuelve a descargar nada).
+        const data = {
             year, animes: animes.length, mangas: mangas.length, avg: avg !== null ? fmt1(avg) : '–',
-            top: top.map((a, i) => ({ title: a.anime, score: a.score, img: images[i] })), facts
-        });
-        window._lastWrappedLayout = JSON.parse(canvas.dataset.layout);
+            top: top.map((a, i) => ({ title: a.anime, score: a.score, img: images[i] })),
+            genre: topGenre ? topGenre[0] : null, studio: topStudio ? topStudio[0] : null,
+            hot: hot ? { title: hot.a.anime, d: hot.d } : null
+        };
         const missing = images.filter(img => !img).length;
         if (missing && top.length) toast(`${missing} de ${top.length} portadas no se pudieron descargar (se muestra un hueco).`, { type: 'info' });
-        showWrappedPreview(canvas, year);
+        showWrappedPreview(data);
     } catch (err) {
         toast(`No se pudo crear el Wrapped: ${err.message}`, { type: 'error' });
     } finally {
@@ -236,30 +254,60 @@ async function createWrapped(yearValue) {
     }
 }
 
-function showWrappedPreview(canvas, year) {
+const WRAPPED_LANG_KEY = 'wrapped_lang';
+
+function showWrappedPreview(data) {
     closeWorkSheet();
-    canvas.toBlob(blob => {
-        const url = URL.createObjectURL(blob);
-        const file = new File([blob], `OtakuHub_Wrapped_${year}.png`, { type: 'image/png' });
-        const canShare = navigator.canShare && navigator.canShare({ files: [file] });
-        const overlay = document.createElement('div');
-        overlay.className = 'wrapped-overlay';
-        overlay.id = 'workSheetOverlay';
-        overlay.innerHTML = `
-            <div class="wrapped-preview" role="dialog" aria-modal="true" aria-label="Tu Wrapped ${year}">
-                <img src="${url}" alt="Tu Wrapped de ${year}">
-                <div class="wrapped-actions">
-                    <a class="chip-btn accent-cyan" href="${url}" download="OtakuHub_Wrapped_${year}.png">💾 Descargar</a>
-                    ${canShare ? '<button type="button" class="chip-btn accent-magenta" id="wrappedShare">📤 Compartir</button>' : ''}
-                    <button type="button" class="chip-btn accent-red" onclick="closeWorkSheet()">✕ Cerrar</button>
-                </div>
-            </div>`;
-        overlay._cleanup = () => URL.revokeObjectURL(url);
-        document.body.appendChild(overlay);
-        overlay.addEventListener('click', e => { if (e.target === overlay) closeWorkSheet(); });
-        overlay.addEventListener('keydown', e => { if (e.key === 'Escape') closeWorkSheet(); });
-        const share = document.getElementById('wrappedShare');
-        if (share) share.onclick = () => navigator.share({ files: [file], title: `Mi ${year} en anime` }).catch(() => {});
-        overlay.querySelector('a').focus();
-    }, 'image/png');
+    const year = data.year;
+    const overlay = document.createElement('div');
+    overlay.className = 'wrapped-overlay';
+    overlay.id = 'workSheetOverlay';
+    overlay.innerHTML = `
+        <div class="wrapped-preview" role="dialog" aria-modal="true" aria-label="Tu Wrapped ${year}">
+            <div class="wrapped-lang" role="group" aria-label="Idioma de la imagen">
+                <button type="button" data-lang="es">Español</button>
+                <button type="button" data-lang="en">English</button>
+            </div>
+            <img alt="Tu Wrapped de ${year}">
+            <div class="wrapped-actions">
+                <a class="chip-btn accent-cyan" id="wrappedDownload">💾 Descargar</a>
+                <button type="button" class="chip-btn accent-magenta" id="wrappedShare" hidden>📤 Compartir</button>
+                <button type="button" class="chip-btn accent-red" onclick="closeWorkSheet()">✕ Cerrar</button>
+            </div>
+        </div>`;
+    let url = null, file = null;
+    // Escape se escucha en todo el documento (el foco puede no estar dentro de la ventana).
+    const onKey = e => { if (e.key === 'Escape') closeWorkSheet(); };
+    document.addEventListener('keydown', onKey);
+    overlay._cleanup = () => { if (url) URL.revokeObjectURL(url); document.removeEventListener('keydown', onKey); };
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeWorkSheet(); });
+
+    const share = overlay.querySelector('#wrappedShare');
+    share.onclick = () => file && navigator.share({ files: [file], title: `Wrapped ${year}` }).catch(() => {});
+
+    const render = lang => {
+        overlay.querySelectorAll('.wrapped-lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+        try { localStorage.setItem(WRAPPED_LANG_KEY, lang); } catch (e) {}
+        const canvas = drawWrapped(data, lang);
+        window._lastWrappedLayout = JSON.parse(canvas.dataset.layout);
+        canvas.toBlob(blob => {
+            if (!document.body.contains(overlay)) return;
+            if (url) URL.revokeObjectURL(url);
+            const name = `OtakuHub_Wrapped_${year}${lang === 'en' ? '_en' : ''}.png`;
+            url = URL.createObjectURL(blob);
+            file = new File([blob], name, { type: 'image/png' });
+            overlay.querySelector('img').src = url;
+            overlay.querySelector('img').alt = lang === 'en' ? `Your ${year} Wrapped` : `Tu Wrapped de ${year}`;
+            const dl = overlay.querySelector('#wrappedDownload');
+            dl.href = url; dl.download = name;
+            share.hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
+            overlay.dataset.lang = lang;
+        }, 'image/png');
+    };
+    overlay.querySelectorAll('.wrapped-lang button').forEach(b => b.addEventListener('click', () => render(b.dataset.lang)));
+    let saved = null;
+    try { saved = localStorage.getItem(WRAPPED_LANG_KEY); } catch (e) { /* almacenamiento bloqueado */ }
+    render(saved === 'en' ? 'en' : 'es');   // el último idioma que usaste
+    overlay.querySelector('.wrapped-lang button[aria-pressed="true"]').focus();
 }
