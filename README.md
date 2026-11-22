@@ -33,6 +33,7 @@ otaku-hub/
 │   │   ├── router.js          # Rutas (#/vista), navegación agrupada y hub
 │   │   ├── search.js          # Búsqueda global (🔍 / Ctrl+K)
 │   │   ├── sortable.js        # Reordenar listas con dedo, ratón o teclado
+│   │   ├── charts.js          # Gráficos ligeros (tooltip, tabla equivalente)
 │   │   ├── pwa.js             # Registro del Service Worker
 │   │   └── fullscreen.js      # Rotación / pantalla completa
 │   ├── services/
@@ -41,6 +42,7 @@ otaku-hub/
 │   │   ├── local-store.js     # IndexedDB: copia de las hojas y cola sin conexión
 │   │   ├── sheets-api.js      # sheetsRead()/sheetsWrite(): acceso único a Sheets
 │   │   ├── anilist-link.js    # Vincular obras registradas con su ID de AniList
+│   │   ├── anime-meta.js      # Géneros y media mundial de tus obras (caché 7 días)
 │   │   ├── sheets-fetchers.js # Lecturas maestras desde Sheets
 │   │   └── cloud-sync.js      # TOP 150, ranking anual, calificador (Sheets)
 │   └── views/                 # Lógica de cada pestaña
@@ -52,7 +54,9 @@ otaku-hub/
 │       ├── planificador.js
 │       ├── ranker.js          # Opening Ranker
 │       ├── gacha.js
-│       └── work-sheet.js      # Ficha de obra: datos de AniList, editar y borrar
+│       ├── work-sheet.js      # Ficha de obra: datos de AniList, editar y borrar
+│       ├── insights.js        # Tu perfil: tú vs el mundo, géneros, evolución
+│       └── wrapped.js         # Wrapped anual en imagen
 ├── apps-script/
 │   ├── Auth.gs                # Guardia de autenticación para Apps Script
 │   └── Code.gs                # Lecturas/escrituras en Sheets (backend v2)

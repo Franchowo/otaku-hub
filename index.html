@@ -367,6 +367,15 @@
             </div>
         </div>
 
+        <div id="insightsView" class="view">
+            <h2>Tu perfil</h2>
+            <div id="insightsLoader" class="loader" role="status" aria-live="polite">
+                <span class="loader-text" id="insightsLoaderText">Analizando tu colección…</span>
+                <div class="skeleton-grid skeleton-grid--kpi" aria-hidden="true"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
+            </div>
+            <div id="insightsContent" hidden></div>
+        </div>
+
         <div id="timeMachineView" class="view">
             <h2>⏳ Cápsula Tiempo</h2>
             
@@ -377,7 +386,8 @@
 
             <div id="timeMachineContent" style="display: none; width: 100%;">
                 <div class="tm-year-container">
-                    <select id="tmYearSelect" class="tm-year-select" onchange="renderTimeMachine(this.value)"></select>
+                    <select id="tmYearSelect" class="tm-year-select" aria-label="Año" onchange="renderTimeMachine(this.value)"></select>
+                    <button type="button" class="chip-btn accent-magenta" id="btnWrapped" hidden onclick="createWrapped(document.getElementById('tmYearSelect').value)">🎁 Crear mi Wrapped</button>
                 </div>
 
                 <div class="stats-grid-extended" style="margin-bottom: 30px;">
@@ -786,6 +796,7 @@
     <script src="js/core/ui.js"></script>
     <script src="js/core/search.js"></script>
     <script src="js/core/sortable.js"></script>
+    <script src="js/core/charts.js"></script>
     <script src="js/core/auth.js"></script>
     <script src="js/core/state.js"></script>
     <script src="js/services/anilist.js"></script>
@@ -793,6 +804,7 @@
     <script src="js/services/local-store.js"></script>
     <script src="js/services/sheets-api.js"></script>
     <script src="js/services/anilist-link.js"></script>
+    <script src="js/services/anime-meta.js"></script>
     <script src="js/services/cloud-sync.js"></script>
     <script src="js/core/router.js"></script>
     <script src="js/services/sheets-fetchers.js"></script>
@@ -805,6 +817,8 @@
     <script src="js/views/ranker.js"></script>
     <script src="js/views/gacha.js"></script>
     <script src="js/views/work-sheet.js"></script>
+    <script src="js/views/insights.js"></script>
+    <script src="js/views/wrapped.js"></script>
     <script src="js/core/pwa.js"></script>
     <script src="js/core/fullscreen.js"></script>
 </body>

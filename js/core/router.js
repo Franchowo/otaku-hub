@@ -18,6 +18,7 @@ const VIEW_META = {
     mangaLibraryView:    { slug: 'manga',           label: 'Manga',           icon: '📚', desc: 'Tu estantería de manga.' },
     favoritesView:       { slug: 'favoritos',       label: 'Favoritos',       icon: '👑', desc: 'Tu hoja FAVS con portadas grandes.' },
     statsView:           { slug: 'estadisticas',    label: 'Estadísticas',    icon: '📊', desc: 'Notas, temporadas, estudios y tu perfil de crítico.' },
+    insightsView:        { slug: 'perfil',          label: 'Tu perfil',       icon: '🧠', desc: 'Tu nota frente al mundo, tus géneros y tu evolución.' },
     timeMachineView:     { slug: 'capsula',         label: 'Cápsula',         icon: '⏳', desc: 'Lo mejor de cada año, en anime y manga.' },
     studiosView:         { slug: 'estudios',        label: 'Estudios',        icon: '🏢', desc: 'Ranking de estudios con 5 o más animes.' },
     top150View:          { slug: 'top-150',         label: 'TOP 150',         icon: '💯', desc: 'Tu salón de la fama, con subidas y bajadas.' },
@@ -32,7 +33,7 @@ const VIEW_META = {
 const NAV_GROUPS = [
     { id: 'inicio',    label: 'Inicio',    icon: '🏠', views: ['hubView'] },
     { id: 'coleccion', label: 'Colección', icon: '📚', views: ['detailView', 'mangaLibraryView', 'favoritesView'] },
-    { id: 'analisis',  label: 'Análisis',  icon: '📊', views: ['statsView', 'timeMachineView', 'studiosView'] },
+    { id: 'analisis',  label: 'Análisis',  icon: '📊', views: ['statsView', 'insightsView', 'timeMachineView', 'studiosView'] },
     { id: 'registrar', label: 'Registrar', icon: '＋', views: ['formView', 'mangaFormView'], primary: true },
     { id: 'rankings',  label: 'Rankings',  icon: '🏆', views: ['top150View', 'annualRankingView', 'rankerView'] },
     { id: 'descubrir', label: 'Descubrir', icon: '🧭', views: ['planificadorView', 'recommendationsView', 'gachaView', 'calificadorView'] },
@@ -152,6 +153,8 @@ function showView(viewId, params = {}) {
         initCalificadorFetch();
     } else if(viewId === 'planificadorView') {
         initMasterDataFetch(() => initPlanificadorFetch());
+    } else if(viewId === 'insightsView') {
+        initMasterDataFetch(() => renderInsightsView());
     } else if(viewId === 'rankerView') {
         initMasterDataFetch(() => fillRankerYears());
     } else if(viewId === 'gachaView') {
