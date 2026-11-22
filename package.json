@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "sw:version": "node scripts/sw-version.js",
     "serve": "python3 -m http.server 8000"
   },
   "engines": {

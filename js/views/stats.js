@@ -70,14 +70,14 @@ function renderTimeMachine(year) {
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px; overflow:hidden;">
                     <span style="color:var(--neon-cyan); font-weight:bold; font-size:0.75rem;">MEJOR ANIME DEL AÑO</span>
-                    <span style="font-weight:900; font-size:1.1rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(bestAnime.anime)}</span>
-                    <span style="color:rgba(255,255,255,0.5); font-size:0.8rem;">${esc(bestAnime.studio)}</span>
+                    <span style="font-weight:900; font-size:1.1rem; color:var(--text-strong); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(bestAnime.anime)}</span>
+                    <span style="color:var(--text-subtle); font-size:0.8rem;">${esc(bestAnime.studio)}</span>
                     <span class="detail-score-badge ${neonClass}" style="margin-top:5px;">${esc(bestAnime.score)} ⭐</span>
                 </div>
             </div>
         `;
     } else {
-        featuredHTML += `<div class="tm-featured-card anime" style="justify-content:center; color:rgba(255,255,255,0.6);">Sin anime este año</div>`;
+        featuredHTML += `<div class="tm-featured-card anime" style="justify-content:center; color:rgba(var(--fg-rgb), 0.6);">Sin anime este año</div>`;
     }
 
     if (bestManga) {
@@ -89,14 +89,14 @@ function renderTimeMachine(year) {
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px; overflow:hidden;">
                     <span style="color:var(--neon-green); font-weight:bold; font-size:0.75rem;">MEJOR MANGA DEL AÑO</span>
-                    <span style="font-weight:900; font-size:1.1rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(bestManga.manga)}</span>
-                    <span style="color:rgba(255,255,255,0.5); font-size:0.8rem;">Autor: ${esc(bestManga.author)}</span>
+                    <span style="font-weight:900; font-size:1.1rem; color:var(--text-strong); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(bestManga.manga)}</span>
+                    <span style="color:var(--text-subtle); font-size:0.8rem;">Autor: ${esc(bestManga.author)}</span>
                     <span class="detail-score-badge ${neonClass}" style="margin-top:5px;">${esc(bestManga.score)} ⭐</span>
                 </div>
             </div>
         `;
     } else {
-        featuredHTML += `<div class="tm-featured-card manga" style="justify-content:center; color:rgba(255,255,255,0.6);">Sin manga este año</div>`;
+        featuredHTML += `<div class="tm-featured-card manga" style="justify-content:center; color:rgba(var(--fg-rgb), 0.6);">Sin manga este año</div>`;
     }
 
     // Inyectamos el HTML de golpe
@@ -272,7 +272,7 @@ function updateSortIcons() {
             iconEl.style.color = k === 'score' ? 'var(--neon-magenta)' : 'var(--neon-cyan)';
         } else {
             iconEl.innerText = ' ↕';
-            iconEl.style.color = 'rgba(255,255,255,0.6)';
+            iconEl.style.color = 'rgba(var(--fg-rgb), 0.6)';
         }
     });
 }
@@ -453,7 +453,7 @@ function renderSeasonPerformance(seasons) {
             pct = (avg / 10) * 100;
         chart.insertAdjacentHTML(
             'beforeend',
-            `<div class="interactive-bar" style="cursor:default;"><div class="bar-label-fixed">${seasonLabel(sName)}</div><div class="bar-track-pro"><div class="bar-fill-pro magenta" style="width: ${pct}%"></div></div><div class="bar-qty" style="color:var(--neon-magenta);">${avg.toFixed(1)}⭐ <span style="font-size:0.65rem; color:rgba(255,255,255,0.6)">(${sData.count})</span></div></div>`
+            `<div class="interactive-bar" style="cursor:default;"><div class="bar-label-fixed">${seasonLabel(sName)}</div><div class="bar-track-pro"><div class="bar-fill-pro magenta" style="width: ${pct}%"></div></div><div class="bar-qty" style="color:var(--neon-magenta);">${avg.toFixed(1)}⭐ <span style="font-size:0.65rem; color:rgba(var(--fg-rgb), 0.6)">(${sData.count})</span></div></div>`
         );
     });
 }
@@ -468,7 +468,7 @@ function renderStudioLeaderboard(studios) {
         .sort((a, b) => b.count - a.count);
     if (sorted.length === 0) {
         listContainer.innerHTML =
-            '<div style="font-size:0.8rem; color:rgba(255,255,255,0.6); text-align:center; padding-top:20px;">Sin estudios.</div>';
+            '<div style="font-size:0.8rem; color:rgba(var(--fg-rgb), 0.6); text-align:center; padding-top:20px;">Sin estudios.</div>';
         return;
     }
     sorted.slice(0, 15).forEach(item => {
@@ -490,14 +490,14 @@ function renderTopShelfGallery(filteredData) {
         .slice(0, 3);
     if (topThree.length === 0) {
         gallery.innerHTML =
-            '<div style="font-size:0.85rem; color:rgba(255,255,255,0.6); padding:10px 5px;">Ningún destacado disponible.</div>';
+            '<div style="font-size:0.85rem; color:rgba(var(--fg-rgb), 0.6); padding:10px 5px;">Ningún destacado disponible.</div>';
         return;
     }
     topThree.forEach((anime, idx) => {
         const imgId = `shelf-img-${idx}`;
         gallery.insertAdjacentHTML(
             'beforeend',
-            `<div class="anime-poster-card" ${workSheetAttrs(anime, 'anime')}><div class="poster-rank">#${idx + 1}</div><div class="img-container"><img id="${imgId}" data-type="anime" data-title="${esc(anime.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='75' height='105'><rect width='75' height='105' fill='%23111122'/></svg>"></div><div class="poster-info"><span class="poster-title" title="${esc(anime.anime)}">${esc(anime.anime)}</span><span class="poster-studio">${esc(anime.studio || 'Desconocido')} (${esc(anime.year)})</span><span class="poster-badge">${esc(anime.score)} SCORE</span></div></div>`
+            `<div class="anime-poster-card" ${workSheetAttrs(anime, 'anime')}><div class="poster-rank" aria-hidden="true">#${idx + 1}</div><div class="img-container"><img id="${imgId}" data-type="anime" data-title="${esc(anime.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='75' height='105'><rect width='75' height='105' fill='%23111122'/></svg>"></div><div class="poster-info"><span class="poster-title" title="${esc(anime.anime)}">${esc(anime.anime)}</span><span class="poster-studio">${esc(anime.studio || 'Desconocido')} (${esc(anime.year)})</span><span class="poster-badge">${esc(anime.score)} SCORE</span></div></div>`
         );
         const imgEl = document.getElementById(imgId);
         if (imgEl) globalImageObserver.observe(imgEl);
@@ -509,13 +509,13 @@ function renderDataTable(data) {
     document.getElementById('tableCount').innerText = `${data.length} procesados`;
     tbody.innerHTML = '';
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.6);">Sin coincidencias.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(var(--fg-rgb), 0.6);">Sin coincidencias.</td></tr>';
         return;
     }
     data.forEach(item => {
         tbody.insertAdjacentHTML(
             'beforeend',
-            `<tr class="clickable-row" ${workSheetAttrs(item, 'anime')}><td style="font-weight:600; color:#fff;" title="${esc(item.anime)}">${esc(item.anime)}</td><td>${esc(seasonLabel(item.season))}</td><td>${esc(item.year)}</td><td title="${esc(item.studio)}">${esc(item.studio)}</td><td style="font-weight:bold; color:var(--neon-magenta);">${esc(item.score)}</td></tr>`
+            `<tr class="clickable-row" ${workSheetAttrs(item, 'anime')}><td style="font-weight:600; color:var(--text-strong);" title="${esc(item.anime)}">${esc(item.anime)}</td><td>${esc(seasonLabel(item.season))}</td><td>${esc(item.year)}</td><td title="${esc(item.studio)}">${esc(item.studio)}</td><td style="font-weight:bold; color:var(--neon-magenta);">${esc(item.score)}</td></tr>`
         );
     });
 }
@@ -559,7 +559,7 @@ function applyDetailFilters() {
 
     if (filtered.length === 0) {
         container.innerHTML =
-            '<div style="grid-column:1/-1; text-align:center; padding:5px; color:rgba(255,255,255,0.6); font-size:0.95rem;">No se han encontrado animes con los criterios seleccionados.</div>';
+            '<div style="grid-column:1/-1; text-align:center; padding:5px; color:rgba(var(--fg-rgb), 0.6); font-size:0.95rem;">No se han encontrado animes con los criterios seleccionados.</div>';
         return;
     }
 
@@ -637,7 +637,7 @@ function applyMangaFilters() {
 
     if (filtered.length === 0) {
         container.innerHTML =
-            '<div style="width:100%; text-align:center; padding:40px; color:rgba(255,255,255,0.6); font-size:0.95rem;">No se han encontrado tomos con estos filtros.</div>';
+            '<div style="width:100%; text-align:center; padding:40px; color:rgba(var(--fg-rgb), 0.6); font-size:0.95rem;">No se han encontrado tomos con estos filtros.</div>';
         return;
     }
 
@@ -704,7 +704,7 @@ function saveTop150() {
         .then(result => {
             btnStart.innerText = result.confirmed ? '¡Cambios Registrados y Subidos! ✔️' : 'Cambios enviados ✔️ (sin confirmar)';
             btnStart.style.background = 'var(--neon-green)';
-            btnStart.style.color = '#000';
+            btnStart.style.color = 'var(--on-accent)';
             setTimeout(() => {
                 btnStart.innerText = '🔓 Iniciar Top 150';
                 btnStart.style.background = '';
@@ -836,7 +836,7 @@ function renderTop150List() {
     container.innerHTML = '';
     if (_currentTop150.length === 0) {
         container.innerHTML =
-            '<div style="grid-column:1/-1; text-align:center; padding:30px; color:rgba(255,255,255,0.6); font-size:0.9rem;">El TOP 150 está vacío. Utiliza el buscador superior para añadir obras.</div>';
+            '<div style="grid-column:1/-1; text-align:center; padding:30px; color:rgba(var(--fg-rgb), 0.6); font-size:0.9rem;">El TOP 150 está vacío. Utiliza el buscador superior para añadir obras.</div>';
         return;
     }
 

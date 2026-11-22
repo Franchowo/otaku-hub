@@ -40,4 +40,14 @@ const listJs = dir =>
 const orphan = listJs(path.join(ROOT, 'js')).filter(f => !local.includes(f));
 check('Todos los scripts de js/ se cargan en index.html', orphan.length === 0, orphan.join(', '));
 
+// CACHE_NAME debe corresponder al contenido actual de la app (scripts/sw-version.js)
+const { computeCacheName, currentCacheName } = require('../../scripts/sw-version');
+const want = computeCacheName(sw),
+    have = currentCacheName(sw);
+check(
+    'CACHE_NAME coincide con el contenido de la app',
+    want === have,
+    want === have ? have : `es '${have}' y debería ser '${want}': ejecuta npm run sw:version`
+);
+
 console.log(results.join('\n'));

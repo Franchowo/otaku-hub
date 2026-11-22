@@ -45,7 +45,7 @@ async function searchAnimeCalificador() {
         const medias = data?.data?.Page?.media || [];
         if (medias.length === 0) {
             resultsGrid.innerHTML =
-                '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6);">No se encontraron resultados.</div>';
+                '<div style="grid-column:1/-1; text-align:center; color:rgba(var(--fg-rgb), 0.6);">No se encontraron resultados.</div>';
             return;
         }
 
@@ -138,7 +138,7 @@ function renderCalificadorSavedGrid() {
         card.style.cursor = 'pointer';
         card.setAttribute('role', 'button');
         card.tabIndex = 0;
-        card.innerHTML = `<div class="recom-card-img-container" style="position:relative;"><img src="${esc(anime.cover)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"><div style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(255,255,255,0.2);"><div style="width:${pct}%; height:100%; background:var(--neon-cyan);"></div></div></div><span class="recom-card-title" title="${esc(anime.title)}">${esc(anime.title)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">Progreso: ${Math.round(pct)}%</span><button class="clear-cache-btn" style="border:none; color:var(--neon-red); margin-top:5px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCalificadorProgress(${jsArg(anime.id)})">Eliminar</button>`;
+        card.innerHTML = `<div class="recom-card-img-container" style="position:relative;"><img src="${esc(anime.cover)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"><div style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(var(--fg-rgb), 0.2);"><div style="width:${pct}%; height:100%; background:var(--neon-cyan);"></div></div></div><span class="recom-card-title" title="${esc(anime.title)}">${esc(anime.title)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">Progreso: ${Math.round(pct)}%</span><button class="clear-cache-btn" style="border:none; color:var(--neon-red); margin-top:5px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCalificadorProgress(${jsArg(anime.id)})">Eliminar</button>`;
         card.onclick = () => {
             document.getElementById('calificadorResultsGrid').innerHTML = '';
             loadCalificadorTracker(anime.title, anime.episodes, anime.cover, anime.scores, anime.id);
@@ -271,13 +271,13 @@ function renderCalificadorList() {
         item.style.justifyContent = 'space-between';
         item.style.alignItems = 'center';
         item.style.padding = '16px 20px';
-        item.style.background = cp.completed ? 'rgba(0, 255, 102, 0.02)' : 'rgba(255, 255, 255, 0.01)';
+        item.style.background = cp.completed ? 'rgba(0, 255, 102, 0.02)' : 'rgba(var(--fg-rgb), 0.01)';
         item.style.borderColor = cp.completed ? 'rgba(0, 255, 102, 0.15)' : 'var(--glass-border)';
 
         item.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:4px;">
-                <span style="font-weight: 700; color: ${isFinal ? 'var(--neon-yellow)' : '#fff'}; font-size: 0.95rem;">${title}</span>
-                <span style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">${cp.completed ? 'Formulario guardado ✔️' : 'Evaluación pendiente...'}</span>
+                <span style="font-weight: 700; color: ${isFinal ? 'var(--neon-yellow)' : 'var(--text-strong)'}; font-size: 0.95rem;">${title}</span>
+                <span style="font-size: 0.75rem; color: rgba(var(--fg-rgb), 0.6);">${cp.completed ? 'Formulario guardado ✔️' : 'Evaluación pendiente...'}</span>
             </div>
             <button class="btn-icon calif-step-btn" style="${btnStyle}" onclick="openCalificadorForm(${index})">${btnText}</button>
         `;
@@ -342,9 +342,9 @@ function renderFormQuestions() {
             .map(opt => {
                 // Tolerancia más ajustada (1.2) por tener 5 botones
                 const isSelected = Math.abs(currentVal - opt.val) <= 1.2;
-                const bg = isSelected ? opt.color : 'rgba(0,0,0,0.3)';
-                const textCol = isSelected ? '#000' : opt.color;
-                const border = isSelected ? opt.color : 'rgba(255,255,255,0.1)';
+                const bg = isSelected ? opt.color : 'rgba(var(--shade-rgb), 0.3)';
+                const textCol = isSelected ? 'var(--on-accent)' : opt.color;
+                const border = isSelected ? opt.color : 'rgba(var(--fg-rgb), 0.1)';
                 const shadow = isSelected ? `box-shadow: 0 0 10px ${opt.color}60;` : '';
                 const scale = isSelected ? 'transform: scale(1.05);' : 'transform: scale(1);';
 
@@ -359,8 +359,8 @@ function renderFormQuestions() {
             .join('');
 
         questionsEl.innerHTML += `
-            <div style="background: rgba(255,255,255,0.02); padding: 18px 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);">
-                <label style="color: #fff; font-weight: bold; font-size: 0.95rem; margin-bottom: 12px; display:block; text-align:center;">${q}</label>
+            <div style="background: rgba(var(--fg-rgb), 0.02); padding: 18px 12px; border-radius: 14px; border: 1px solid rgba(var(--fg-rgb), 0.05);">
+                <label style="color: var(--text-strong); font-weight: bold; font-size: 0.95rem; margin-bottom: 12px; display:block; text-align:center;">${q}</label>
                 <div style="display:flex; gap:8px; width:100%;">${btnsHTML}</div>
             </div>
         `;
@@ -441,13 +441,13 @@ function calculateCalificadorStats() {
         badge.className = 'kpi-card magenta';
         badge.style.borderColor = 'var(--neon-magenta)';
         badge.style.boxShadow = '0 0 15px rgba(255, 0, 127, 0.2)';
-        tensCount.style.color = '#fff';
+        tensCount.style.color = 'var(--text-strong)';
         tensCount.innerText = perfectHits + ' 🌟 ¡EXCELENTE!';
     } else {
         badge.className = 'kpi-card';
         badge.style.borderColor = 'var(--glass-border)';
         badge.style.boxShadow = 'none';
-        tensCount.style.color = 'rgba(255,255,255,0.6)';
+        tensCount.style.color = 'rgba(var(--fg-rgb), 0.6)';
     }
 }
 

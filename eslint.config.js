@@ -96,5 +96,10 @@ module.exports = [
             globals: { ...globals.node, ...globals.browser, ...appGlobals() }
         },
         rules: { ...sharedRules, 'no-unused-vars': 'off' }
+    },
+    {
+        files: ['scripts/**/*.js'],
+        languageOptions: { ecmaVersion: 'latest', sourceType: 'commonjs', globals: globals.node },
+        rules: sharedRules
     }
 ];

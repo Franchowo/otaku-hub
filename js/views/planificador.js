@@ -41,7 +41,7 @@ function initPlanificadorFetch() {
             }
             _planificadorInitialized = true;
             getSafeEl('planificadorGrid').innerHTML =
-                '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar"</strong> para cargar los animes.</div>';
+                '<div style="grid-column:1/-1; text-align:center; color:rgba(var(--fg-rgb), 0.6); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar"</strong> para cargar los animes.</div>';
         })
         .catch(err => {
             getSafeEl('planificadorLoader').style.display = 'none';
@@ -200,7 +200,7 @@ function renderSeasonGrid() {
 
     if (visibleCount === 0 && _currentSeasonData.length > 0 && filterElement) {
         const filterName = filterElement.options[filterElement.selectedIndex].text;
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6); padding: 50px 0; font-size:1.1rem;">No hay animes en esta temporada con el estado <strong>"${esc(filterName)}"</strong>.</div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(var(--fg-rgb), 0.6); padding: 50px 0; font-size:1.1rem;">No hay animes en esta temporada con el estado <strong>"${esc(filterName)}"</strong>.</div>`;
     }
     if (autoSyncNeeded) setTimeout(() => syncPlanificadorToCloud(), 1000);
 }

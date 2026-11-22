@@ -211,3 +211,58 @@ function applyDateDefaults() {
 
 // Los scripts se cargan al final del <body>: el formulario ya existe.
 applyDateDefaults();
+
+// ---------------------------------------------------------------------
+// TEMA (Automático → Claro → Oscuro). "Automático" sigue al sistema.
+// El tema guardado se aplica en <head> antes de pintar (index.html).
+// ---------------------------------------------------------------------
+const THEME_KEY = 'otaku_theme';
+const THEME_LABELS = { auto: 'Automático', light: 'Claro', dark: 'Oscuro' };
+const THEME_ICONS = { auto: '🌓', light: '☀️', dark: '🌙' };
+
+function currentThemeMode() {
+    try {
+        const t = localStorage.getItem(THEME_KEY);
+        return t === 'light' || t === 'dark' ? t : 'auto';
+    } catch (e) {
+        return 'auto';
+    }
+}
+
+function effectiveTheme(mode = currentThemeMode()) {
+    if (mode !== 'auto') return mode;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function applyTheme(mode) {
+    const root = document.documentElement;
+    if (mode === 'auto') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    try {
+        if (mode === 'auto') localStorage.removeItem(THEME_KEY);
+        else localStorage.setItem(THEME_KEY, mode);
+    } catch (e) {}
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', effectiveTheme(mode) === 'light' ? '#eef0f6' : '#030308');
+    const btn = document.getElementById('themeToggle');
+    if (btn) {
+        btn.textContent = THEME_ICONS[mode];
+        const label = `Tema: ${THEME_LABELS[mode]}${mode === 'auto' ? ` (ahora ${effectiveTheme(mode) === 'light' ? 'claro' : 'oscuro'})` : ''}. Pulsa para cambiar.`;
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+    }
+}
+
+function cycleTheme() {
+    const order = ['auto', 'light', 'dark'];
+    const next = order[(order.indexOf(currentThemeMode()) + 1) % order.length];
+    applyTheme(next);
+    toast(`Tema: ${THEME_LABELS[next]}`, { type: 'info', duration: 1800 });
+}
+
+applyTheme(currentThemeMode());
+if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+        if (currentThemeMode() === 'auto') applyTheme('auto');
+    });
+}

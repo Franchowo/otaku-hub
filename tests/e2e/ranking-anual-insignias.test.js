@@ -35,7 +35,7 @@ const rgb = s => (s.match(/\d+(\.\d+)?/g) || []).slice(0, 3).map(Number);
 
 (async () => {
     const browser = await chromium.launch();
-    const page = await browser.newPage({ viewport: { width: 1160, height: 900 } });
+    const page = await browser.newPage({ viewport: { width: 1160, height: 900 }, colorScheme: 'dark' });
     page.on('pageerror', e => results.push(`⚠️ pageerror: ${e.message}`));
     await page.route(/fonts\.|cdnjs|graphql\.anilist/, r =>
         r.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{"data":{}}' })
