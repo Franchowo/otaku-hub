@@ -16,6 +16,12 @@ async function renderInsightsView() {
     box.hidden = true;
 
     if (!_mangaData.length) await new Promise(res => initMangaDataFetch(false, res));
+    // Hojas de estado para los logros de herramientas (sin conexión se usa la copia local).
+    const readState = (key, sheet) => sheetsReadOnce(key, sheet).catch(() => []);
+    const extras = {
+        calificador: _calificadorSavedProgress.length ? _calificadorSavedProgress : await readState('calificador', 'CALIFICADOR_STATE'),
+        planificador: _planificadorInitialized ? _planificadorSavedProgress : await readState('planificador', 'PLANIFICADOR_STATE')
+    };
     const meta = await loadMediaMeta('ANIME', linked.map(a => a.anilistId), (done, total) => {
         document.getElementById('insightsLoaderText').textContent = `Consultando AniList… ${done}/${total}`;
     });
@@ -31,7 +37,7 @@ async function renderInsightsView() {
         <section class="insights-section" aria-labelledby="insGenres">${genresSectionHTML(withMeta)}</section>
         <section class="insights-section" aria-labelledby="insYears">${yearsSectionHTML(_masterData)}</section>
         <section class="insights-section" aria-labelledby="insSeasons">${seasonsSectionHTML(_masterData)}</section>
-        <section class="insights-section" aria-labelledby="insAchievements">${achievementsSectionHTML(withMeta)}</section>`;
+        <section class="insights-section" aria-labelledby="insAchievements">${achievementsSectionHTML(withMeta, extras)}</section>`;
     loader.style.display = 'none';
     box.hidden = false;
 }
@@ -123,8 +129,44 @@ function seasonsSectionHTML(all) {
 
 // ---------------------------------------------------------------------
 // LOGROS (se calculan con tus datos; no se guardan en ningún sitio)
+// extras: { calificador: [...], planificador: [...] } (hojas de estado)
 // ---------------------------------------------------------------------
-function computeAchievements(items) {
+const SEASON_INDEX = { winter: 0, spring: 1, summer: 2, fall: 3 };
+
+// Racha más larga de temporadas consecutivas (Invierno → Primavera → … → Invierno del año siguiente) con algún anime.
+function longestSeasonStreak(all) {
+    const keys = [...new Set(all.map(a => {
+        const y = parseInt(a.year, 10), s = SEASON_INDEX[String(a.season).toLowerCase()];
+        return y && s !== undefined ? y * 4 + s : null;
+    }).filter(k => k !== null))].sort((a, b) => a - b);
+    let best = 0, run = 0;
+    keys.forEach((k, i) => { run = i > 0 && k === keys[i - 1] + 1 ? run + 1 : 1; best = Math.max(best, run); });
+    return best;
+}
+
+// ¿Hay algún año con al menos `min` animes en cada una de sus 4 temporadas? Devuelve las temporadas cubiertas del mejor año (0-4).
+function bestFullYear(all, min) {
+    const perYear = {};
+    all.forEach(a => {
+        const y = parseInt(a.year, 10), s = SEASON_INDEX[String(a.season).toLowerCase()];
+        if (!y || s === undefined) return;
+        perYear[y] = perYear[y] || [0, 0, 0, 0];
+        perYear[y][s]++;
+    });
+    return Math.max(0, ...Object.values(perYear).map(counts => counts.filter(c => c >= min).length));
+}
+
+function completedCalificaciones(list) {
+    return (list || []).filter(item => {
+        let scores = item.scores;
+        if (typeof scores === 'string') { try { scores = JSON.parse(scores); } catch (e) { scores = []; } }
+        return Array.isArray(scores) && scores.some(cp => cp && cp.isFinal && cp.completed);
+    }).length;
+}
+
+const ACHIEVEMENT_CATEGORIES = ['Colección', 'Constancia', 'Criterio', 'Herramientas'];
+
+function computeAchievements(items, extras = {}) {
     const all = _masterData, mangas = _mangaData;
     const count = (arr, fn) => arr.filter(fn).length;
     const studios = {}, seasons = {}, decades = new Set(), genres = new Set();
@@ -136,26 +178,44 @@ function computeAchievements(items) {
     items.forEach(a => (a.meta.genres || []).forEach(g => genres.add(g)));
     const maxOf = obj => Math.max(0, ...Object.values(obj));
     const avg = all.length ? all.reduce((s, a) => s + (parseFloat(a.score) || 0), 0) / all.length : 0;
+    const thisYear = new Date().getFullYear();
+    const vsWorld = items.filter(a => a.meta.averageScore).map(a => parseFloat(a.score) - a.meta.averageScore);
+    const ranker = readStoredJSON('ranker_data_v2', null);
+    const planned = (extras.planificador || []).filter(p => p.status && p.status !== 'default').length;
+
     return [
-        { icon: '📺', name: 'Centenario', desc: '100 animes registrados', value: all.length, goal: 100 },
-        { icon: '🏯', name: 'Leyenda', desc: '500 animes registrados', value: all.length, goal: 500 },
-        { icon: '📚', name: 'Lector voraz', desc: '50 mangas registrados', value: mangas.length, goal: 50 },
-        { icon: '💎', name: 'Ojo para las joyas', desc: '10 animes con un 10', value: count(all, a => parseFloat(a.score) >= 10), goal: 10 },
-        { icon: '🏢', name: 'Fiel a un estudio', desc: '15 animes del mismo estudio', value: maxOf(studios), goal: 15 },
-        { icon: '🗓️', name: 'Temporada a tope', desc: '10 animes de una misma temporada', value: maxOf(seasons), goal: 10 },
-        { icon: '⏳', name: 'Viajero en el tiempo', desc: 'Animes de 4 décadas distintas', value: decades.size, goal: 4 },
-        { icon: '🧭', name: 'Explorador de géneros', desc: '12 géneros distintos (obras vinculadas)', value: genres.size, goal: 12 },
-        { icon: '💯', name: 'Salón de la fama', desc: 'TOP 150 completo', value: readStoredJSON('saved_top150_data', []).length, goal: 150 },
-        { icon: '🧐', name: 'Crítico exigente', desc: 'Media por debajo de 7 con 50+ animes', value: all.length >= 50 && avg < 7 ? 1 : 0, goal: 1, binary: true },
+        // Colección
+        { cat: 'Colección', icon: '📺', name: 'Centenario', desc: '100 animes registrados', value: all.length, goal: 100 },
+        { cat: 'Colección', icon: '🏯', name: 'Leyenda', desc: '500 animes registrados', value: all.length, goal: 500 },
+        { cat: 'Colección', icon: '📚', name: 'Lector voraz', desc: '50 mangas registrados', value: mangas.length, goal: 50 },
+        { cat: 'Colección', icon: '📖', name: 'Biblioteca', desc: '200 mangas registrados', value: mangas.length, goal: 200 },
+        { cat: 'Colección', icon: '🎨', name: 'Coleccionista de estudios', desc: 'Animes de 30 estudios distintos', value: Object.keys(studios).length, goal: 30 },
+        { cat: 'Colección', icon: '🏛️', name: 'Arqueólogo', desc: '10 animes anteriores al año 2000', value: count(all, a => parseInt(a.year, 10) && parseInt(a.year, 10) < 2000), goal: 10 },
+        { cat: 'Colección', icon: '⏳', name: 'Viajero en el tiempo', desc: 'Animes de 4 décadas distintas', value: decades.size, goal: 4 },
+        { cat: 'Colección', icon: '🆕', name: 'Al día', desc: `10 animes de ${thisYear}`, value: count(all, a => parseInt(a.year, 10) === thisYear), goal: 10 },
+        { cat: 'Colección', icon: '💯', name: 'Salón de la fama', desc: 'TOP 150 completo', value: readStoredJSON('saved_top150_data', []).length, goal: 150 },
+        // Constancia
+        { cat: 'Constancia', icon: '🏢', name: 'Fiel a un estudio', desc: '15 animes del mismo estudio', value: maxOf(studios), goal: 15 },
+        { cat: 'Constancia', icon: '🗓️', name: 'Temporada a tope', desc: '10 animes de una misma temporada', value: maxOf(seasons), goal: 10 },
+        { cat: 'Constancia', icon: '🔥', name: 'Racha de temporadas', desc: '8 temporadas seguidas con algún anime', value: longestSeasonStreak(all), goal: 8 },
+        { cat: 'Constancia', icon: '🌸', name: 'Año completo', desc: 'Las 4 temporadas de un año, con 3+ animes en cada una', value: bestFullYear(all, 3), goal: 4 },
+        // Criterio
+        { cat: 'Criterio', icon: '💎', name: 'Ojo para las joyas', desc: '10 animes con un 10', value: count(all, a => parseFloat(a.score) >= 10), goal: 10 },
+        { cat: 'Criterio', icon: '🔨', name: 'Mano dura', desc: '5 animes con nota 3 o menos', value: count(all, a => parseFloat(a.score) > 0 && parseFloat(a.score) <= 3), goal: 5 },
+        { cat: 'Criterio', icon: '🛡️', name: 'Defensor', desc: '5 animes que puntúas 2+ puntos por encima de la media de AniList', value: count(vsWorld, d => d >= 2), goal: 5 },
+        { cat: 'Criterio', icon: '🗡️', name: 'Contracorriente', desc: '5 animes que puntúas 2+ puntos por debajo de la media de AniList', value: count(vsWorld, d => d <= -2), goal: 5 },
+        { cat: 'Criterio', icon: '🧭', name: 'Explorador de géneros', desc: '12 géneros distintos (obras vinculadas)', value: genres.size, goal: 12 },
+        { cat: 'Criterio', icon: '🧐', name: 'Crítico exigente', desc: 'Media por debajo de 7 con 50+ animes', value: all.length >= 50 && avg < 7 ? 1 : 0, goal: 1, binary: true },
+        // Herramientas de la app
+        { cat: 'Herramientas', icon: '🎵', name: 'Melómano', desc: 'Completar un ranking en el Opening Ranker', value: ranker && ranker.result && ranker.result.length ? 1 : 0, goal: 1, binary: true },
+        { cat: 'Herramientas', icon: '🎯', name: 'Analista', desc: 'Calificar 5 animes hasta el hito final', value: completedCalificaciones(extras.calificador), goal: 5 },
+        { cat: 'Herramientas', icon: '🗄️', name: 'Archivero', desc: 'Archivar 3 años del Ranking Anual', value: Object.keys(readStoredJSON('annual_archive', {})).length, goal: 3 },
+        { cat: 'Herramientas', icon: '📅', name: 'Planificador nato', desc: '25 animes marcados en el Planificador', value: planned, goal: 25 },
     ].map(a => ({ ...a, done: a.value >= a.goal }));
 }
 
-function achievementsSectionHTML(items) {
-    const list = computeAchievements(items);
-    const done = list.filter(a => a.done).length;
+function achievementCardHTML(a) {
     return `
-        <h3 id="insAchievements" class="insights-title">Logros <span class="achv-count">${done} de ${list.length}</span></h3>
-        <ul class="achv-grid">${list.map(a => `
             <li class="achv${a.done ? ' achv--done' : ''}">
                 <span class="achv-icon" aria-hidden="true">${a.icon}</span>
                 <span class="achv-body">
@@ -165,5 +225,17 @@ function achievementsSectionHTML(items) {
                         <span class="achv-fill" style="width:${Math.min(100, (a.value / a.goal) * 100)}%"></span></span>
                         <span class="achv-progress">${Math.min(a.value, a.goal)} / ${a.goal}</span>`}
                 </span>
-            </li>`).join('')}</ul>`;
+            </li>`;
+}
+
+function achievementsSectionHTML(items, extras) {
+    const list = computeAchievements(items, extras);
+    const done = list.filter(a => a.done).length;
+    return `
+        <h3 id="insAchievements" class="insights-title">Logros <span class="achv-count">${done} de ${list.length}</span></h3>
+        ${ACHIEVEMENT_CATEGORIES.map(cat => {
+            const group = list.filter(a => a.cat === cat);
+            return `<h4 class="insights-sub">${cat} <span class="achv-count">${group.filter(a => a.done).length} de ${group.length}</span></h4>
+                <ul class="achv-grid">${group.map(achievementCardHTML).join('')}</ul>`;
+        }).join('')}`;
 }
