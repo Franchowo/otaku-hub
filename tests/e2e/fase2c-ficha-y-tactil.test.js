@@ -151,12 +151,12 @@ const center = async loc => {
     await page.waitForTimeout(250);
     await page.screenshot({ path: `${SHOTS}/2c-ficha-movil.png` });
     await page.keyboard.press('Escape');
-    check('Escape cierra la ficha', !(await page.$('.work-sheet')));
+    check('Escape cierra la ficha', !(await page.$('#workSheetOverlay')));
 
     // Título "86": la clave por fila no se confunde
     await page.click('.detail-card >> nth=1');
-    await page.waitForSelector('.work-sheet');
-    check('Ficha del anime "86" (no la fila 86)', (await page.textContent('.work-sheet-title')) === '86');
+    await page.waitForSelector('#workSheetOverlay');
+    check('Ficha del anime "86" (no la fila 86)', (await page.textContent('#workSheetTitle')) === '86');
     await page.click('button:has-text("Editar")');
     await page.waitForSelector('#workEditForm');
     await page.fill('#weTitle', '86 Eighty-Six');
@@ -183,7 +183,7 @@ const center = async loc => {
     );
     check(
         'Tras editar se cierra la ficha y avisa',
-        !(await page.$('.work-sheet')) && (await page.textContent('#toastRegion')).includes('actualizado')
+        !(await page.$('#workSheetOverlay')) && (await page.textContent('#toastRegion')).includes('actualizado')
     );
 
     await page.waitForSelector('.detail-card');

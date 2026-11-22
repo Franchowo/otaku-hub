@@ -200,7 +200,12 @@ function renderSeasonGrid() {
 
     if (visibleCount === 0 && _currentSeasonData.length > 0 && filterElement) {
         const filterName = filterElement.options[filterElement.selectedIndex].text;
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(var(--fg-rgb), 0.6); padding: 50px 0; font-size:1.1rem;">No hay animes en esta temporada con el estado <strong>"${esc(filterName)}"</strong>.</div>`;
+        grid.innerHTML = emptyStateHTML({
+            art: 'calendar',
+            title: `Nada con el estado "${filterName}"`,
+            text: 'Ningún anime de esta temporada tiene ese estado todavía.',
+            actions: [{ label: '👁️ Ver todos', onclick: "getSafeEl('planStatusFilter').value = 'all'; renderSeasonGrid();" }]
+        });
     }
     if (autoSyncNeeded) setTimeout(() => syncPlanificadorToCloud(), 1000);
 }

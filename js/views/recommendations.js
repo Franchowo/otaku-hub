@@ -150,7 +150,13 @@ async function buildRecommendations() {
         const grid = document.getElementById(sec.grid);
         grid.innerHTML = recs.length
             ? recs.map(r => recomCardHTML(r, sec.key)).join('')
-            : '<div style="color:rgba(var(--fg-rgb), 0.6); text-align:center; grid-column:1/-1;">No hemos podido cargar recomendaciones.</div>';
+            : emptyStateHTML({
+                  art: 'signal',
+                  title: 'No hemos podido cargar recomendaciones',
+                  text: 'AniList no ha respondido. Comprueba la conexión y vuelve a intentarlo.',
+                  actions: [{ label: '↻ Reintentar', onclick: 'initRecommendationsFetch()' }],
+                  compact: true
+              });
     }
 
     document.getElementById('recomLoader').style.display = 'none';

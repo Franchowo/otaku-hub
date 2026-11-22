@@ -126,8 +126,15 @@ async function onRouteChange() {
 }
 window.addEventListener('hashchange', onRouteChange);
 
+// Orden de las vistas en la navegación: decide si la nueva entra por la
+// derecha (avanzas) o por la izquierda (vuelves).
+const VIEW_ORDER = NAV_GROUPS.flatMap(g => g.views);
+
 function showView(viewId, params = {}) {
     if (!document.getElementById(viewId)) viewId = 'hubView';
+    const from = VIEW_ORDER.indexOf(_currentView),
+        to = VIEW_ORDER.indexOf(viewId);
+    const navDir = from === -1 || from === to ? '' : to > from ? 'forward' : 'back';
     _currentView = viewId;
     _currentParams = params;
     const group = groupOfView(viewId);
@@ -138,6 +145,8 @@ function showView(viewId, params = {}) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(viewId).classList.add('active');
     container.classList.remove('form-mode', 'hub-mode');
+    if (navDir) container.dataset.navDir = navDir;
+    else delete container.dataset.navDir;
     renderNavState(viewId);
     document.title = viewId === 'hubView' ? 'OTAKU HUB' : `${VIEW_META[viewId].label} · OTAKU HUB`;
     window.scrollTo({ top: 0 });
