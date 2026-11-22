@@ -23,7 +23,8 @@ function makeSortable(container, { itemSelector, handleSelector, onMove }) {
         e.preventDefault();
 
         const from = items().indexOf(item);
-        let lastY = e.clientY, frame = null;
+        let lastY = e.clientY,
+            frame = null;
         item.classList.add('dragging');
         // Los eventos se escuchan en window: al mover el elemento en el DOM el
         // navegador suelta la captura del puntero y el asa dejaría de recibirlos.
@@ -45,7 +46,8 @@ function makeSortable(container, { itemSelector, handleSelector, onMove }) {
             const target = under && under.closest(itemSelector);
             if (!target || target === item || !container.contains(target)) return;
             const list = items();
-            if (list.indexOf(target) > list.indexOf(item)) target.after(item); else target.before(item);
+            if (list.indexOf(target) > list.indexOf(item)) target.after(item);
+            else target.before(item);
         };
         const finish = ev => {
             if (ev && ev.pointerId !== pointerId) return;

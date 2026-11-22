@@ -11,8 +11,15 @@ if ('serviceWorker' in navigator) {
             if (!hadController || notified) return;
             notified = true;
             toast('OTAKU HUB se ha actualizado.', {
-                type: 'info', duration: 15000,
-                action: { label: 'Recargar', onClick: () => { if (!hasUnsavedChanges()) location.reload(); else toast('Guarda tus cambios antes de recargar.', { type: 'error' }); } }
+                type: 'info',
+                duration: 15000,
+                action: {
+                    label: 'Recargar',
+                    onClick: () => {
+                        if (!hasUnsavedChanges()) location.reload();
+                        else toast('Guarda tus cambios antes de recargar.', { type: 'error' });
+                    }
+                }
             });
         });
     });

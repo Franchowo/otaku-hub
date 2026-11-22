@@ -60,7 +60,12 @@ otaku-hub/
 │       └── data.js            # Copia de seguridad e importar desde AniList
 ├── apps-script/
 │   ├── Auth.gs                # Guardia de autenticación para Apps Script
-│   └── Code.gs                # Lecturas/escrituras en Sheets (backend v2)
+│   └── Code.gs                # Lecturas/escrituras en Sheets (backend v5)
+├── tests/
+│   ├── run.js                 # Ejecutor (npm test)
+│   ├── unit/                  # Backend y Service Worker (sin navegador)
+│   ├── e2e/                   # La app en Chromium (Sheets y AniList simulados)
+│   └── online/                # Contra AniList real
 └── docs/
     ├── APPS-SCRIPT.md         # Cómo desplegar/actualizar el backend
     └── SEGURIDAD.md           # Cómo activar y mantener el acceso privado
@@ -82,7 +87,36 @@ funcionando). Si añades un archivo nuevo, inclúyelo también en la lista
 
 ## Desarrollo local
 
+La app no necesita compilarse: basta con servir la carpeta.
+
 ```bash
-python3 -m http.server 8000
+npm run serve        # o: python3 -m http.server 8000
 # abre http://localhost:8000
 ```
+
+### Pruebas y calidad
+
+Requiere Node 20 o superior. La primera vez:
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+| Comando | Qué hace |
+|---|---|
+| `npm test` | Todas las pruebas: backend de Apps Script (con una hoja simulada) y la app en Chromium (con Sheets y AniList simulados). |
+| `npm test -- fase2b` | Solo las suites cuyo nombre contiene `fase2b`. |
+| `npm run test:online` | Pruebas contra AniList real (necesitan internet). |
+| `npm run lint` | ESLint: detecta errores como usar una variable que nadie declara. |
+| `npm run format` | Prettier: aplica el formato del proyecto. |
+
+Las capturas que generan las pruebas quedan en `tests/output/` (ignorado por git).
+
+GitHub Actions (`.github/workflows/ci.yml`) ejecuta lint, formato y pruebas en
+cada pull request y en cada push a `main`. La prueba contra AniList real se
+ejecuta cada lunes o a mano desde la pestaña **Actions**.
+
+Una prueba (`tests/unit/service-worker-app-shell.test.js`) avisa si un archivo
+de la página falta en `APP_SHELL` de `sw.js`: sin él, la app fallaría sin
+conexión.

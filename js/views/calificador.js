@@ -7,8 +7,7 @@ const CALIFICADOR_SCALE = 10;
 // consideran antiguos los hitos sin marca de escala que contengan alguno.
 // (Un hito antiguo con las 4 respuestas a 5 es indistinguible y se deja tal cual.)
 function isLegacyCheckpoint(cp) {
-    return !cp.isFinal && cp.scale !== CALIFICADOR_SCALE && Array.isArray(cp.answers)
-        && cp.answers.some(v => [1, 2, 3, 4].includes(v));
+    return !cp.isFinal && cp.scale !== CALIFICADOR_SCALE && Array.isArray(cp.answers) && cp.answers.some(v => [1, 2, 3, 4].includes(v));
 }
 
 // Repara hitos corrompidos por el bug anterior (respuestas duplicadas por
@@ -30,37 +29,65 @@ async function searchAnimeCalificador() {
     const query = document.getElementById('calificadorSearchInput').value.trim();
     if (!query) return;
 
-    const resultsGrid = document.getElementById('calificadorResultsGrid'), loader = document.getElementById('calificadorLoader'), trackerSection = document.getElementById('calificadorTrackerSection');
-    resultsGrid.innerHTML = ''; trackerSection.style.display = 'none'; loader.style.display = 'block';
+    const resultsGrid = document.getElementById('calificadorResultsGrid'),
+        loader = document.getElementById('calificadorLoader'),
+        trackerSection = document.getElementById('calificadorTrackerSection');
+    resultsGrid.innerHTML = '';
+    trackerSection.style.display = 'none';
+    loader.style.display = 'block';
 
     const gql = `query($search: String) { Page(page: 1, perPage: 6) { media(search: $search, type: ANIME) { id title { romaji } episodes status nextAiringEpisode { episode } coverImage { large } } } }`;
 
     try {
         const data = await fetchAnilist(gql, { search: query });
         loader.style.display = 'none';
-        
+
         const medias = data?.data?.Page?.media || [];
-        if (medias.length === 0) { resultsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6);">No se encontraron resultados.</div>'; return; }
+        if (medias.length === 0) {
+            resultsGrid.innerHTML =
+                '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6);">No se encontraron resultados.</div>';
+            return;
+        }
 
         medias.forEach(anime => {
             const epCount = anime.episodes;
             const airedSoFar = anime.nextAiringEpisode ? anime.nextAiringEpisode.episode - 1 : null;
             const imgUrl = anime.coverImage?.large || FALLBACK_IMG;
             const titleRomaji = anime.title.romaji;
-            
-            const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer'; card.setAttribute('role', 'button'); card.tabIndex = 0;
+
+            const card = document.createElement('div');
+            card.className = 'recom-card anime-recom';
+            card.style.cursor = 'pointer';
+            card.setAttribute('role', 'button');
+            card.tabIndex = 0;
             card.innerHTML = `<div class="recom-card-img-container"><img src="${esc(imgUrl)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span class="recom-card-title" title="${esc(titleRomaji)}">${esc(titleRomaji)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">${epCount ? `${esc(epCount)} episodios` : airedSoFar !== null ? `En emisión (van ${esc(airedSoFar)})` : 'Episodios por confirmar'}</span>`;
-            
+
             card.onclick = async () => {
-                const existingAnime = Array.isArray(_calificadorSavedProgress) ? _calificadorSavedProgress.find(a => a && (a.id === `al-${anime.id}` || String(a.title).toLowerCase() === titleRomaji.toLowerCase())) : null;
-                if (existingAnime && Array.isArray(existingAnime.scores)) { loadCalificadorTracker(existingAnime.title, existingAnime.episodes, existingAnime.cover, existingAnime.scores, existingAnime.id); return; }
+                const existingAnime = Array.isArray(_calificadorSavedProgress)
+                    ? _calificadorSavedProgress.find(
+                          a => a && (a.id === `al-${anime.id}` || String(a.title).toLowerCase() === titleRomaji.toLowerCase())
+                      )
+                    : null;
+                if (existingAnime && Array.isArray(existingAnime.scores)) {
+                    loadCalificadorTracker(
+                        existingAnime.title,
+                        existingAnime.episodes,
+                        existingAnime.cover,
+                        existingAnime.scores,
+                        existingAnime.id
+                    );
+                    return;
+                }
                 let episodes = epCount;
                 if (!episodes) {
                     // En emisión o sin confirmar: AniList aún no sabe cuántos tendrá.
                     episodes = await promptNumberDialog({
                         title: '¿Cuántos episodios tendrá?',
                         message: `AniList aún no lo confirma${airedSoFar !== null ? ` (van ${airedSoFar} emitidos)` : ''}. Podrás cambiarlo después.`,
-                        value: Math.max(12, airedSoFar || 0), min: 1, max: 2000, confirmText: 'Empezar'
+                        value: Math.max(12, airedSoFar || 0),
+                        min: 1,
+                        max: 2000,
+                        confirmText: 'Empezar'
                     });
                     if (episodes === null) return;
                 }
@@ -69,42 +96,72 @@ async function searchAnimeCalificador() {
             };
             resultsGrid.appendChild(card);
         });
-    } catch (error) { loader.style.display = 'none'; resultsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--neon-red);">Error de red al buscar.</div>'; }
+    } catch (error) {
+        loader.style.display = 'none';
+        resultsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--neon-red);">Error de red al buscar.</div>';
+    }
 }
 
 function renderCalificadorSavedGrid() {
-    const section = document.getElementById('calificadorSavedSection'), grid = document.getElementById('calificadorSavedGrid'); grid.innerHTML = '';
+    const section = document.getElementById('calificadorSavedSection'),
+        grid = document.getElementById('calificadorSavedGrid');
+    grid.innerHTML = '';
     if (!Array.isArray(_calificadorSavedProgress)) _calificadorSavedProgress = [];
 
     _calificadorSavedProgress.forEach(anime => {
-        if (typeof anime.scores === 'string') { try { anime.scores = JSON.parse(anime.scores); } catch(e) { anime.scores = []; } }
+        if (typeof anime.scores === 'string') {
+            try {
+                anime.scores = JSON.parse(anime.scores);
+            } catch (e) {
+                anime.scores = [];
+            }
+        }
         if (!Array.isArray(anime.scores)) anime.scores = [];
     });
 
     const validProgress = _calificadorSavedProgress.filter(a => a && a.id && a.title);
-    _calificadorSavedProgress = validProgress; 
+    _calificadorSavedProgress = validProgress;
 
-    if (validProgress.length === 0) { section.style.display = 'none'; return; }
+    if (validProgress.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
     section.style.display = 'block';
     validProgress.forEach(anime => {
         // Compatible con el nuevo formato de objetos
         const completed = anime.scores.filter(s => s && s.completed).length;
         const totalHitos = anime.scores.length || 1;
         const pct = (completed / totalHitos) * 100;
-        
-        const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer'; card.setAttribute('role', 'button'); card.tabIndex = 0;
+
+        const card = document.createElement('div');
+        card.className = 'recom-card anime-recom';
+        card.style.cursor = 'pointer';
+        card.setAttribute('role', 'button');
+        card.tabIndex = 0;
         card.innerHTML = `<div class="recom-card-img-container" style="position:relative;"><img src="${esc(anime.cover)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"><div style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(255,255,255,0.2);"><div style="width:${pct}%; height:100%; background:var(--neon-cyan);"></div></div></div><span class="recom-card-title" title="${esc(anime.title)}">${esc(anime.title)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">Progreso: ${Math.round(pct)}%</span><button class="clear-cache-btn" style="border:none; color:var(--neon-red); margin-top:5px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCalificadorProgress(${jsArg(anime.id)})">Eliminar</button>`;
-        card.onclick = () => { document.getElementById('calificadorResultsGrid').innerHTML = ''; loadCalificadorTracker(anime.title, anime.episodes, anime.cover, anime.scores, anime.id); };
+        card.onclick = () => {
+            document.getElementById('calificadorResultsGrid').innerHTML = '';
+            loadCalificadorTracker(anime.title, anime.episodes, anime.cover, anime.scores, anime.id);
+        };
         grid.appendChild(card);
     });
 }
 
 async function deleteCalificadorProgress(id) {
     const anime = _calificadorSavedProgress.find(a => a.id === id);
-    const ok = await confirmDialog({ title: 'Eliminar evaluación', message: `Se borrará el progreso de "${anime ? anime.title : 'este anime'}" también en Sheets.`, confirmText: 'Eliminar', danger: true });
+    const ok = await confirmDialog({
+        title: 'Eliminar evaluación',
+        message: `Se borrará el progreso de "${anime ? anime.title : 'este anime'}" también en Sheets.`,
+        confirmText: 'Eliminar',
+        danger: true
+    });
     if (ok) {
-        _calificadorSavedProgress = _calificadorSavedProgress.filter(a => a.id !== id); renderCalificadorSavedGrid(); syncCalificadorToCloud({ remove: id });
-        if(_calificadorCurrentId === id) { document.getElementById('calificadorTrackerSection').style.display = 'none'; }
+        _calificadorSavedProgress = _calificadorSavedProgress.filter(a => a.id !== id);
+        renderCalificadorSavedGrid();
+        syncCalificadorToCloud({ remove: id });
+        if (_calificadorCurrentId === id) {
+            document.getElementById('calificadorTrackerSection').style.display = 'none';
+        }
     }
 }
 
@@ -113,16 +170,21 @@ let _calificadorDirty = false;
 registerLeaveGuard('calificadorView', {
     isDirty: () => _calificadorDirty,
     message: 'Has evaluado hitos que aún no has guardado con "Guardar Progreso Actual".',
-    discard: () => { _calificadorDirty = false; }
+    discard: () => {
+        _calificadorDirty = false;
+    }
 });
 
 function loadCalificadorTracker(title, episodes, imgUrl, existingScores = null, id = null) {
     _calificadorDirty = false;
-    document.getElementById('calificadorResultsGrid').innerHTML = ''; document.getElementById('calificadorSearchInput').value = '';
-    const trackerSection = document.getElementById('calificadorTrackerSection'); trackerSection.style.display = 'block'; trackerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    
-    document.getElementById('calificadorAnimeTitle').textContent = title; 
-    document.getElementById('calificadorAnimeMeta').innerText = `${episodes} Capítulos Registrados`; 
+    document.getElementById('calificadorResultsGrid').innerHTML = '';
+    document.getElementById('calificadorSearchInput').value = '';
+    const trackerSection = document.getElementById('calificadorTrackerSection');
+    trackerSection.style.display = 'block';
+    trackerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    document.getElementById('calificadorAnimeTitle').textContent = title;
+    document.getElementById('calificadorAnimeMeta').innerText = `${episodes} Capítulos Registrados`;
     document.getElementById('calificadorAnimeCover').src = imgUrl;
 
     _calificadorEpisodesCount = episodes;
@@ -140,12 +202,12 @@ function loadCalificadorTracker(title, episodes, imgUrl, existingScores = null, 
             isFinal: m.isFinal,
             completed: false,
             score: 0,
-            answers: m.isFinal ? [5,5,5,5] : [3,3,3,3] // Valores predeterminados neutros
+            answers: m.isFinal ? [5, 5, 5, 5] : [3, 3, 3, 3] // Valores predeterminados neutros
         }));
     }
 
     renderCalificadorList();
-    calculateCalificadorStats(); 
+    calculateCalificadorStats();
 }
 
 // Hitos cada 3 episodios + hito final (también si el total no es múltiplo de 3).
@@ -160,12 +222,22 @@ function buildMilestones(episodes) {
 // Se conservan las evaluaciones de los hitos que siguen existiendo; la final
 // solo se conserva si el último episodio no cambia.
 async function changeCalificadorEpisodes() {
-    const episodes = await promptNumberDialog({ title: 'Número de episodios', message: 'Total de episodios del anime. Las evaluaciones ya hechas se conservan.', value: _calificadorEpisodesCount, min: 1, max: 2000, confirmText: 'Cambiar' });
+    const episodes = await promptNumberDialog({
+        title: 'Número de episodios',
+        message: 'Total de episodios del anime. Las evaluaciones ya hechas se conservan.',
+        value: _calificadorEpisodesCount,
+        min: 1,
+        max: 2000,
+        confirmText: 'Cambiar'
+    });
     if (episodes === null || episodes === _calificadorEpisodesCount) return;
     const previous = _calificadorCurrentScores;
     _calificadorCurrentScores = buildMilestones(episodes).map(m => {
-        const old = previous.find(p => p.ep === m.ep && p.isFinal === m.isFinal) || (!m.isFinal && previous.find(p => p.ep === m.ep && !p.isFinal));
-        return old ? { ...old, isFinal: m.isFinal } : { ep: m.ep, isFinal: m.isFinal, completed: false, score: 0, answers: m.isFinal ? [5,5,5,5] : [3,3,3,3] };
+        const old =
+            previous.find(p => p.ep === m.ep && p.isFinal === m.isFinal) || (!m.isFinal && previous.find(p => p.ep === m.ep && !p.isFinal));
+        return old
+            ? { ...old, isFinal: m.isFinal }
+            : { ep: m.ep, isFinal: m.isFinal, completed: false, score: 0, answers: m.isFinal ? [5, 5, 5, 5] : [3, 3, 3, 3] };
     });
     _calificadorEpisodesCount = episodes;
     document.getElementById('calificadorAnimeMeta').innerText = `${episodes} Capítulos Registrados`;
@@ -176,23 +248,29 @@ async function changeCalificadorEpisodes() {
 }
 
 function renderCalificadorList() {
-    const list = document.getElementById('calificadorEpisodeList'); list.innerHTML = '';
-    
+    const list = document.getElementById('calificadorEpisodeList');
+    list.innerHTML = '';
+
     _calificadorCurrentScores.forEach((cp, index) => {
         const isFinal = cp.isFinal;
-        const prevEp = index === 0 ? 1 : _calificadorCurrentScores[index-1].ep + 1;
+        const prevEp = index === 0 ? 1 : _calificadorCurrentScores[index - 1].ep + 1;
         const title = isFinal ? `🏆 PUNTO DE ESTADO FINAL (Hasta Ep. ${cp.ep})` : `📍 Punto de Estado (Eps. ${prevEp} - ${cp.ep})`;
         const btnText = cp.completed ? `Editar Nota (${cp.score.toFixed(1)}⭐)` : 'Rellenar Formulario 📝';
-        
-        let btnStyle = cp.completed 
-            ? 'background: rgba(0, 255, 102, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(0,255,102,0.1);' 
+
+        let btnStyle = cp.completed
+            ? 'background: rgba(0, 255, 102, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(0,255,102,0.1);'
             : 'background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan); border: 1px solid var(--neon-cyan);';
-        
-        if(isFinal && !cp.completed) btnStyle = 'background: rgba(255, 170, 0, 0.1); color: var(--neon-yellow); border: 1px solid var(--neon-yellow); box-shadow: 0 0 10px rgba(255,170,0,0.1);';
+
+        if (isFinal && !cp.completed)
+            btnStyle =
+                'background: rgba(255, 170, 0, 0.1); color: var(--neon-yellow); border: 1px solid var(--neon-yellow); box-shadow: 0 0 10px rgba(255,170,0,0.1);';
 
         const item = document.createElement('div');
         item.className = 'list-item';
-        item.style.display = 'flex'; item.style.justifyContent = 'space-between'; item.style.alignItems = 'center'; item.style.padding = '16px 20px';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        item.style.padding = '16px 20px';
         item.style.background = cp.completed ? 'rgba(0, 255, 102, 0.02)' : 'rgba(255, 255, 255, 0.01)';
         item.style.borderColor = cp.completed ? 'rgba(0, 255, 102, 0.15)' : 'var(--glass-border)';
 
@@ -214,9 +292,13 @@ function openCalificadorForm(index) {
     _currentFormIndex = index;
     const cp = _calificadorCurrentScores[index];
     const modal = document.getElementById('calificadorFormModal');
-    document.getElementById('calificadorFormTitle').innerText = cp.isFinal ? `Evaluación Definitiva Final` : `Evaluación Intermedia (Ep. ${cp.ep})`;
-    document.getElementById('calificadorFormDesc').innerText = cp.isFinal ? "Selecciona cómo sentiste el cierre de la obra." : "Selecciona cómo sentiste este bloque de episodios.";
-    
+    document.getElementById('calificadorFormTitle').innerText = cp.isFinal
+        ? `Evaluación Definitiva Final`
+        : `Evaluación Intermedia (Ep. ${cp.ep})`;
+    document.getElementById('calificadorFormDesc').innerText = cp.isFinal
+        ? 'Selecciona cómo sentiste el cierre de la obra.'
+        : 'Selecciona cómo sentiste este bloque de episodios.';
+
     // Iniciar valores temporales para interactividad
     if (!cp.completed) {
         _tempCalificadorAnswers = [7.5, 7.5, 7.5, 7.5]; // Por defecto marcado en "Bien"
@@ -226,7 +308,7 @@ function openCalificadorForm(index) {
         // Antes se duplicaba todo si había algún valor <= 5, pero "Meh" (5),
         // "Mal" (2.5) y "Basura" (0) son valores válidos de la escala actual.
         if (isLegacyCheckpoint(cp)) {
-            _tempCalificadorAnswers = _tempCalificadorAnswers.map(v => v * 2); 
+            _tempCalificadorAnswers = _tempCalificadorAnswers.map(v => v * 2);
         }
     }
 
@@ -237,20 +319,12 @@ function openCalificadorForm(index) {
 function renderFormQuestions() {
     if (_currentFormIndex === null) return;
     const cp = _calificadorCurrentScores[_currentFormIndex];
-    const questionsEl = document.getElementById('calificadorFormQuestions'); 
+    const questionsEl = document.getElementById('calificadorFormQuestions');
     questionsEl.innerHTML = '';
 
-    const questions = cp.isFinal ? [
-        "📜 Resolución de la trama",
-        "🎭 Cierre de personajes",
-        "💖 Impacto emocional",
-        "🎨 Calidad técnica y sonora"
-    ] : [
-        "🎢 Ritmo y entretenimiento",
-        "🧠 Interés de la historia",
-        "🔥 Ganas de seguir viendo",
-        "🎨 Animación general"
-    ];
+    const questions = cp.isFinal
+        ? ['📜 Resolución de la trama', '🎭 Cierre de personajes', '💖 Impacto emocional', '🎨 Calidad técnica y sonora']
+        : ['🎢 Ritmo y entretenimiento', '🧠 Interés de la historia', '🔥 Ganas de seguir viendo', '🎨 Animación general'];
 
     // Botones cualitativos con equivalencia numérica interna ampliada a 5 opciones (Mínimo 0)
     const options = [
@@ -263,24 +337,26 @@ function renderFormQuestions() {
 
     questions.forEach((q, i) => {
         const currentVal = _tempCalificadorAnswers[i];
-        
-        let btnsHTML = options.map(opt => {
-            // Tolerancia más ajustada (1.2) por tener 5 botones
-            const isSelected = Math.abs(currentVal - opt.val) <= 1.2; 
-            const bg = isSelected ? opt.color : 'rgba(0,0,0,0.3)';
-            const textCol = isSelected ? '#000' : opt.color;
-            const border = isSelected ? opt.color : 'rgba(255,255,255,0.1)';
-            const shadow = isSelected ? `box-shadow: 0 0 10px ${opt.color}60;` : '';
-            const scale = isSelected ? 'transform: scale(1.05);' : 'transform: scale(1);';
 
-            return `<button type="button" 
+        let btnsHTML = options
+            .map(opt => {
+                // Tolerancia más ajustada (1.2) por tener 5 botones
+                const isSelected = Math.abs(currentVal - opt.val) <= 1.2;
+                const bg = isSelected ? opt.color : 'rgba(0,0,0,0.3)';
+                const textCol = isSelected ? '#000' : opt.color;
+                const border = isSelected ? opt.color : 'rgba(255,255,255,0.1)';
+                const shadow = isSelected ? `box-shadow: 0 0 10px ${opt.color}60;` : '';
+                const scale = isSelected ? 'transform: scale(1.05);' : 'transform: scale(1);';
+
+                return `<button type="button" 
                     style="flex:1; padding:10px 1px; border-radius:8px; border:1px solid ${border}; 
                            background:${bg}; color:${textCol}; font-weight:800; font-size:0.75rem; 
                            cursor:pointer; transition:all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); ${shadow} ${scale}" 
                     onclick="_tempCalificadorAnswers[${i}] = ${opt.val}; renderFormQuestions();">
                     ${opt.label}
                     </button>`;
-        }).join('');
+            })
+            .join('');
 
         questionsEl.innerHTML += `
             <div style="background: rgba(255,255,255,0.02); padding: 18px 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);">
@@ -297,14 +373,14 @@ function updateCalificadorLiveScore() {
     if (_currentFormIndex === null) return;
     // Suma las notas matemáticas generadas por los botones
     const sum = _tempCalificadorAnswers.reduce((a, b) => a + b, 0);
-    const calcScore = sum / 4; 
+    const calcScore = sum / 4;
     document.getElementById('calificadorFormLiveScore').innerText = calcScore.toFixed(1);
 }
 
 function submitCalificadorForm() {
     if (_currentFormIndex === null) return;
     const cp = _calificadorCurrentScores[_currentFormIndex];
-    
+
     cp.answers = [..._tempCalificadorAnswers];
     cp.score = _tempCalificadorAnswers.reduce((a, b) => a + b, 0) / 4;
     cp.completed = true;
@@ -323,7 +399,8 @@ function closeCalificadorForm() {
 
 function calculateCalificadorStats() {
     const completedCPs = _calificadorCurrentScores.filter(cp => cp.completed);
-    let average = 0, perfectHits = 0;
+    let average = 0,
+        perfectHits = 0;
 
     if (completedCPs.length > 0) {
         // Separamos los hitos intermedios del hito final
@@ -338,7 +415,7 @@ function calculateCalificadorStats() {
 
         // Cálculo con pesos: 50% Intermedios / 50% Final
         if (finalCP && intermediateCPs.length > 0) {
-            average = (avgIntermediate * 0.5) + (finalCP.score * 0.5);
+            average = avgIntermediate * 0.5 + finalCP.score * 0.5;
         } else if (finalCP) {
             average = finalCP.score;
         } else {
@@ -350,45 +427,70 @@ function calculateCalificadorStats() {
     }
 
     document.getElementById('calificadorAverageScore').innerText = average.toFixed(2).replace('.', ',');
-    
+
     const badge = document.getElementById('calificadorCandidateBadge');
     const tensCount = document.getElementById('calificadorTensCount');
     tensCount.innerText = perfectHits;
 
-    renderCalificadorFinalProposal(average, completedCPs.some(cp => cp.isFinal));
+    renderCalificadorFinalProposal(
+        average,
+        completedCPs.some(cp => cp.isFinal)
+    );
 
     if (perfectHits > 0) {
-        badge.className = 'kpi-card magenta'; 
-        badge.style.borderColor = 'var(--neon-magenta)'; 
+        badge.className = 'kpi-card magenta';
+        badge.style.borderColor = 'var(--neon-magenta)';
         badge.style.boxShadow = '0 0 15px rgba(255, 0, 127, 0.2)';
-        tensCount.style.color = '#fff'; 
+        tensCount.style.color = '#fff';
         tensCount.innerText = perfectHits + ' 🌟 ¡EXCELENTE!';
     } else {
-        badge.className = 'kpi-card'; 
-        badge.style.borderColor = 'var(--glass-border)'; 
+        badge.className = 'kpi-card';
+        badge.style.borderColor = 'var(--glass-border)';
         badge.style.boxShadow = 'none';
         tensCount.style.color = 'rgba(255,255,255,0.6)';
     }
 }
 
 function saveCurrentCalificadorToCloud() {
-    const btn = document.getElementById('btnSaveCalificador'), title = document.getElementById('calificadorAnimeTitle').textContent, cover = document.getElementById('calificadorAnimeCover').src;
+    const btn = document.getElementById('btnSaveCalificador'),
+        title = document.getElementById('calificadorAnimeTitle').textContent,
+        cover = document.getElementById('calificadorAnimeCover').src;
     if (!Array.isArray(_calificadorSavedProgress)) _calificadorSavedProgress = [];
     const existingIndex = _calificadorSavedProgress.findIndex(a => a.id === _calificadorCurrentId);
-    const animeData = { id: _calificadorCurrentId, title: title, episodes: _calificadorEpisodesCount, cover: cover, scores: [..._calificadorCurrentScores] };
+    const animeData = {
+        id: _calificadorCurrentId,
+        title: title,
+        episodes: _calificadorEpisodesCount,
+        cover: cover,
+        scores: [..._calificadorCurrentScores]
+    };
 
-    if (existingIndex > -1) { _calificadorSavedProgress[existingIndex] = animeData; } else { _calificadorSavedProgress.push(animeData); }
+    if (existingIndex > -1) {
+        _calificadorSavedProgress[existingIndex] = animeData;
+    } else {
+        _calificadorSavedProgress.push(animeData);
+    }
     renderCalificadorSavedGrid();
-    btn.innerText = "Sincronizando... ⏳"; btn.disabled = true;
+    btn.innerText = 'Sincronizando... ⏳';
+    btn.disabled = true;
 
-    syncCalificadorToCloud({ upsert: animeData }, result => {
-        _calificadorDirty = false;
-        btn.innerText = savedLabel(result, "¡Progreso Guardado! ✔️"); setTimeout(() => { btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false; }, 2000);
-    }, err => {
-        // Antes el botón se quedaba bloqueado en "Sincronizando..." para siempre.
-        toast(`No se guardó el progreso: ${err.message}`, { type: 'error' });
-        btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false;
-    });
+    syncCalificadorToCloud(
+        { upsert: animeData },
+        result => {
+            _calificadorDirty = false;
+            btn.innerText = savedLabel(result, '¡Progreso Guardado! ✔️');
+            setTimeout(() => {
+                btn.innerText = '💾 Guardar Progreso Actual';
+                btn.disabled = false;
+            }, 2000);
+        },
+        err => {
+            // Antes el botón se quedaba bloqueado en "Sincronizando..." para siempre.
+            toast(`No se guardó el progreso: ${err.message}`, { type: 'error' });
+            btn.innerText = '💾 Guardar Progreso Actual';
+            btn.disabled = false;
+        }
+    );
 }
 
 // Con Code.gs v2 guarda/borra solo la evaluación afectada; con el backend
@@ -401,19 +503,32 @@ async function saveCalificadorChange(change) {
     if (version >= 2 && change && change.remove) {
         return sheetsWrite({ action: 'delete_rows', sheet: 'CALIFICADOR_STATE', ids: [change.remove] }, { minVersion: 2 });
     }
-    return sheetsWrite({ action: "save_calificador", payload: _calificadorSavedProgress });
+    return sheetsWrite({ action: 'save_calificador', payload: _calificadorSavedProgress });
 }
 
 function syncCalificadorToCloud(change, callbackSuccess, callbackError) {
-    const statusLabel = document.getElementById('calificadorSyncStatus'); if(statusLabel) { statusLabel.innerText = "Sincronizando ⏳"; statusLabel.style.color = "var(--neon-yellow)"; }
+    const statusLabel = document.getElementById('calificadorSyncStatus');
+    if (statusLabel) {
+        statusLabel.innerText = 'Sincronizando ⏳';
+        statusLabel.style.color = 'var(--neon-yellow)';
+    }
 
-    saveCalificadorChange(change).then(result => {
-        if(statusLabel) { statusLabel.innerText = result.confirmed ? "Sincronizado ✔️" : "Enviado ✔️ (sin confirmar)"; statusLabel.style.color = "var(--neon-green)"; }
-        if(callbackSuccess) callbackSuccess(result);
-    }).catch(err => {
-        if(statusLabel) { statusLabel.innerText = "No guardado ❌"; statusLabel.title = err.message; statusLabel.style.color = "var(--neon-red)"; }
-        if(callbackError) callbackError(err);
-    });
+    saveCalificadorChange(change)
+        .then(result => {
+            if (statusLabel) {
+                statusLabel.innerText = result.confirmed ? 'Sincronizado ✔️' : 'Enviado ✔️ (sin confirmar)';
+                statusLabel.style.color = 'var(--neon-green)';
+            }
+            if (callbackSuccess) callbackSuccess(result);
+        })
+        .catch(err => {
+            if (statusLabel) {
+                statusLabel.innerText = 'No guardado ❌';
+                statusLabel.title = err.message;
+                statusLabel.style.color = 'var(--neon-red)';
+            }
+            if (callbackError) callbackError(err);
+        });
 }
 
 // ---------------------------------------------------------------------
@@ -428,7 +543,11 @@ function calificadorAnilistId() {
 function renderCalificadorFinalProposal(average, finalDone) {
     const box = document.getElementById('calificadorFinalProposal');
     if (!box) return;
-    if (!finalDone) { box.hidden = true; box.innerHTML = ''; return; }
+    if (!finalDone) {
+        box.hidden = true;
+        box.innerHTML = '';
+        return;
+    }
     const proposed = Math.min(10, Math.max(1, Math.round(average)));
     const title = document.getElementById('calificadorAnimeTitle').textContent;
     const id = calificadorAnilistId();
@@ -451,10 +570,14 @@ async function registerFromCalificador(score) {
     _calificadorDirty = false;
     switchView('formView');
     document.getElementById('anime').value = title;
-    document.getElementById('score').value = score; updateScoreData(score);
+    document.getElementById('score').value = score;
+    updateScoreData(score);
     if (!id) return;
     try {
-        const json = await fetchAnilist(`query($id: Int) { Media(id: $id, type: ANIME) { id title { romaji } season seasonYear startDate { year month } studios(isMain: true) { nodes { name } } } }`, { id });
+        const json = await fetchAnilist(
+            `query($id: Int) { Media(id: $id, type: ANIME) { id title { romaji } season seasonYear startDate { year month } studios(isMain: true) { nodes { name } } } }`,
+            { id }
+        );
         const m = json?.data?.Media;
         if (!m) return;
         const season = m.season ? m.season.charAt(0) + m.season.slice(1).toLowerCase() : null;
@@ -463,5 +586,7 @@ async function registerFromCalificador(score) {
         const studios = (m.studios?.nodes || []).map(n => n.name).join(', ');
         if (studios) document.getElementById('studio').value = studios;
         _selectedAnimeMedia = { id: m.id, title };
-    } catch (e) { /* el usuario puede completar el resto a mano */ }
+    } catch (e) {
+        /* el usuario puede completar el resto a mano */
+    }
 }

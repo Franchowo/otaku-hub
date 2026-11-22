@@ -42,7 +42,9 @@ function jsonpRequest(params) {
             settled = true;
             clearTimeout(timer);
             // Si la respuesta llega tarde, que no lance "callback is not defined".
-            window[cbName] = () => { delete window[cbName]; };
+            window[cbName] = () => {
+                delete window[cbName];
+            };
             script.remove();
         };
 
@@ -52,7 +54,7 @@ function jsonpRequest(params) {
             reject(new SheetsError('TIMEOUT', 'Google Sheets no respondió a tiempo. Revisa tu conexión.'));
         }, SHEETS_TIMEOUT_MS);
 
-        window[cbName] = (response) => {
+        window[cbName] = response => {
             if (settled) return;
             finish();
             delete window[cbName];
@@ -65,7 +67,9 @@ function jsonpRequest(params) {
             reject(new SheetsError('NETWORK', 'No se pudo contactar con Google Sheets. Revisa tu conexión.'));
         };
 
-        const query = Object.keys(params).map(k => `${k}=${encodeURIComponent(params[k])}&`).join('');
+        const query = Object.keys(params)
+            .map(k => `${k}=${encodeURIComponent(params[k])}&`)
+            .join('');
         script.src = `${sheetsUrl()}${query}callback=${cbName}&_=${Date.now()}`;
         document.body.appendChild(script);
     });
@@ -89,13 +93,15 @@ function unwrapSheetsResponse(response) {
 let _serverVersionPromise = null;
 function getServerVersion() {
     if (!_serverVersionPromise) {
-        _serverVersionPromise = jsonpRequest({ action: 'ping' }).then(response => {
-            if (response && response.message === 'UNAUTHORIZED') unwrapSheetsResponse(response);
-            return Number(response && response.version) || 1;
-        }).catch(err => {
-            _serverVersionPromise = null;
-            throw err;
-        });
+        _serverVersionPromise = jsonpRequest({ action: 'ping' })
+            .then(response => {
+                if (response && response.message === 'UNAUTHORIZED') unwrapSheetsResponse(response);
+                return Number(response && response.version) || 1;
+            })
+            .catch(err => {
+                _serverVersionPromise = null;
+                throw err;
+            });
     }
     return _serverVersionPromise;
 }
@@ -132,7 +138,11 @@ async function postToSheets(payload) {
         return null;
     }
     let body = null;
-    try { body = JSON.parse(await res.text()); } catch (e) { /* respuesta no JSON */ }
+    try {
+        body = JSON.parse(await res.text());
+    } catch (e) {
+        /* respuesta no JSON */
+    }
     if (!body && !res.ok) throw new SheetsError('SERVER', `Error de Sheets (HTTP ${res.status}).`);
     return body;
 }
@@ -196,13 +206,18 @@ function notifyOfflineSnapshot(savedAt) {
     _offlineNoticeShown = true;
     toast(`Sin conexión: muestro tus datos guardados ${formatSnapshotDate(savedAt)}.`, { type: 'info', duration: 6000 });
 }
-window.addEventListener('online', () => { _offlineNoticeShown = false; });
+window.addEventListener('online', () => {
+    _offlineNoticeShown = false;
+});
 
 // Evita lanzar dos veces la misma lectura mientras la primera sigue en curso.
 function sheetsReadOnce(key, sheetName) {
     if (!_sheetsInflight[key]) {
         _sheetsInflight[key] = sheetsRead(sheetName)
-            .then(data => { saveSheetSnapshot(key, data); return data; })
+            .then(data => {
+                saveSheetSnapshot(key, data);
+                return data;
+            })
             .catch(async err => {
                 if (!OFFLINE_CODES.includes(err.code)) throw err;
                 const snapshot = await loadSheetSnapshot(key);
@@ -210,7 +225,9 @@ function sheetsReadOnce(key, sheetName) {
                 notifyOfflineSnapshot(snapshot.savedAt);
                 return snapshot.data;
             })
-            .finally(() => { delete _sheetsInflight[key]; });
+            .finally(() => {
+                delete _sheetsInflight[key];
+            });
     }
     return _sheetsInflight[key];
 }
@@ -221,12 +238,19 @@ function sheetsReadOnce(key, sheetName) {
 function describeWrite(payload) {
     if (payload.anime) return `Registrar "${payload.anime}"`;
     if (payload.manga) return `Registrar "${payload.manga}"`;
-    return {
-        save_top150: 'Guardar TOP 150', save_annual: 'Guardar Ranking Anual',
-        save_planificador: 'Guardar planificador', save_calificador: 'Guardar calificador',
-        upsert_rows: 'Guardar cambios', delete_rows: 'Borrar elementos',
-        update_entry: 'Editar obra', delete_entry: 'Borrar obra', set_anilist_ids: 'Vincular con AniList'
-    }[payload.action] || 'Cambio pendiente';
+    return (
+        {
+            save_top150: 'Guardar TOP 150',
+            save_annual: 'Guardar Ranking Anual',
+            save_planificador: 'Guardar planificador',
+            save_calificador: 'Guardar calificador',
+            upsert_rows: 'Guardar cambios',
+            delete_rows: 'Borrar elementos',
+            update_entry: 'Editar obra',
+            delete_entry: 'Borrar obra',
+            set_anilist_ids: 'Vincular con AniList'
+        }[payload.action] || 'Cambio pendiente'
+    );
 }
 
 async function queueWrite(payload, minVersion) {
@@ -253,8 +277,8 @@ async function flushOutbox() {
                 await outboxRemove(entry.id);
                 sent++;
             } catch (err) {
-                if (OFFLINE_CODES.includes(err.code) || err.code === 'UNAUTHORIZED') break;   // se reintentará
-                await outboxRemove(entry.id);                                                // el servidor lo rechazó
+                if (OFFLINE_CODES.includes(err.code) || err.code === 'UNAUTHORIZED') break; // se reintentará
+                await outboxRemove(entry.id); // el servidor lo rechazó
                 failed.push(`${entry.label}: ${err.message}`);
             }
         }
@@ -264,7 +288,8 @@ async function flushOutbox() {
     }
     if (sent) {
         toast(`Se enviaron ${sent} ${sent === 1 ? 'cambio pendiente' : 'cambios pendientes'}.`, { type: 'success' });
-        invalidateList('master'); invalidateList('manga');
+        invalidateList('master');
+        invalidateList('manga');
         if (typeof refreshCurrentView === 'function') refreshCurrentView();
     }
     failed.forEach(msg => toast(`No se pudo enviar: ${msg}`, { type: 'error' }));

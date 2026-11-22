@@ -2,8 +2,44 @@
 // Una obra popular al azar que aún no tienes (ni has ocultado), con filtro
 // de época y género. Desde la carta: añadir al Planificador u ocultarla.
 
-const GACHA_GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller'];
-const GENRE_LABELS = { Action: 'Acción', Adventure: 'Aventura', Comedy: 'Comedia', Drama: 'Drama', Fantasy: 'Fantasía', Horror: 'Terror', 'Mahou Shoujo': 'Mahou Shoujo', Mecha: 'Mecha', Music: 'Música', Mystery: 'Misterio', Psychological: 'Psicológico', Romance: 'Romance', 'Sci-Fi': 'Ciencia ficción', 'Slice of Life': 'Recuentos de la vida', Sports: 'Deportes', Supernatural: 'Sobrenatural', Thriller: 'Thriller' };
+const GACHA_GENRES = [
+    'Action',
+    'Adventure',
+    'Comedy',
+    'Drama',
+    'Fantasy',
+    'Horror',
+    'Mahou Shoujo',
+    'Mecha',
+    'Music',
+    'Mystery',
+    'Psychological',
+    'Romance',
+    'Sci-Fi',
+    'Slice of Life',
+    'Sports',
+    'Supernatural',
+    'Thriller'
+];
+const GENRE_LABELS = {
+    Action: 'Acción',
+    Adventure: 'Aventura',
+    Comedy: 'Comedia',
+    Drama: 'Drama',
+    Fantasy: 'Fantasía',
+    Horror: 'Terror',
+    'Mahou Shoujo': 'Mahou Shoujo',
+    Mecha: 'Mecha',
+    Music: 'Música',
+    Mystery: 'Misterio',
+    Psychological: 'Psicológico',
+    Romance: 'Romance',
+    'Sci-Fi': 'Ciencia ficción',
+    'Slice of Life': 'Recuentos de la vida',
+    Sports: 'Deportes',
+    Supernatural: 'Sobrenatural',
+    Thriller: 'Thriller'
+};
 let _gachaWinner = null;
 
 function fillGachaGenres() {
@@ -27,10 +63,14 @@ async function pullGacha() {
     const filters = [];
     if (decade !== 'all') {
         const startYear = parseInt(decade, 10);
-        variables.from = startYear * 10000; variables.to = (startYear + 9) * 10000 + 9999;
+        variables.from = startYear * 10000;
+        variables.to = (startYear + 9) * 10000 + 9999;
         filters.push('startDate_greater: $from, startDate_lesser: $to');
     }
-    if (genre !== 'all') { variables.genre = genre; filters.push('genre_in: [$genre]'); }
+    if (genre !== 'all') {
+        variables.genre = genre;
+        filters.push('genre_in: [$genre]');
+    }
 
     const gql = `query($page: Int, $type: MediaType, $from: FuzzyDateInt, $to: FuzzyDateInt, $genre: String) {
         Page(page: $page, perPage: 50) {
@@ -47,7 +87,7 @@ async function pullGacha() {
     try {
         const data = await fetchAnilist(gql, variables);
         const medias = data?.data?.Page?.media || [];
-        if (medias.length === 0) throw new Error("No hay resultados");
+        if (medias.length === 0) throw new Error('No hay resultados');
 
         // Fuera lo que ya tienes (por ID de AniList y, si no está vinculado, por título) y lo ocultado.
         const owned = format === 'ANIME' ? buildOwnedIndex(_masterData, 'anime') : buildOwnedIndex(_mangaData, 'manga');
@@ -57,7 +97,8 @@ async function pullGacha() {
         loader.style.display = 'none';
 
         if (unseenMedias.length === 0) {
-            resultContainer.innerHTML = '<div style="text-align:center; color:var(--neon-yellow); padding: 20px;">¡Increíble! Ya tienes (u ocultaste) todo lo que ha salido en esta tirada. Prueba otra vez o cambia los filtros.</div>';
+            resultContainer.innerHTML =
+                '<div style="text-align:center; color:var(--neon-yellow); padding: 20px;">¡Increíble! Ya tienes (u ocultaste) todo lo que ha salido en esta tirada. Prueba otra vez o cambia los filtros.</div>';
             return;
         }
 
@@ -92,14 +133,18 @@ async function pullGacha() {
         `;
     } catch (e) {
         loader.style.display = 'none';
-        resultContainer.innerHTML = '<div style="text-align:center; color:var(--neon-red); padding: 20px;">Error al conectar con la base de datos global. Inténtalo de nuevo.</div>';
+        resultContainer.innerHTML =
+            '<div style="text-align:center; color:var(--neon-red); padding: 20px;">Error al conectar con la base de datos global. Inténtalo de nuevo.</div>';
     }
 }
 
 async function gachaToPlanner() {
     if (!_gachaWinner) return;
-    try { await addToPlanificador(_gachaWinner); }
-    catch (err) { toast(err.message, { type: 'error' }); }
+    try {
+        await addToPlanificador(_gachaWinner);
+    } catch (err) {
+        toast(err.message, { type: 'error' });
+    }
 }
 
 function gachaHide() {

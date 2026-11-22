@@ -1,5 +1,7 @@
 /* --- PANTALLA DE BLOQUEO (ver js/core/auth.js) --- */
-body.auth-locked { overflow: hidden; }
+body.auth-locked {
+    overflow: hidden;
+}
 
 #authOverlay {
     position: fixed;
@@ -17,16 +19,28 @@ body.auth-locked { overflow: hidden; }
     max-width: 340px;
     padding: 32px 24px;
     text-align: center;
-    border: 1px solid var(--glass-border, rgba(255,255,255,0.07));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.07));
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.03);
     box-shadow: 0 0 30px rgba(0, 240, 255, 0.08);
     color: var(--text-color, #f0f0f5);
 }
 
-.auth-logo { font-size: 2.5rem; margin-bottom: 8px; }
-.auth-card h1 { margin: 0; font-size: 1.6rem; letter-spacing: 3px; color: var(--neon-cyan, #00f0ff); }
-.auth-sub { margin: 4px 0 20px; opacity: 0.5; font-size: 0.85rem; }
+.auth-logo {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+.auth-card h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    letter-spacing: 3px;
+    color: var(--neon-cyan, #00f0ff);
+}
+.auth-sub {
+    margin: 4px 0 20px;
+    opacity: 0.5;
+    font-size: 0.85rem;
+}
 
 .auth-card input {
     width: 100%;
@@ -51,6 +65,14 @@ body.auth-locked { overflow: hidden; }
     font-size: 1rem;
     cursor: pointer;
 }
-.auth-card button:disabled { opacity: 0.6; cursor: wait; }
+.auth-card button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
 
-.auth-msg { min-height: 1.2em; margin: 12px 0 0; font-size: 0.85rem; color: var(--neon-yellow, #ffaa00); }
+.auth-msg {
+    min-height: 1.2em;
+    margin: 12px 0 0;
+    font-size: 0.85rem;
+    color: var(--neon-yellow, #ffaa00);
+}

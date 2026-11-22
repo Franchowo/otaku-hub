@@ -5,13 +5,13 @@
 async function fetchAnilist(query, variables = {}) {
     const response = await fetch('https://graphql.anilist.co', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ query, variables })
     });
     if (!response.ok) {
-        if (response.status === 429) throw new Error("RATE_LIMIT");
+        if (response.status === 429) throw new Error('RATE_LIMIT');
         if (response.status === 404) return { data: null };
-        throw new Error("API_ERROR");
+        throw new Error('API_ERROR');
     }
     return response.json();
 }

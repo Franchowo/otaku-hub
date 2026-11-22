@@ -34,7 +34,10 @@ function toast(message, { type = 'info', action = null, duration } = {}) {
         btn.type = 'button';
         btn.className = 'toast-action';
         btn.textContent = action.label;
-        btn.addEventListener('click', () => { close(); action.onClick(); });
+        btn.addEventListener('click', () => {
+            close();
+            action.onClick();
+        });
         el.appendChild(btn);
     }
     const closeBtn = document.createElement('button');
@@ -75,15 +78,19 @@ function confirmDialog({ title = '¿Seguro?', message = '', confirmText = 'Acept
                 </div>
             </div>`;
 
-        const finish = (answer) => {
+        const finish = answer => {
             document.removeEventListener('keydown', onKey, true);
             overlay.remove();
             if (previousFocus && previousFocus.focus) previousFocus.focus();
             resolve(answer);
         };
-        const onKey = (e) => {
-            if (e.key === 'Escape') { e.preventDefault(); finish(false); }
-            if (e.key === 'Tab') { // mantener el foco dentro del diálogo
+        const onKey = e => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                finish(false);
+            }
+            if (e.key === 'Tab') {
+                // mantener el foco dentro del diálogo
                 const buttons = [...overlay.querySelectorAll('button')];
                 const idx = buttons.indexOf(document.activeElement);
                 e.preventDefault();
@@ -120,7 +127,7 @@ function promptNumberDialog({ title = '', message = '', value = '', min = 1, max
                 </div>
             </form>`;
         const input = overlay.querySelector('input');
-        const finish = (answer) => {
+        const finish = answer => {
             overlay.remove();
             if (previousFocus && previousFocus.focus) previousFocus.focus();
             resolve(answer);
@@ -128,14 +135,26 @@ function promptNumberDialog({ title = '', message = '', value = '', min = 1, max
         overlay.querySelector('form').addEventListener('submit', e => {
             e.preventDefault();
             const n = parseInt(input.value, 10);
-            if (Number.isNaN(n) || n < min || n > max) { input.setCustomValidity(`Entre ${min} y ${max}`); input.reportValidity(); return; }
+            if (Number.isNaN(n) || n < min || n > max) {
+                input.setCustomValidity(`Entre ${min} y ${max}`);
+                input.reportValidity();
+                return;
+            }
             finish(n);
         });
         input.addEventListener('input', () => input.setCustomValidity(''));
-        overlay.addEventListener('click', e => { if (e.target === overlay || e.target.closest('[data-answer="no"]')) finish(null); });
-        overlay.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); finish(null); } });
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay || e.target.closest('[data-answer="no"]')) finish(null);
+        });
+        overlay.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                finish(null);
+            }
+        });
         document.body.appendChild(overlay);
-        input.focus(); input.select();
+        input.focus();
+        input.select();
     });
 }
 
@@ -174,13 +193,18 @@ function applyDateDefaults() {
     ['year', 'mangaYear', 'planYearSelect'].forEach(id => {
         const el = document.getElementById(id);
         // defaultValue también, para que form.reset() vuelva al año actual.
-        if (el) { el.defaultValue = el.value = year; el.max = year + 2; }
+        if (el) {
+            el.defaultValue = el.value = year;
+            el.max = year + 2;
+        }
     });
     const season = currentAnimeSeason();
     ['season', 'planSeasonSelect'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        [...el.options].forEach(opt => { opt.defaultSelected = opt.value === season; });
+        [...el.options].forEach(opt => {
+            opt.defaultSelected = opt.value === season;
+        });
         el.value = season;
     });
 }

@@ -29,34 +29,58 @@ function loadRankerState() {
     const old = readStoredJSON('ranker_data', null);
     if (old && Array.isArray(old.songs) && old.songs.length) {
         const fresh = emptyRankerState();
-        fresh.items = old.songs.map(s => ({ id: String(s.id), anime: s.name, label: s.name, img: s.img, stars: s.stars || 0, keep: s.action !== 'discard' }));
+        fresh.items = old.songs.map(s => ({
+            id: String(s.id),
+            anime: s.name,
+            label: s.name,
+            img: s.img,
+            stars: s.stars || 0,
+            keep: s.action !== 'discard'
+        }));
         const finished = old.pool && old.pool.length && old.duelsDone >= old.duelsTotal;
-        if (finished) { fresh.result = old.pool.slice().sort((a, b) => b.elo - a.elo).map(s => String(s.id)); fresh.step = 4; }
-        else fresh.step = 3;
+        if (finished) {
+            fresh.result = old.pool
+                .slice()
+                .sort((a, b) => b.elo - a.elo)
+                .map(s => String(s.id));
+            fresh.step = 4;
+        } else fresh.step = 3;
         return fresh;
     }
     return emptyRankerState();
 }
 
 function save() {
-    try { localStorage.setItem(RANKER_KEY, JSON.stringify(state)); localStorage.removeItem('ranker_data'); } catch (e) { /* almacenamiento lleno o bloqueado */ }
+    try {
+        localStorage.setItem(RANKER_KEY, JSON.stringify(state));
+        localStorage.removeItem('ranker_data');
+    } catch (e) {
+        /* almacenamiento lleno o bloqueado */
+    }
 }
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 const itemById = id => state.items.find(i => i.id === id);
 
 async function resetApp() {
-    const ok = await confirmDialog({ title: 'Reiniciar Opening Ranker', message: 'Se borrarán la lista, las estrellas y los duelos. No se puede deshacer.', confirmText: 'Reiniciar', danger: true });
+    const ok = await confirmDialog({
+        title: 'Reiniciar Opening Ranker',
+        message: 'Se borrarán la lista, las estrellas y los duelos. No se puede deshacer.',
+        confirmText: 'Reiniciar',
+        danger: true
+    });
     if (!ok) return;
     stopAllOpenings();
-    state = emptyRankerState(); save();
+    state = emptyRankerState();
+    save();
     document.getElementById('input').value = '';
     goToStep(1);
     toast('Opening Ranker reiniciado.', { type: 'success' });
 }
 
 function goToStep(n) {
-    state.step = n; save();
+    state.step = n;
+    save();
     stopAllOpenings();
     document.querySelectorAll('#rankerView .screen').forEach(s => s.classList.remove('active'));
     document.getElementById('step-' + n).classList.add('active');
@@ -71,22 +95,40 @@ function fillRankerYears() {
     const select = document.getElementById('rankerImportYear');
     if (!select) return;
     const years = [...new Set(_masterData.map(a => parseInt(a.year, 10)).filter(Boolean))].sort((a, b) => b - a);
-    select.innerHTML = years.length ? years.map(y => `<option value="${y}">${y}</option>`).join('') : '<option value="">(cargando tu lista…)</option>';
+    select.innerHTML = years.length
+        ? years.map(y => `<option value="${y}">${y}</option>`).join('')
+        : '<option value="">(cargando tu lista…)</option>';
 }
 
 function importRankerYear() {
     const year = parseInt(document.getElementById('rankerImportYear').value, 10);
     if (!year) return;
     const input = document.getElementById('input');
-    const current = new Set(input.value.split('\n').map(l => l.trim().toLowerCase()).filter(Boolean));
-    const add = _masterData.filter(a => parseInt(a.year, 10) === year).map(a => String(a.anime).trim()).filter(t => !current.has(t.toLowerCase()));
+    const current = new Set(
+        input.value
+            .split('\n')
+            .map(l => l.trim().toLowerCase())
+            .filter(Boolean)
+    );
+    const add = _masterData
+        .filter(a => parseInt(a.year, 10) === year)
+        .map(a => String(a.anime).trim())
+        .filter(t => !current.has(t.toLowerCase()));
     input.value = [input.value.trim(), ...add].filter(Boolean).join('\n');
     toast(add.length ? `Añadidos ${add.length} animes de ${year}.` : `Ya estaban todos los de ${year}.`, { type: 'info' });
 }
 
 async function startApp() {
-    const names = [...new Set(document.getElementById('input').value.split('\n').map(l => l.trim()).filter(Boolean))];
-    if (names.length === 0) return toast("Escribe al menos un anime (uno por línea).", { type: 'error' });
+    const names = [
+        ...new Set(
+            document
+                .getElementById('input')
+                .value.split('\n')
+                .map(l => l.trim())
+                .filter(Boolean)
+        )
+    ];
+    if (names.length === 0) return toast('Escribe al menos un anime (uno por línea).', { type: 'error' });
     const btn = document.getElementById('btn-start-ranker');
     btn.disabled = true;
 
@@ -102,29 +144,59 @@ async function startApp() {
             btn.textContent = `Buscando animes… ${Math.min(i + 10, pending.length)}/${pending.length}`;
             const batch = pending.slice(i, i + 10);
             const defs = batch.map((_, k) => `$s${k}: String`).join(', ');
-            const body = batch.map((_, k) => `q${k}: Page(page: 1, perPage: 1) { media(search: $s${k}, type: ANIME) { id coverImage { large } } }`).join(' ');
-            const vars = {}; batch.forEach((n, k) => { vars[`s${k}`] = n; });
+            const body = batch
+                .map((_, k) => `q${k}: Page(page: 1, perPage: 1) { media(search: $s${k}, type: ANIME) { id coverImage { large } } }`)
+                .join(' ');
+            const vars = {};
+            batch.forEach((n, k) => {
+                vars[`s${k}`] = n;
+            });
             try {
                 const json = await fetchAnilist(`query(${defs}) { ${body} }`, vars);
-                batch.forEach((n, k) => { const m = json?.data?.[`q${k}`]?.media?.[0]; if (m) found[n] = { id: m.id, img: m.coverImage?.large }; });
-            } catch (e) { /* sin resultados para este bloque */ }
+                batch.forEach((n, k) => {
+                    const m = json?.data?.[`q${k}`]?.media?.[0];
+                    if (m) found[n] = { id: m.id, img: m.coverImage?.large };
+                });
+            } catch (e) {
+                /* sin resultados para este bloque */
+            }
             await delay(700);
         }
 
         // 2) Openings de cada anime (AnimeThemes).
         const items = [];
         for (let i = 0; i < names.length; i++) {
-            const name = names[i], media = found[name];
+            const name = names[i],
+                media = found[name];
             btn.textContent = `Buscando openings… ${i + 1}/${names.length}`;
             const themes = media ? await fetchOpeningsForAnilistId(media.id) : [];
             if (themes && themes.length) {
-                themes.forEach(t => items.push({
-                    id: `${media.id}-${t.slug}`, anime: name, anilistId: media.id, img: media.img,
-                    label: `${name} — ${t.slug}`, slug: t.slug, song: t.song, artists: t.artists, video: t.video,
-                    keep: true, stars: 0
-                }));
+                themes.forEach(t =>
+                    items.push({
+                        id: `${media.id}-${t.slug}`,
+                        anime: name,
+                        anilistId: media.id,
+                        img: media.img,
+                        label: `${name} — ${t.slug}`,
+                        slug: t.slug,
+                        song: t.song,
+                        artists: t.artists,
+                        video: t.video,
+                        keep: true,
+                        stars: 0
+                    })
+                );
             } else {
-                items.push({ id: `name-${i}`, anime: name, anilistId: media ? media.id : null, img: media ? media.img : null, label: name, keep: true, stars: 0, themes: themes === null ? 'error' : 'none' });
+                items.push({
+                    id: `name-${i}`,
+                    anime: name,
+                    anilistId: media ? media.id : null,
+                    img: media ? media.img : null,
+                    label: name,
+                    keep: true,
+                    stars: 0,
+                    themes: themes === null ? 'error' : 'none'
+                });
             }
             if (media) await delay(400);
         }
@@ -132,7 +204,8 @@ async function startApp() {
         state.items = items;
         goToStep(2);
     } finally {
-        btn.disabled = false; btn.textContent = '🔎 Buscar sus openings';
+        btn.disabled = false;
+        btn.textContent = '🔎 Buscar sus openings';
     }
 }
 
@@ -143,13 +216,23 @@ async function fetchOpeningsForAnilistId(anilistId) {
     for (const site of ['AniList', 'Anilist']) {
         const url = `${ANIMETHEMES_API}/anime?filter[has]=resources&filter[site]=${site}&filter[external_id]=${anilistId}&include=animethemes.animethemeentries.videos,animethemes.song.artists`;
         let res;
-        try { res = await fetch(url, { headers: { Accept: 'application/json' } }); }
-        catch (e) { return null; }
-        if (res.status === 429) { await delay(5000); continue; }
-        if (res.status >= 500) return null;   // AnimeThemes caído: "no respondió", no "sin openings"
+        try {
+            res = await fetch(url, { headers: { Accept: 'application/json' } });
+        } catch (e) {
+            return null;
+        }
+        if (res.status === 429) {
+            await delay(5000);
+            continue;
+        }
+        if (res.status >= 500) return null; // AnimeThemes caído: "no respondió", no "sin openings"
         if (!res.ok) continue;
         let json;
-        try { json = await res.json(); } catch (e) { continue; }
+        try {
+            json = await res.json();
+        } catch (e) {
+            continue;
+        }
         const anime = Array.isArray(json.anime) ? json.anime[0] : null;
         if (anime) return parseAnimeThemes(anime);
     }
@@ -168,7 +251,10 @@ function parseAnimeThemes(anime) {
             return {
                 slug: t.slug || `OP${t.sequence || ''}`,
                 song: t.song?.title || '',
-                artists: (t.song?.artists || []).map(a => a.name).filter(Boolean).join(', '),
+                artists: (t.song?.artists || [])
+                    .map(a => a.name)
+                    .filter(Boolean)
+                    .join(', '),
                 video: video ? video.link : null
             };
         });
@@ -184,8 +270,14 @@ function openingPlayerHTML(item) {
 }
 
 function stopAllOpenings() {
-    document.querySelectorAll('#rankerView video.opening-video').forEach(v => { v.pause(); v.remove(); });
-    document.querySelectorAll('#rankerView [data-playing]').forEach(b => { b.textContent = '▶ Escuchar'; delete b.dataset.playing; });
+    document.querySelectorAll('#rankerView video.opening-video').forEach(v => {
+        v.pause();
+        v.remove();
+    });
+    document.querySelectorAll('#rankerView [data-playing]').forEach(b => {
+        b.textContent = '▶ Escuchar';
+        delete b.dataset.playing;
+    });
 }
 
 function toggleOpening(button, src) {
@@ -194,16 +286,28 @@ function toggleOpening(button, src) {
     if (playing) return;
     const video = document.createElement('video');
     video.className = 'opening-video';
-    video.src = src; video.controls = true; video.autoplay = true; video.playsInline = true; video.preload = 'none';
-    video.onerror = () => { toast('No se pudo reproducir este opening.', { type: 'error' }); stopAllOpenings(); };
-    button.dataset.playing = '1'; button.textContent = '⏸ Parar';
+    video.src = src;
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = 'none';
+    video.onerror = () => {
+        toast('No se pudo reproducir este opening.', { type: 'error' });
+        stopAllOpenings();
+    };
+    button.dataset.playing = '1';
+    button.textContent = '⏸ Parar';
     button.closest('.ranker-card').appendChild(video);
 }
 
 function itemMetaHTML(item) {
     const song = item.song ? `<span class="ranker-song">🎵 ${esc(item.song)}${item.artists ? ` · ${esc(item.artists)}` : ''}</span>` : '';
-    const note = item.themes === 'none' ? '<span class="ranker-song">Sin openings en AnimeThemes</span>'
-        : item.themes === 'error' ? '<span class="ranker-song">AnimeThemes no respondió</span>' : '';
+    const note =
+        item.themes === 'none'
+            ? '<span class="ranker-song">Sin openings en AnimeThemes</span>'
+            : item.themes === 'error'
+              ? '<span class="ranker-song">AnimeThemes no respondió</span>'
+              : '';
     return `<span class="ranker-title">${esc(item.label)}</span>${song}${note}`;
 }
 
@@ -215,7 +319,9 @@ function coverHTML(item, size = '') {
 function renderDiscard() {
     const kept = state.items.filter(i => i.keep).length;
     document.getElementById('ranker-discard-count').textContent = `${kept} de ${state.items.length} openings seleccionados`;
-    document.getElementById('discard-list').innerHTML = state.items.map(s => `
+    document.getElementById('discard-list').innerHTML = state.items
+        .map(
+            s => `
         <div class="list-item ranker-card ${s.keep ? 'item-keep' : 'item-discard'}">
             ${coverHTML(s)}
             <div class="ranker-info">${itemMetaHTML(s)}</div>
@@ -223,24 +329,29 @@ function renderDiscard() {
                 ${openingPlayerHTML(s)}
                 <button type="button" class="btn-icon ${s.keep ? 'btn-keep' : 'btn-discard'}" onclick="markItem(${jsArg(s.id)})" aria-pressed="${s.keep}" aria-label="${s.keep ? 'Quitar' : 'Incluir'} ${esc(s.label)}">${s.keep ? '✔' : '✕'}</button>
             </div>
-        </div>`).join('');
+        </div>`
+        )
+        .join('');
 }
 
 function markItem(id) {
     const item = itemById(String(id));
     if (item) item.keep = !item.keep;
-    save(); renderDiscard();
+    save();
+    renderDiscard();
 }
 
 function prepareRating() {
-    if (!state.items.some(s => s.keep)) return toast("Mantén (✔) al menos un opening para continuar.", { type: 'error' });
+    if (!state.items.some(s => s.keep)) return toast('Mantén (✔) al menos un opening para continuar.', { type: 'error' });
     goToStep(3);
 }
 
 // --- Paso 3: estrellas (niveles) ---
 function renderRating() {
     const kept = state.items.filter(s => s.keep);
-    document.getElementById('rating-list').innerHTML = kept.map(s => `
+    document.getElementById('rating-list').innerHTML = kept
+        .map(
+            s => `
         <div class="list-item ranker-card">
             ${coverHTML(s)}
             <div class="ranker-info">${itemMetaHTML(s)}</div>
@@ -250,26 +361,35 @@ function renderRating() {
                     ${[1, 2, 3].map(i => `<button type="button" class="star ${i <= s.stars ? 'active' : ''}" role="radio" aria-checked="${s.stars === i}" aria-label="${i} estrella${i > 1 ? 's' : ''}" onclick="setStars(${jsArg(s.id)}, ${i})">★</button>`).join('')}
                 </div>
             </div>
-        </div>`).join('');
+        </div>`
+        )
+        .join('');
 }
 
 function setStars(id, val) {
     const item = itemById(String(id));
     if (item) item.stars = item.stars === val ? 0 : val;
-    save(); renderRating();
+    save();
+    renderRating();
 }
 
 // Nº máximo de duelos para ordenar n elementos por inserción binaria.
-function maxDuels(n) { let total = 0; for (let k = 1; k < n; k++) total += Math.ceil(Math.log2(k + 1)); return total; }
+function maxDuels(n) {
+    let total = 0;
+    for (let k = 1; k < n; k++) total += Math.ceil(Math.log2(k + 1));
+    return total;
+}
 
 function startDuels() {
     const rated = state.items.filter(s => s.keep && s.stars > 0);
-    if (rated.length < 2) return toast("Da estrellas al menos a 2 openings para empezar los duelos.", { type: 'error' });
+    if (rated.length < 2) return toast('Da estrellas al menos a 2 openings para empezar los duelos.', { type: 'error' });
     const unrated = state.items.filter(s => s.keep && !s.stars).length;
     if (unrated) toast(`${unrated} sin estrellas no entran en los duelos.`, { type: 'info' });
     state.sorted = { 3: [], 2: [], 1: [] };
     state.queue = TIERS.flatMap(t => rated.filter(s => s.stars === t).map(s => s.id));
-    state.current = null; state.history = []; state.result = null;
+    state.current = null;
+    state.history = [];
+    state.result = null;
     state.totalDuels = TIERS.reduce((sum, t) => sum + maxDuels(rated.filter(s => s.stars === t).length), 0);
     state.duelsDone = 0;
     advanceInsertion();
@@ -282,7 +402,10 @@ function advanceInsertion() {
         const id = state.queue.shift();
         const tier = itemById(id).stars;
         const list = state.sorted[tier];
-        if (list.length === 0) { list.push(id); continue; }   // el primero de su nivel no necesita duelo
+        if (list.length === 0) {
+            list.push(id);
+            continue;
+        } // el primero de su nivel no necesita duelo
         state.current = { id, tier, lo: 0, hi: list.length };
     }
     if (!state.current && !state.queue.length) {
@@ -296,36 +419,47 @@ function vote(candidateWins) {
     state.history.push(JSON.stringify({ sorted: state.sorted, queue: state.queue, current: state.current, duelsDone: state.duelsDone }));
     if (state.history.length > 60) state.history.shift();
     const mid = Math.floor((c.lo + c.hi) / 2);
-    if (candidateWins) c.hi = mid; else c.lo = mid + 1;
+    if (candidateWins) c.hi = mid;
+    else c.lo = mid + 1;
     state.duelsDone++;
     if (c.lo >= c.hi) {
         state.sorted[c.tier].splice(c.lo, 0, c.id);
         state.current = null;
         advanceInsertion();
     }
-    save(); renderDuel();
+    save();
+    renderDuel();
 }
 
 function undoDuel() {
     const last = state.history.pop();
     if (!last) return;
     Object.assign(state, JSON.parse(last), { result: null });
-    save(); renderDuel();
+    save();
+    renderDuel();
 }
 
 function renderDuel() {
     stopAllOpenings();
-    const box = document.getElementById('duel-box'), fill = document.getElementById('progress-fill');
+    const box = document.getElementById('duel-box'),
+        fill = document.getElementById('progress-fill');
     if (state.result) {
         fill.style.width = '100%';
         box.innerHTML = `
             <h3>🏆 Tu ranking de openings</h3>
-            <div class="ranker-final">${state.result.map((id, i) => { const s = itemById(id); return s ? `
+            <div class="ranker-final">${state.result
+                .map((id, i) => {
+                    const s = itemById(id);
+                    return s
+                        ? `
                 <div class="list-item ranker-card">
                     <strong class="ranker-pos">#${i + 1}</strong>${coverHTML(s)}
                     <div class="ranker-info">${itemMetaHTML(s)}</div>
                     <div class="ranker-actions">${openingPlayerHTML(s)}</div>
-                </div>` : ''; }).join('')}</div>
+                </div>`
+                        : '';
+                })
+                .join('')}</div>
             <div class="ranker-final-actions">
                 <button type="button" class="chip-btn accent-cyan" onclick="copyRankerResult()">📋 Copiar como texto</button>
                 ${state.history.length ? '<button type="button" class="chip-btn accent-yellow" onclick="undoDuel()">↶ Deshacer último duelo</button>' : ''}
@@ -333,9 +467,13 @@ function renderDuel() {
         return;
     }
     const c = state.current;
-    if (!c) { box.innerHTML = ''; return; }
+    if (!c) {
+        box.innerHTML = '';
+        return;
+    }
     const list = state.sorted[c.tier];
-    const a = itemById(c.id), b = itemById(list[Math.floor((c.lo + c.hi) / 2)]);
+    const a = itemById(c.id),
+        b = itemById(list[Math.floor((c.lo + c.hi) / 2)]);
     const pct = state.totalDuels ? Math.min(99, Math.round((state.duelsDone / state.totalDuels) * 100)) : 0;
     fill.style.width = pct + '%';
     const card = (s, wins, key) => `
@@ -355,10 +493,16 @@ function renderDuel() {
 }
 
 function copyRankerResult() {
-    const text = state.result.map((id, i) => { const s = itemById(id); return `${i + 1}. ${s.label}${s.song ? ` — ${s.song}${s.artists ? ' (' + s.artists + ')' : ''}` : ''}`; }).join('\n');
+    const text = state.result
+        .map((id, i) => {
+            const s = itemById(id);
+            return `${i + 1}. ${s.label}${s.song ? ` — ${s.song}${s.artists ? ' (' + s.artists + ')' : ''}` : ''}`;
+        })
+        .join('\n');
     navigator.clipboard.writeText(text).then(
         () => toast('Ranking copiado.', { type: 'success' }),
-        () => toast('No se pudo copiar (permiso del navegador).', { type: 'error' }));
+        () => toast('No se pudo copiar (permiso del navegador).', { type: 'error' })
+    );
 }
 
 // Teclas 1 / 2 para votar en los duelos.
