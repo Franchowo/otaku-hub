@@ -12,6 +12,12 @@ function setLoadersVisible(ids, visible) {
 
 const MASTER_LOADERS = ['statsLoader', 'detailLoader', 'studiosLoader', 'annualLoader'];
 
+// ID de AniList de una fila (columna "AniList ID"), o null si aún no está vinculada.
+function readAnilistId(item) {
+    const id = parseInt(item.anilistid ?? item.anilistId, 10);
+    return id > 0 ? id : null;
+}
+
 function initMasterDataFetch(callbackSuccess) {
     if(_masterData.length > 0) {
         if(callbackSuccess) callbackSuccess();
@@ -22,7 +28,7 @@ function initMasterDataFetch(callbackSuccess) {
     setLoadersVisible(MASTER_LOADERS, true);
 
     sheetsReadOnce('master', null).then(data => {
-        _masterData = data;
+        _masterData = data.map(item => Object.assign(item, { anilistId: readAnilistId(item) }));
         populateFilterDropdowns(_masterData);
         if(callbackSuccess) callbackSuccess();
         else applyFiltersAndRender();
@@ -74,7 +80,9 @@ function initMangaDataFetch(forceRefresh = false, callbackSuccess = null) {
                 manga: mangaName,
                 year: item.Year || item.year || item.Año || item.año || '????',
                 author: item.Author || item.author || item.Autor || item.autor || item.Serialization || item.serialization || 'Desconocido',
-                score: parseFloat(item.Score || item.score || item.Nota || item.nota || 0)
+                score: parseFloat(item.Score || item.score || item.Nota || item.nota || 0),
+                anilistId: readAnilistId(item),
+                _row: item._row || null
             };
         }).filter(m => m.manga);
 

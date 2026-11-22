@@ -1,7 +1,8 @@
         // --- NUEVO SISTEMA DE COLA MULTI-HILO (BATCHING) 4.0 ---
 const anilistQueue = [];
 let isProcessingQueue = false;
-const FALLBACK_COVER = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='85'%3E%3Crect width='60' height='85' fill='%23111122' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2300f0ff' font-family='sans-serif' font-size='20' font-weight='bold'%3E?%3C/text%3E%3C/svg%3E";
+// Comillas codificadas (%27): esta URL se inserta dentro de onerror="this.src='...'".
+const FALLBACK_COVER = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2760%27 height=%2785%27%3E%3Crect width=%2760%27 height=%2785%27 fill=%27%23111122%27 rx=%278%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 fill=%27%2300f0ff%27 font-family=%27sans-serif%27 font-size=%2720%27 font-weight=%27bold%27%3E?%3C/text%3E%3C/svg%3E";
 
 // OBSERVADOR GLOBAL CON RENOVACIÓN DE CACHÉ V5 (Soporte Estudio Anime)
 const globalImageObserver = new IntersectionObserver((entries, obs) => {
@@ -23,18 +24,26 @@ const globalImageObserver = new IntersectionObserver((entries, obs) => {
                 const safeTitle = title.toLowerCase().replace(/[^a-z0-9]/g, '');
                 const safeAuthor = author.toLowerCase().replace(/[^a-z0-9]/g, '');
                 
-                // NUEVO: Recuperamos el estudio desde _masterData sin tocar el HTML de las vistas
+                // Recuperamos estudio e ID de AniList desde los datos cargados
+                // sin tocar el HTML de las vistas.
                 let studio = '';
+                let anilistId = parseInt(imgEl.getAttribute('data-anilist-id'), 10) || null;
                 if (type === 'anime' && typeof _masterData !== 'undefined') {
-                    const foundAnime = _masterData.find(a => a.anime.toLowerCase() === title.toLowerCase());
+                    const foundAnime = _masterData.find(a => a.anime && String(a.anime).toLowerCase() === title.toLowerCase());
                     if (foundAnime && foundAnime.studio) studio = foundAnime.studio;
+                    if (foundAnime && foundAnime.anilistId) anilistId = anilistId || foundAnime.anilistId;
+                } else if (type === 'manga' && typeof _mangaData !== 'undefined') {
+                    const foundManga = _mangaData.find(m => m.manga && String(m.manga).toLowerCase() === title.toLowerCase());
+                    if (foundManga && foundManga.anilistId) anilistId = anilistId || foundManga.anilistId;
                 }
                 const safeStudio = studio.toLowerCase().replace(/[^a-z0-9]/g, '');
                 
-                // CLAVE: Subimos a "v5" el caché de anime para forzar la actualización de portadas erróneas
-                const cacheKey = type === 'anime' 
-                    ? `anime_cover_v5_${safeTitle}_${safeStudio}` 
-                    : `manga_cover_v4_${safeTitle}_${safeAuthor}`;
+                // Con ID de AniList la portada es exacta y no depende del título.
+                const cacheKey = anilistId
+                    ? `cover_id_${anilistId}`
+                    : type === 'anime'
+                        ? `anime_cover_v5_${safeTitle}_${safeStudio}`
+                        : `manga_cover_v4_${safeTitle}_${safeAuthor}`;
 
                 const cachedUrl = localStorage.getItem(cacheKey);
 
@@ -42,7 +51,7 @@ const globalImageObserver = new IntersectionObserver((entries, obs) => {
                     imgEl.src = cachedUrl;
                 } else {
                     // Pasamos el estudio al objeto de la cola
-                    anilistQueue.push({ el: imgEl, type, title, author, studio, cacheKey });
+                    anilistQueue.push({ el: imgEl, type, title, author, studio, cacheKey, anilistId });
                     processAnilistQueue();
                 }
             } catch(e) { console.error("Error al encolar:", e); }
@@ -63,11 +72,12 @@ async function processAnilistQueue() {
         if(anilistQueue.length === 0) break;
 
         const currentType = anilistQueue[0].type;
-        const batchSize = 10; 
+        const byId = !!anilistQueue[0].anilistId;
+        const batchSize = byId ? 50 : 10;
         const batch = [];
 
         for (let i = 0; i < anilistQueue.length; i++) {
-            if (anilistQueue[i].type === currentType) {
+            if (anilistQueue[i].type === currentType && !!anilistQueue[i].anilistId === byId) {
                 batch.push(anilistQueue.splice(i, 1)[0]);
                 i--;
             }
@@ -77,6 +87,12 @@ async function processAnilistQueue() {
         if(batch.length === 0) continue;
 
         try {
+            if (byId) {
+                await fetchCoversById(batch);
+                await new Promise(resolve => setTimeout(resolve, 800));
+                continue;
+            }
+
             let queryDef = [];
             let queryBody = [];
             let variables = {};
@@ -170,9 +186,21 @@ async function processAnilistQueue() {
     isProcessingQueue = false;
 }
 
-        function fetchStudioLogoArt(studioName, targetImgId, index) {
-            // Anilist no provee logos de estudio.
-        }
+// Portadas por ID: una sola consulta para hasta 50 obras, sin ambigüedad.
+async function fetchCoversById(batch) {
+    const ids = [...new Set(batch.map(task => task.anilistId))];
+    const json = await fetchAnilist(
+        `query($ids: [Int]) { Page(page: 1, perPage: 50) { media(id_in: $ids) { id coverImage { large } } } }`,
+        { ids }
+    );
+    const covers = {};
+    (json?.data?.Page?.media || []).forEach(m => { if (m.coverImage?.large) covers[m.id] = m.coverImage.large; });
+    batch.forEach(task => {
+        const url = covers[task.anilistId] || FALLBACK_COVER;
+        localStorage.setItem(task.cacheKey, url);
+        if (task.el) task.el.src = url;
+    });
+}
 
         function updateScoreData(val) { document.getElementById('scoreVal').innerText = val; }
         function updateMangaScoreData(val) { document.getElementById('mangaScoreVal').innerText = val; }
@@ -180,7 +208,7 @@ async function processAnilistQueue() {
         function clearLocalMemory() {
             if(confirm("¿Quieres limpiar las imágenes guardadas en caché? (Se volverán a descargar secuencialmente en alta definición la próxima vez)")) {
                 Object.keys(localStorage).forEach(key => {
-                    if(key.startsWith('studio_logo_') || key.startsWith('anime_cover_') || key.startsWith('manga_cover_')) {
+                    if(key.startsWith('studio_logo_') || key.startsWith('anime_cover_') || key.startsWith('manga_cover_') || key.startsWith('cover_id_')) {
                         localStorage.removeItem(key);
                     }
                 });

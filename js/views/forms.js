@@ -3,6 +3,11 @@ const animeInput = document.getElementById('anime'), searchBtn = document.getEle
 if(searchBtn) searchBtn.addEventListener('click', performSearch);
 if(animeInput) animeInput.addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); performSearch(); } });
 
+// Obra elegida en el buscador: su ID de AniList se guarda con el registro.
+// Si después editas el título a mano, se descarta (ya no es esa obra).
+let _selectedAnimeMedia = null, _selectedMangaMedia = null;
+if(animeInput) animeInput.addEventListener('input', () => { if (_selectedAnimeMedia && animeInput.value !== _selectedAnimeMedia.title) _selectedAnimeMedia = null; });
+
 function performSearch() {
     const query = animeInput.value.trim(); if (query.length < 3) { alert("Escribe al menos 3 caracteres."); return; }
     searchBtn.innerText = "⏳"; searchBtn.disabled = true;
@@ -10,6 +15,7 @@ function performSearch() {
     const gql = `query($search: String) {
         Page(page: 1, perPage: 5) {
             media(search: $search, type: ANIME) {
+                id
                 title { romaji }
                 season seasonYear
                 startDate { year month }
@@ -43,6 +49,7 @@ function performSearch() {
             item.innerHTML = `<img src="${esc(anime.coverImage?.large || FALLBACK_IMG)}" alt=""><div class="info"><span class="title">${esc(titleStr)}</span><span class="meta">${esc(displayYear)} | ${esc(displaySeasonFormatted)} | Studio: ${esc(studiosText)}</span></div>`;
             item.addEventListener('click', function() {
                 animeInput.value = titleStr;
+                _selectedAnimeMedia = { id: anime.id, title: titleStr };
                 if (displayYear !== '????') document.getElementById('year').value = displayYear;
                 if (displaySeasonFormatted !== 'Unknown' && ['Winter', 'Spring', 'Summer', 'Fall'].includes(displaySeasonFormatted)) {
                     document.getElementById('season').value = displaySeasonFormatted;
@@ -62,6 +69,7 @@ function performSearch() {
 const mangaInput = document.getElementById('manga'), mangaSearchBtn = document.getElementById('mangaSearchBtn'), mangaSearchResults = document.getElementById('mangaSearchResults');
 if(mangaSearchBtn) mangaSearchBtn.addEventListener('click', performMangaSearch);
 if(mangaInput) mangaInput.addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); performMangaSearch(); } });
+if(mangaInput) mangaInput.addEventListener('input', () => { if (_selectedMangaMedia && mangaInput.value !== _selectedMangaMedia.title) _selectedMangaMedia = null; });
 
 function performMangaSearch() {
     const query = mangaInput.value.trim(); if (query.length < 3) { alert("Escribe por lo menos 3 letras."); return; }
@@ -70,6 +78,7 @@ function performMangaSearch() {
     const gql = `query($search: String) {
         Page(page: 1, perPage: 5) {
             media(search: $search, type: MANGA) {
+                id
                 title { romaji }
                 startDate { year }
                 coverImage { large }
@@ -92,6 +101,7 @@ function performMangaSearch() {
             item.innerHTML = `<img src="${esc(manga.coverImage?.large || FALLBACK_IMG)}" alt=""><div class="info"><span class="title">${esc(titleStr)}</span><span class="meta">${esc(startYear)} | Autor: ${esc(authorName)}</span></div>`;
             item.addEventListener('click', function() {
                 mangaInput.value = titleStr;
+                _selectedMangaMedia = { id: manga.id, title: titleStr };
                 if (startYear !== '????') document.getElementById('mangaYear').value = startYear;
                 const authInput = document.getElementById('author') || document.getElementById('serialization');
                 if(authInput) authInput.value = authorName;
@@ -136,11 +146,13 @@ if(animeForm) {
         if (!finalStudio) finalStudio = "Desconocido";
 
         const payload = { anime: document.getElementById('anime').value, season: document.getElementById('season').value, year: parseInt(document.getElementById('year').value), studio: finalStudio, score: parseInt(document.getElementById('score').value) };
+        // El Code.gs original ignora este campo; la v2 lo guarda en la columna "AniList ID".
+        if (_selectedAnimeMedia && _selectedAnimeMedia.title === payload.anime) payload.anilistId = _selectedAnimeMedia.id;
 
         sheetsWrite(payload).then(result => {
             statusMsg.style.color = "#00ff66";
             statusMsg.innerText = result.confirmed ? "¡Anime guardado perfectamente!" : "Anime enviado (el servidor no confirmó la respuesta).";
-            document.getElementById('animeForm').reset(); updateScoreData(7); _masterData = []; 
+            document.getElementById('animeForm').reset(); updateScoreData(7); _masterData = []; _selectedAnimeMedia = null;
         }).catch(err => {
             // No se resetea el formulario: así no pierdes lo que escribiste.
             statusMsg.style.color = "var(--neon-magenta)"; statusMsg.innerText = `No se guardó: ${err.message}`;
@@ -164,12 +176,13 @@ if(mangaForm) {
             serialization: authorVal,      
             score: parseInt(document.getElementById('mangaScore').value) 
         };
+        if (_selectedMangaMedia && _selectedMangaMedia.title === payload.manga) payload.anilistId = _selectedMangaMedia.id;
 
         sheetsWrite(payload).then(result => {
             statusMsg.style.color = "#00ff66";
             statusMsg.innerText = result.confirmed ? "¡Manga registrado con éxito en FULL LIST MANGA!" : "Manga enviado (el servidor no confirmó la respuesta).";
             // Antes se vaciaba _masterData (anime) y la librería de manga no se refrescaba.
-            document.getElementById('mangaForm').reset(); updateMangaScoreData(7); _mangaData = []; 
+            document.getElementById('mangaForm').reset(); updateMangaScoreData(7); _mangaData = []; _selectedMangaMedia = null;
         }).catch(err => {
             statusMsg.style.color = "var(--neon-red)"; statusMsg.innerText = `No se guardó: ${err.message}`;
         }).finally(() => { submitBtn.disabled = false; submitBtn.innerText = "Enviar al Registro"; });

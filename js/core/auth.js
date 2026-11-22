@@ -47,15 +47,18 @@ function verifyAccessKey(key) {
 }
 
 // ---------------------------------------------------------------------
-// BLOQUEO POR INTENTOS FALLIDOS (por dispositivo/navegador)
-// Tras MAX_FAILED_ATTEMPTS claves incorrectas, este dispositivo queda
-// bloqueado LOCKOUT_MS. Es por dispositivo a propósito: un bloqueo en el
-// servidor permitiría a cualquiera bloquearte a ti fallando 3 veces.
+// BLOQUEO PROGRESIVO POR INTENTOS FALLIDOS (por dispositivo/navegador)
+// Tras MAX_FAILED_ATTEMPTS claves incorrectas, espera de 1 min; cada fallo
+// posterior la alarga (5 min, 30 min, 2 h y 24 h como máximo). Al acertar se
+// reinicia. Antes eran 30 días de golpe: tres errores de tecleo te dejaban
+// fuera de tu propio móvil un mes. Es por dispositivo a propósito: un bloqueo
+// en el servidor permitiría a cualquiera bloquearte a ti.
 // ---------------------------------------------------------------------
 const MAX_FAILED_ATTEMPTS = 3;
-const LOCKOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 días
+const LOCKOUT_STEPS_MS = [60e3, 5 * 60e3, 30 * 60e3, 2 * 3600e3, 24 * 3600e3];
 const AUTH_FAILS_KEY = 'otaku_hub_auth_fails';
 const AUTH_LOCK_KEY = 'otaku_hub_auth_lock_until';
+const AUTH_LEVEL_KEY = 'otaku_hub_auth_lock_level';
 
 function readNumber(storageKey) {
     try { return parseInt(localStorage.getItem(storageKey), 10) || 0; } catch (e) { return 0; }
@@ -69,19 +72,27 @@ function writeValue(storageKey, value) {
 }
 
 function getLockUntil() {
-    const until = readNumber(AUTH_LOCK_KEY);
-    if (until && Date.now() >= until) {       // el bloqueo ya expiró
+    let until = readNumber(AUTH_LOCK_KEY);
+    const maxUntil = Date.now() + LOCKOUT_STEPS_MS[LOCKOUT_STEPS_MS.length - 1];
+    if (until > maxUntil) {                 // bloqueos antiguos de 30 días → máximo 24 h
+        until = maxUntil;
+        writeValue(AUTH_LOCK_KEY, until);
+    }
+    if (until && Date.now() >= until) {     // la espera ya terminó (el nivel se conserva)
         writeValue(AUTH_LOCK_KEY, null);
-        writeValue(AUTH_FAILS_KEY, null);
         return 0;
     }
     return until;
 }
 
 function registerFailedAttempt() {
+    const level = readNumber(AUTH_LEVEL_KEY);
     const fails = readNumber(AUTH_FAILS_KEY) + 1;
-    if (fails >= MAX_FAILED_ATTEMPTS) {
-        writeValue(AUTH_LOCK_KEY, Date.now() + LOCKOUT_MS);
+    // Primera tanda: 3 intentos. Tras una espera, cada fallo vuelve a bloquear.
+    if (level > 0 || fails >= MAX_FAILED_ATTEMPTS) {
+        const step = LOCKOUT_STEPS_MS[Math.min(level, LOCKOUT_STEPS_MS.length - 1)];
+        writeValue(AUTH_LOCK_KEY, Date.now() + step);
+        writeValue(AUTH_LEVEL_KEY, level + 1);
         writeValue(AUTH_FAILS_KEY, null);
         return 0;
     }
@@ -89,9 +100,18 @@ function registerFailedAttempt() {
     return MAX_FAILED_ATTEMPTS - fails;        // intentos restantes
 }
 
+function resetFailedAttempts() {
+    writeValue(AUTH_FAILS_KEY, null);
+    writeValue(AUTH_LEVEL_KEY, null);
+    writeValue(AUTH_LOCK_KEY, null);
+}
+
 function lockedMessage(until) {
-    const date = new Date(until).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-    return `⛔ Demasiados intentos fallidos. Acceso bloqueado en este dispositivo hasta el ${date}.`;
+    const date = new Date(until);
+    const sameDay = date.toDateString() === new Date().toDateString();
+    const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    const when = sameDay ? `las ${time}` : `mañana a las ${time}`;
+    return `⛔ Demasiados intentos fallidos. Podrás volver a probar a ${when}.`;
 }
 
 // Pide al navegador que no borre los datos de la app (incluida la clave)
@@ -126,6 +146,13 @@ function showLockScreen(message) {
     const applyLock = (until) => {
         input.disabled = true; btn.disabled = true;
         msg.textContent = lockedMessage(until);
+        // Reactivar el formulario solo cuando termine la espera.
+        setTimeout(() => {
+            if (getLockUntil()) return applyLock(getLockUntil());
+            input.disabled = false; btn.disabled = false;
+            msg.textContent = 'Ya puedes volver a intentarlo.';
+            input.focus();
+        }, Math.max(1000, until - Date.now() + 500));
     };
 
     const lockUntil = getLockUntil();
@@ -144,7 +171,7 @@ function showLockScreen(message) {
         btn.disabled = false; btn.textContent = 'Entrar';
         if (result === 'ok') {
             setAccessKey(key);
-            writeValue(AUTH_FAILS_KEY, null);
+            resetFailedAttempts();
             requestPersistentStorage();
             overlay.remove();
             document.body.classList.remove('auth-locked');

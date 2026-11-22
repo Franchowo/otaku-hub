@@ -28,4 +28,5 @@ let _calificadorSavedProgress = [];
 let _planificadorSavedProgress = [];
 let _currentSeasonData = [];
 
-const FALLBACK_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='85'%3E%3Crect width='60' height='85' fill='%23111122' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2300f0ff' font-family='sans-serif' font-size='20' font-weight='bold'%3E?%3C/text%3E%3C/svg%3E";
+// Comillas codificadas (%27): esta URL se inserta dentro de onerror="this.src='...'".
+const FALLBACK_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2760%27 height=%2785%27%3E%3Crect width=%2760%27 height=%2785%27 fill=%27%23111122%27 rx=%278%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 fill=%27%2300f0ff%27 font-family=%27sans-serif%27 font-size=%2720%27 font-weight=%27bold%27%3E?%3C/text%3E%3C/svg%3E";

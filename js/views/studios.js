@@ -290,7 +290,9 @@ function saveStudiosSnapshot() {
             const cacheKeyV5 = `anime_cover_v5_${safeTitle}_${safeStudio}`;
             const cacheKeyV4 = `anime_cover_v4_${safeTitle}`;
             
-            let imgUrl = localStorage.getItem(cacheKeyV5) || 
+            const cacheKeyById = foundAnime && foundAnime.anilistId ? `cover_id_${foundAnime.anilistId}` : null;
+            let imgUrl = (cacheKeyById && localStorage.getItem(cacheKeyById)) ||
+                         localStorage.getItem(cacheKeyV5) || 
                          localStorage.getItem(cacheKeyV4) || 
                          "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='48' height='48' fill='%23111122'/></svg>";
             

@@ -1,5 +1,9 @@
         // --- PLANIFICADOR ESTACIONAL ---
         let _planificadorInitialized = false, _planificadorSaveTimeout = null;
+        // Cambios pendientes de subir (guardado por fila con Code.gs v2).
+        const _planPending = { upsert: new Map(), remove: new Set() };
+        function queuePlanUpsert(item) { _planPending.remove.delete(item.id); _planPending.upsert.set(item.id, item); }
+        function queuePlanRemove(id) { _planPending.upsert.delete(id); _planPending.remove.add(id); }
         function getSafeEl(id) { const els = document.querySelectorAll('#' + id); return els[els.length - 1]; }
 
         function initPlanificadorFetch() {
@@ -35,7 +39,7 @@ const gql = `query($season: MediaSeason, $seasonYear: Int, $page: Int) {
         pageInfo { hasNextPage }
         media(season: $season, seasonYear: $seasonYear, type: ANIME, format: TV) {
             id 
-            title { romaji } 
+            title { romaji english } 
             coverImage { large }
             relations {
                 edges {
@@ -58,6 +62,7 @@ medias.forEach(m => {
     allAnime.push({ 
         mal_id: m.id, 
         title: m.title.romaji, 
+        titleEnglish: m.title.english,
         images: { jpg: { large_image_url: m.coverImage?.large } },
         isSequel: isSequel // Guardamos la propiedad
     });
@@ -87,16 +92,20 @@ medias.forEach(m => {
             const filterElement = getSafeEl('planStatusFilter'), currentFilter = filterElement ? filterElement.value : 'all';
             let visibleCount = 0;
 
+            const owned = buildOwnedIndex(_masterData, 'anime');
             _currentSeasonData.forEach(anime => {
                 const malId = String(anime.mal_id), title = anime.title, cover = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url || FALLBACK_IMG;
-                const isRegistered = _masterData.some(m => m.anime && m.anime.toLowerCase() === title.toLowerCase());
+                // mal_id es en realidad el ID de AniList (la consulta es a AniList).
+                const isRegistered = owned.has({ id: anime.mal_id, title: { romaji: title, english: anime.titleEnglish } });
                 const savedItem = _planificadorSavedProgress.find(p => String(p.id) === malId);
                 let status = savedItem ? savedItem.status : 'default';
 
                 if (isRegistered && status !== 'visto') {
                     status = 'visto';
                     _planificadorSavedProgress = _planificadorSavedProgress.filter(p => String(p.id) !== String(malId));
-                    _planificadorSavedProgress.push({ id: String(malId), title: title, cover: cover, year: parseInt(getSafeEl('planYearSelect').value), season: getSafeEl('planSeasonSelect').value, status: 'visto' });
+                    const autoItem = { id: String(malId), title: title, cover: cover, year: parseInt(getSafeEl('planYearSelect').value), season: getSafeEl('planSeasonSelect').value, status: 'visto' };
+                    _planificadorSavedProgress.push(autoItem);
+                    queuePlanUpsert(autoItem);
                     autoSyncNeeded = true;
                 }
 
@@ -143,7 +152,13 @@ grid.appendChild(card);
             
             if (newStatus !== 'default') {
                 const animeRef = _currentSeasonData.find(a => String(a.mal_id) === String(malId));
-                if (animeRef) { _planificadorSavedProgress.push({ id: String(malId), title: animeRef.title, cover: animeRef.images?.jpg?.large_image_url || animeRef.images?.jpg?.image_url || FALLBACK_IMG, year: parseInt(currentYear), season: currentSeason, status: newStatus }); }
+                if (animeRef) {
+                    const item = { id: String(malId), title: animeRef.title, cover: animeRef.images?.jpg?.large_image_url || animeRef.images?.jpg?.image_url || FALLBACK_IMG, year: parseInt(currentYear), season: currentSeason, status: newStatus };
+                    _planificadorSavedProgress.push(item);
+                    queuePlanUpsert(item);
+                }
+            } else {
+                queuePlanRemove(String(malId));
             }
             
             renderSeasonGrid();
@@ -157,9 +172,7 @@ grid.appendChild(card);
         function syncPlanificadorToCloud() {
             const btn = getSafeEl('btnSyncPlanificador');
             if(btn) { btn.innerText = "Sincronizando ☁️"; btn.disabled = true; }
-            const payload = { action: "save_planificador", payload: _planificadorSavedProgress };
-
-            sheetsWrite(payload).then(result => {
+            savePlanificadorChanges().then(result => {
                 if(btn) {
                     btn.innerText = savedLabel(result); btn.style.borderColor = "var(--neon-green)"; btn.style.color = "var(--neon-green)";
                     setTimeout(() => { btn.innerText = "☁️ Guardar Cambios"; btn.disabled = false; }, 2000);
@@ -172,4 +185,30 @@ grid.appendChild(card);
                     setTimeout(() => { btn.disabled = false; }, 1500);
                 }
             });
+        }
+
+        // Con Code.gs v2 sube solo lo que cambió (upsert/delete por id); con el
+        // backend antiguo reescribe la hoja entera como antes.
+        async function savePlanificadorChanges() {
+            const version = await getServerVersion();
+            if (version < 2) {
+                _planPending.upsert.clear(); _planPending.remove.clear();
+                return sheetsWrite({ action: "save_planificador", payload: _planificadorSavedProgress });
+            }
+
+            const items = [..._planPending.upsert.values()], ids = [..._planPending.remove];
+            _planPending.upsert.clear(); _planPending.remove.clear();
+            if (items.length === 0 && ids.length === 0) return { confirmed: true };
+
+            try {
+                const results = [];
+                if (items.length) results.push(await sheetsWrite({ action: 'upsert_rows', sheet: 'PLANIFICADOR_STATE', items }, { minVersion: 2 }));
+                if (ids.length) results.push(await sheetsWrite({ action: 'delete_rows', sheet: 'PLANIFICADOR_STATE', ids }, { minVersion: 2 }));
+                return { confirmed: results.every(r => r.confirmed) };
+            } catch (err) {
+                // Se devuelven a la cola para el siguiente intento (sin pisar cambios más nuevos).
+                items.forEach(item => { if (!_planPending.upsert.has(item.id) && !_planPending.remove.has(item.id)) _planPending.upsert.set(item.id, item); });
+                ids.forEach(id => { if (!_planPending.upsert.has(id)) _planPending.remove.add(id); });
+                throw err;
+            }
         }

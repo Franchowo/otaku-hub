@@ -84,9 +84,11 @@ borras los datos del sitio o si usas incógnito.
 > Para evitarlo, instala la app con **Compartir → Añadir a pantalla de inicio**.
 
 ## Bloqueo por intentos fallidos
-Tras **3 claves incorrectas**, ese dispositivo/navegador queda bloqueado
-**30 días** (lo configuran `MAX_FAILED_ATTEMPTS` y `LOCKOUT_MS` en
-`js/core/auth.js`).
+Tras **3 claves incorrectas**, ese dispositivo/navegador espera **1 minuto**.
+Cada fallo posterior alarga la espera: 5 min, 30 min, 2 h y como máximo
+**24 h**. Al acertar se reinicia (lo configuran `MAX_FAILED_ATTEMPTS` y
+`LOCKOUT_STEPS_MS` en `js/core/auth.js`). Además, el servidor tarda 1 segundo
+más en responder a cada clave incorrecta, lo que frena las pruebas a ciegas.
 
 - Es **por dispositivo** a propósito: Apps Script no puede distinguir quién
   hace cada petición, así que un bloqueo en el servidor permitiría que
@@ -95,17 +97,19 @@ Tras **3 claves incorrectas**, ese dispositivo/navegador queda bloqueado
   principal: alguien puede saltárselo con incógnito o borrando los datos del
   sitio. Lo que de verdad impide adivinar la clave es que sea **larga y
   aleatoria** (32+ caracteres): probarla a ciegas llevaría millones de años.
-- Si te bloqueas tú por error: borra los datos del sitio en ese navegador
-  (Configuración del sitio → Borrar datos) o entra desde otro navegador.
+- Si te bloqueas tú por error: espera a que termine la cuenta atrás, o borra los
+  datos del sitio en ese navegador (Configuración del sitio → Borrar datos).
 
 ## Si alguna vez se filtra la clave
 Cambia el valor de `OTAKU_HUB_KEY` en las Propiedades del script (efecto
 inmediato, sin redesplegar) y vuelve a introducirla en tus dispositivos.
 
 ## Notas
-- En las lecturas la clave viaja en la URL (JSONP no permite cabeceras). Va por
-  HTTPS, pero puede quedar en los registros de ejecución de Google y en el
-  historial de red del navegador; es aceptable para una app personal.
+- Con el backend v2 ([docs/APPS-SCRIPT.md](APPS-SCRIPT.md)) las lecturas van por
+  POST y la clave viaja en el cuerpo. Solo el `ping` inicial (una vez por
+  sesión, para conocer la versión del servidor) la lleva en la URL, porque
+  JSONP no permite cabeceras. Va por HTTPS, pero puede quedar en los registros
+  de ejecución de Google; es aceptable para una app personal.
 - El Service Worker no cachea nada de `script.google.com` (solo los archivos de
   la propia app).
 - `<meta name="robots" content="noindex">` evita que los buscadores indexen la

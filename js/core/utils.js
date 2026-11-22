@@ -17,6 +17,24 @@ function jsArg(value) {
     return esc(JSON.stringify(String(value ?? '')));
 }
 
+// ¿Ya tengo esta obra registrada? Compara por ID de AniList y, si la obra
+// aún no está vinculada, por título (romaji o inglés, sin mayúsculas).
+function buildOwnedIndex(items, titleKey) {
+    const ids = new Set(), titles = new Set();
+    items.forEach(item => {
+        if (item.anilistId) ids.add(item.anilistId);
+        if (item[titleKey]) titles.add(String(item[titleKey]).toLowerCase().trim());
+    });
+    return {
+        has(media) {
+            if (!media) return false;
+            if (media.id && ids.has(media.id)) return true;
+            const t = media.title || {};
+            return [t.romaji, t.english].some(x => x && titles.has(String(x).toLowerCase().trim()));
+        }
+    };
+}
+
 // Convierte el HTML de las sinopsis de AniList en texto plano seguro.
 // DOMParser crea un documento inerte: no ejecuta scripts ni carga imágenes.
 function htmlToText(html) {
