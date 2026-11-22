@@ -104,10 +104,6 @@
 
             eligibleStudios.forEach((studio, index) => {
                 const imgId = `studio-best-img-${index}`;
-                let scoreTone = 'red'; 
-                if (studio.avg >= 8.00) scoreTone = 'purple'; 
-                else if (studio.avg >= 7.00) scoreTone = 'green'; 
-                else if (studio.avg >= 5.00) scoreTone = 'yellow';
                 
                 // --- LÓGICA VISUAL: BEST 10, WORST 10 Y CLARIDAD ---
                 let rankBadgeStyle = "font-size: 1.35rem; font-weight: 900;";
@@ -174,7 +170,7 @@
                             <span style="font-size:0.65rem; color:rgba(255,255,255,0.6); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Obra destacada: ${esc(studio.bestAnime)}">👑 ${esc(studio.bestAnime)}</span>
                             
                             <div style="display: flex; align-items: center; gap: 6px; margin-top: auto;">
-                                <span class="studio-card-badge ${scoreTone}" style="margin:0; align-self:center;">${studio.avg.toFixed(2)} MEDIA</span>
+                                <span class="detail-score-badge score-neon-${Math.min(10, Math.max(1, Math.round(studio.avg)))}" style="margin:0; align-self:center;">${studio.avg.toFixed(2)} media</span>
                                 ${avgDiffHtml}
                             </div>
                         </div>
@@ -335,7 +331,7 @@ function saveStudiosSnapshot() {
 
         function downloadTierlistImage() {
             const target = document.getElementById('tierlistCaptureTarget'); if (!target) return toast("No se pudo preparar la imagen.", { type: 'error' });
-            html2canvas(target, { scale: 4, useCORS: true, allowTaint: false, logging: false, backgroundColor: "#000000" }).then(canvas => {
+            loadHtml2Canvas().then(h2c => h2c(target, { scale: 4, useCORS: true, allowTaint: false, logging: false, backgroundColor: "#000000" })).then(canvas => {
                 const downloadLink = document.createElement('a'); downloadLink.download = 'Anime_Tierlist_UHD.png'; downloadLink.href = canvas.toDataURL('image/png'); downloadLink.click();
             }).catch(() => { toast("No se pudo generar la imagen de la tierlist.", { type: 'error' }); });
         }

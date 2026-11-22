@@ -171,6 +171,11 @@ function applyStatsRouteParams(params) {
     if (params.nota !== undefined) _activeFilters.score = params.nota;
 }
 
+// Repinta la vista actual conservando sus parámetros de la URL.
+function refreshCurrentView() {
+    if (_currentView) showView(_currentView, _currentParams);
+}
+
 // --- Pintado de la navegación ---
 function goToGroup(groupId) {
     const group = NAV_GROUPS.find(g => g.id === groupId);
@@ -259,4 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
     buildNavigation();
     const { viewId, params } = parseHash();   // ruta desconocida -> Inicio
     showView(viewId, params);
+    updateOutboxBadge();
+    flushOutbox();                            // cambios que quedaron en cola sin conexión
 });

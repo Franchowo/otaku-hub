@@ -175,8 +175,10 @@ function showLockScreen(message) {
             requestPersistentStorage();
             overlay.remove();
             document.body.classList.remove('auth-locked');
-            // Cargar los datos de la vista actual con la clave ya guardada.
+            // Cargar los datos de la vista actual con la clave ya guardada
+            // y enviar lo que quedara en cola.
             if (typeof reloadActiveView === 'function') reloadActiveView();
+            if (typeof flushOutbox === 'function') flushOutbox();
             return;
         }
         if (result === 'denied') {
@@ -199,16 +201,26 @@ function showLockScreen(message) {
 }
 
 async function otakuLogout() {
-    const ok = await confirmDialog({ title: 'Cerrar sesión', message: 'Tendrás que volver a introducir la clave en este dispositivo.', confirmText: 'Cerrar sesión' });
+    const ok = await confirmDialog({ title: 'Cerrar sesión', message: 'Tendrás que volver a introducir la clave en este dispositivo. También se borrará la copia de tus listas guardada en él.', confirmText: 'Cerrar sesión' });
     if (!ok) return;
     try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
+    forgetLocalData();
     showLockScreen('Sesión cerrada en este dispositivo.');
 }
 
 // El servidor rechazó la clave guardada (p. ej. la cambiaste en Apps Script):
 // se borra de este dispositivo y se pide de nuevo. No cuenta como intento fallido.
+// Borra los datos privados que la app guarda en el dispositivo (copia de las
+// hojas en IndexedDB y listas en memoria). La cola de cambios pendientes se
+// conserva: no contiene la clave y se envía al volver a entrar.
+function forgetLocalData() {
+    if (typeof clearSheetSnapshots === 'function') clearSheetSnapshots();
+    if (typeof _masterData !== 'undefined') { _masterData = []; _mangaData = []; _favsRawData = []; }
+}
+
 function onAccessRevoked() {
     try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
+    forgetLocalData();
     showLockScreen('🔑 Tu clave ya no es válida. Introduce la clave actual.');
 }
 

@@ -42,6 +42,23 @@ function htmlToText(html) {
     return new DOMParser().parseFromString(withBreaks, 'text/html').body.textContent || '';
 }
 
+// html2canvas (~200 KB) solo se descarga al exportar una imagen, no en cada
+// arranque. El Service Worker lo guarda para usarlo también sin conexión.
+let _html2canvasPromise = null;
+function loadHtml2Canvas() {
+    if (window.html2canvas) return Promise.resolve(window.html2canvas);
+    if (!_html2canvasPromise) {
+        _html2canvasPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.onload = () => resolve(window.html2canvas);
+            script.onerror = () => { _html2canvasPromise = null; reject(new Error('No se pudo descargar el generador de imágenes. Revisa tu conexión.')); };
+            document.head.appendChild(script);
+        });
+    }
+    return _html2canvasPromise;
+}
+
 // ---------------------------------------------------------------------
 // ESTADO DE ERROR DE UNA VISTA
 // Sustituye a los spinners infinitos cuando falla una carga.

@@ -18,6 +18,60 @@ function readAnilistId(item) {
     return id > 0 ? id : null;
 }
 
+// ---------------------------------------------------------------------
+// CARGA RÁPIDA CON COPIA LOCAL ("stale-while-revalidate")
+// Si hay copia en el dispositivo se pinta al instante y, cuando llega la
+// respuesta de Sheets, se actualiza solo si algo cambió. Después de guardar
+// (registrar, editar, borrar, recargar a mano) se salta la copia una vez para
+// no enseñar datos anteriores al cambio.
+// ---------------------------------------------------------------------
+const _lastRawJson = {};
+const _skipSnapshotOnce = {};
+
+function invalidateList(key) {
+    if (key === 'master') _masterData = [];
+    if (key === 'manga') _mangaData = [];
+    _skipSnapshotOnce[key] = true;
+}
+
+// Vistas que se pueden repintar sin perder lo que estés haciendo.
+const SAFE_REFRESH_VIEWS = ['hubView', 'detailView', 'statsView', 'studiosView', 'timeMachineView', 'mangaLibraryView'];
+function refreshIfShowing() {
+    const view = document.querySelector('.view.active');
+    const busy = document.getElementById('workSheetOverlay') || document.querySelector('.dialog-overlay') || document.getElementById('searchOverlay');
+    if (view && SAFE_REFRESH_VIEWS.includes(view.id) && !busy) refreshCurrentView();
+}
+
+// opts: { key, sheetName, apply(data), deliver(), onError(err) }
+function loadListWithSnapshot({ key, sheetName, apply, deliver, onError }) {
+    let delivered = false;
+    const deliverOnce = () => { if (!delivered) { delivered = true; deliver(); } };
+
+    if (!_skipSnapshotOnce[key]) {
+        loadSheetSnapshot(key).then(snapshot => {
+            if (!snapshot || delivered || _lastRawJson[key]) return;
+            _lastRawJson[key] = JSON.stringify(snapshot.data);
+            apply(snapshot.data);
+            deliverOnce();
+        });
+    }
+    _skipSnapshotOnce[key] = false;
+
+    sheetsReadOnce(key, sheetName).then(data => {
+        const json = JSON.stringify(data);
+        if (delivered && json === _lastRawJson[key]) return;   // ya se pintó lo mismo
+        _lastRawJson[key] = json;
+        apply(data);
+        if (delivered) refreshIfShowing(); else deliverOnce();
+    }).catch(err => {
+        if (!delivered) onError(err);
+    });
+}
+
+function normalizeMasterRows(data) {
+    return data.map(item => Object.assign({}, item, { anilistId: readAnilistId(item) }));
+}
+
 function initMasterDataFetch(callbackSuccess) {
     if(_masterData.length > 0) {
         if(callbackSuccess) callbackSuccess();
@@ -26,15 +80,11 @@ function initMasterDataFetch(callbackSuccess) {
     }
 
     setLoadersVisible(MASTER_LOADERS, true);
-
-    sheetsReadOnce('master', null).then(data => {
-        _masterData = data.map(item => Object.assign(item, { anilistId: readAnilistId(item) }));
-        populateFilterDropdowns(_masterData);
-        if(callbackSuccess) callbackSuccess();
-        else applyFiltersAndRender();
-    }).catch(err => {
-        setLoadersVisible(MASTER_LOADERS, false);
-        showViewError(err.message);
+    loadListWithSnapshot({
+        key: 'master', sheetName: null,
+        apply: data => { _masterData = normalizeMasterRows(data); populateFilterDropdowns(_masterData); },
+        deliver: () => { if(callbackSuccess) callbackSuccess(); else applyFiltersAndRender(); },
+        onError: err => { setLoadersVisible(MASTER_LOADERS, false); showViewError(err.message); }
     });
 }
 
@@ -66,34 +116,37 @@ function initMangaDataFetch(forceRefresh = false, callbackSuccess = null) {
 
     if(document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'block';
     if(document.getElementById('mangaContent')) document.getElementById('mangaContent').style.display = 'none';
+    if (forceRefresh) _skipSnapshotOnce.manga = true;
 
-    sheetsReadOnce('manga', 'FULL LIST MANGA').then(data => {
-        _mangaData = data.map(item => {
-            let mangaName = "";
-            for(let key in item) {
-                let lowerKey = key.toLowerCase();
-                if(lowerKey.includes('manga') || lowerKey.includes('title')) { mangaName = item[key]; break; }
-            }
-            if(!mangaName) mangaName = item[Object.keys(item)[0]];
-            
-            return {
-                manga: mangaName,
-                year: item.Year || item.year || item.Año || item.año || '????',
-                author: item.Author || item.author || item.Autor || item.autor || item.Serialization || item.serialization || 'Desconocido',
-                score: parseFloat(item.Score || item.score || item.Nota || item.nota || 0),
-                anilistId: readAnilistId(item),
-                _row: item._row || null
-            };
-        }).filter(m => m.manga);
-
-        populateMangaFilterDropdowns(_mangaData);
-
-        if(callbackSuccess) callbackSuccess();
-        else renderMangaLibrary();
-    }).catch(err => {
-        if(document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'none';
-        showViewError(`No se pudo cargar la hoja FULL LIST MANGA. ${err.message}`);
+    loadListWithSnapshot({
+        key: 'manga', sheetName: 'FULL LIST MANGA',
+        apply: data => { _mangaData = normalizeMangaRows(data); populateMangaFilterDropdowns(_mangaData); },
+        deliver: () => { if(callbackSuccess) callbackSuccess(); else renderMangaLibrary(); },
+        onError: err => {
+            if(document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'none';
+            showViewError(`No se pudo cargar la hoja FULL LIST MANGA. ${err.message}`);
+        }
     });
+}
+
+function normalizeMangaRows(data) {
+    return data.map(item => {
+        let mangaName = "";
+        for(let key in item) {
+            let lowerKey = key.toLowerCase();
+            if(lowerKey.includes('manga') || lowerKey.includes('title')) { mangaName = item[key]; break; }
+        }
+        if(!mangaName) mangaName = item[Object.keys(item)[0]];
+
+        return {
+            manga: mangaName,
+            year: item.Year || item.year || item.Año || item.año || '????',
+            author: item.Author || item.author || item.Autor || item.autor || item.Serialization || item.serialization || 'Desconocido',
+            score: parseFloat(item.Score || item.score || item.Nota || item.nota || 0),
+            anilistId: readAnilistId(item),
+            _row: item._row || null
+        };
+    }).filter(m => m.manga);
 }
 
 // FUNCIONES PARA RELLENAR LOS DROPDOWNS

@@ -30,12 +30,13 @@
             --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-pill: 999px;
             --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
             --focus-ring: 0 0 0 3px rgba(0, 240, 255, 0.55);
+            --font-sans: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
             margin: 0;
             padding: 20px 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-sans);
             background: var(--bg-color);
             color: var(--text-color);
             display: flex;
@@ -627,7 +628,7 @@
         /* --- VISTA: CÁPSULA DEL TIEMPO --- */
         .tm-year-container { display: flex; justify-content: center; margin: 10px 0 30px 0; }
         .tm-year-select { 
-            font-family: 'Segoe UI', Impact, sans-serif; font-size: 2.5rem; font-weight: 900; 
+            font-family: var(--font-sans); font-size: 2.5rem; font-weight: 900; 
             background: rgba(0, 0, 0, 0.6); color: var(--neon-yellow); border: 2px solid var(--neon-yellow); 
             border-radius: 20px; padding: 10px 30px; text-shadow: 0 0 15px rgba(255, 170, 0, 0.6); 
             box-shadow: 0 0 25px rgba(255, 170, 0, 0.2), inset 0 0 15px rgba(255, 170, 0, 0.1); 
@@ -755,7 +756,7 @@
             width: 48px; height: 48px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-weight: 900; font-size: 1.2rem; flex-shrink: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: var(--font-sans);
         }
         .fav-title-text {
             flex-grow: 1;
@@ -813,7 +814,7 @@
         }
         .tierlist-canvas-header {
             text-align: center; color: #ffffff; font-size: 1.45rem; font-weight: 900;
-            letter-spacing: 1.5px; text-transform: uppercase; font-family: 'Segoe UI', Impact, Arial, sans-serif;
+            letter-spacing: 1.5px; text-transform: uppercase; font-family: var(--font-sans);
         }
         .tierlist-white-board {
             background: #ffffff; border-radius: 12px; padding: 12px;
@@ -825,7 +826,7 @@
         .tierlist-row-label {
             width: 52px; min-height: 52px; display: flex; align-items: center; justify-content: center;
             color: #ffffff; font-weight: 900; font-size: 1.25rem; border-radius: 6px; flex-shrink: 0;
-            font-family: 'Segoe UI', Arial, sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-family: var(--font-sans); text-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
         .tierlist-row-items {
             display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #ffffff; padding: 2px 4px; flex-grow: 1;
@@ -1390,3 +1391,24 @@ button.rank-pos-badge:hover, button.top150-pos:hover { text-decoration: underlin
     .work-sheet { max-width: none; max-height: 90vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); }
     .work-sheet-cover { width: 90px; }
 }
+
+/* =====================================================================
+   FASE 3 — TIPOGRAFÍA, COLA SIN CONEXIÓN Y ESQUELETOS
+   ===================================================================== */
+button, input, select, textarea { font-family: inherit; }
+
+.outbox-badge {
+    align-self: center; margin-right: 4px; padding: 6px 10px; border-radius: var(--radius-pill); cursor: pointer;
+    font-size: 0.8rem; font-weight: 700; color: #1a1200; background: var(--color-warning); border: none;
+}
+.outbox-badge[hidden] { display: none; }
+
+/* Esqueletos de carga dentro de los indicadores de carga de cada vista. */
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+.skeleton-card { height: 110px; border-radius: var(--radius-lg); }
+.skeleton-grid--books { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.skeleton-grid--books .skeleton-card { height: 165px; border-radius: var(--radius-sm); }
+.skeleton-grid--kpi { grid-template-columns: repeat(4, 1fr); }
+.skeleton-grid--kpi .skeleton-card { height: 84px; }
+@media (max-width: 700px) { .skeleton-grid--kpi { grid-template-columns: repeat(2, 1fr); } }
+.loader-text { display: block; font-size: 0.85rem; color: var(--text-subtle); }

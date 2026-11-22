@@ -151,8 +151,9 @@ if(animeForm) {
 
         sheetsWrite(payload).then(result => {
             statusMsg.style.color = "#00ff66";
-            statusMsg.innerText = result.confirmed ? "¡Anime guardado perfectamente!" : "Anime enviado (el servidor no confirmó la respuesta).";
-            document.getElementById('animeForm').reset(); updateScoreData(7); _masterData = []; _selectedAnimeMedia = null;
+            statusMsg.innerText = result.queued ? "Sin conexión: el anime queda en cola y se registrará al volver la red ⏳"
+                : result.confirmed ? "¡Anime guardado perfectamente!" : "Anime enviado (el servidor no confirmó la respuesta).";
+            document.getElementById('animeForm').reset(); updateScoreData(7); invalidateList('master'); _selectedAnimeMedia = null;
         }).catch(err => {
             // No se resetea el formulario: así no pierdes lo que escribiste.
             statusMsg.style.color = "var(--neon-magenta)"; statusMsg.innerText = `No se guardó: ${err.message}`;
@@ -180,9 +181,10 @@ if(mangaForm) {
 
         sheetsWrite(payload).then(result => {
             statusMsg.style.color = "#00ff66";
-            statusMsg.innerText = result.confirmed ? "¡Manga registrado con éxito en FULL LIST MANGA!" : "Manga enviado (el servidor no confirmó la respuesta).";
+            statusMsg.innerText = result.queued ? "Sin conexión: el manga queda en cola y se registrará al volver la red ⏳"
+                : result.confirmed ? "¡Manga registrado con éxito en FULL LIST MANGA!" : "Manga enviado (el servidor no confirmó la respuesta).";
             // Antes se vaciaba _masterData (anime) y la librería de manga no se refrescaba.
-            document.getElementById('mangaForm').reset(); updateMangaScoreData(7); _mangaData = []; _selectedMangaMedia = null;
+            document.getElementById('mangaForm').reset(); updateMangaScoreData(7); invalidateList('manga'); _selectedMangaMedia = null;
         }).catch(err => {
             statusMsg.style.color = "var(--neon-red)"; statusMsg.innerText = `No se guardó: ${err.message}`;
         }).finally(() => { submitBtn.disabled = false; submitBtn.innerText = "Enviar al Registro"; });

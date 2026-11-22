@@ -115,6 +115,7 @@ medias.forEach(m => {
                 // Reemplaza el bloque donde se define "const card" y su "innerHTML" por este:
 const card = document.createElement('div'); 
 card.className = `plan-card plan-status-${status}`;
+card.dataset.id = malId;
 
 // Generamos la etiqueta visual si es secuela
 const sequelBadge = anime.isSequel ? '<span style="background: var(--neon-purple); color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; position: absolute; top: 8px; left: 8px; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">SECUELA</span>' : '';
@@ -161,7 +162,11 @@ grid.appendChild(card);
                 queuePlanRemove(String(malId));
             }
             
-            renderSeasonGrid();
+            // Sin filtro basta con recolorear esa tarjeta (antes se repintaban todas).
+            const filter = getSafeEl('planStatusFilter');
+            const card = getSafeEl('planificadorGrid').querySelector(`.plan-card[data-id="${CSS.escape(String(malId))}"]`);
+            if (card && (!filter || filter.value === 'all')) card.className = `plan-card plan-status-${newStatus}`;
+            else renderSeasonGrid();
             const btn = getSafeEl('btnSyncPlanificador');
             if (btn) { btn.innerText = "⏳ Guardando..."; btn.style.borderColor = "var(--neon-yellow)"; btn.style.color = "var(--neon-yellow)"; }
             

@@ -11,7 +11,9 @@
     <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/auth.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap">
 </head>
 
     <body>
@@ -21,6 +23,7 @@
         <a class="app-brand" href="#/" aria-label="OTAKU HUB, inicio">OTAKU&nbsp;HUB</a>
         <nav class="group-nav" id="groupNav" aria-label="Secciones"></nav>
         <div class="header-actions">
+            <button type="button" class="outbox-badge" id="outboxBadge" hidden onclick="flushOutbox()" aria-live="polite"></button>
             <button type="button" class="icon-btn" onclick="openGlobalSearch()" title="Buscar (Ctrl+K)" aria-label="Buscar en tu colección">🔍</button>
             <button type="button" class="icon-btn" onclick="toggleLandscape()" title="Pantalla completa / horizontal" aria-label="Pantalla completa u horizontal">⛶</button>
             <button type="button" class="icon-btn" onclick="otakuLogout()" title="Cerrar sesión en este dispositivo" aria-label="Cerrar sesión">🔒</button>
@@ -121,9 +124,9 @@
         <div id="detailView" class="view">
             <h2>Detalle Anime</h2>
             
-            <div id="detailLoader" class="loader">
-                <div class="spinner"></div>
-                Cargando tu lista de anime…
+            <div id="detailLoader" class="loader" role="status" aria-live="polite">
+                <span class="loader-text">Cargando tu lista de anime…</span>
+                <div class="skeleton-grid" aria-hidden="true"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
             </div>
 
             <div id="detailContent" style="display: none;">
@@ -187,9 +190,9 @@
         <div id="mangaLibraryView" class="view">
             <h2>Librería Manga</h2>
             
-            <div id="mangaLoader" class="loader">
-                <div class="spinner" style="border-top-color: var(--neon-green);"></div>
-                Cargando tu lista de manga…
+            <div id="mangaLoader" class="loader" role="status" aria-live="polite">
+                <span class="loader-text">Cargando tu lista de manga…</span>
+                <div class="skeleton-grid skeleton-grid--books" aria-hidden="true"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
             </div>
 
             <div id="mangaContent" style="display: none;">
@@ -236,9 +239,9 @@
         <div id="statsView" class="view">
             <h2>Panel Analítico</h2>
             
-            <div id="statsLoader" class="loader">
-                <div class="spinner"></div>
-                Cargando tus estadísticas…
+            <div id="statsLoader" class="loader" role="status" aria-live="polite">
+                <span class="loader-text">Cargando tus estadísticas…</span>
+                <div class="skeleton-grid skeleton-grid--kpi" aria-hidden="true"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
             </div>
 
             <div id="statsContent" style="display: none;">
@@ -367,9 +370,9 @@
         <div id="timeMachineView" class="view">
             <h2>⏳ Cápsula Tiempo</h2>
             
-            <div id="timeMachineLoader" class="loader">
-                <div class="spinner" style="border-top-color: var(--neon-yellow);"></div>
-                Cargando tus listas de anime y manga…
+            <div id="timeMachineLoader" class="loader" role="status" aria-live="polite">
+                <span class="loader-text">Cargando tus listas de anime y manga…</span>
+                <div class="skeleton-grid skeleton-grid--kpi" aria-hidden="true"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
             </div>
 
             <div id="timeMachineContent" style="display: none; width: 100%;">
@@ -420,9 +423,9 @@
                 <button class="chip-btn accent-purple" onclick="saveStudiosSnapshot()">💾 Fijar Referencia</button>
             </div>
             
-            <div id="studiosLoader" class="loader">
-                <div class="spinner"></div>
-                Calculando el ranking de estudios…
+            <div id="studiosLoader" class="loader" role="status" aria-live="polite">
+                <span class="loader-text">Calculando el ranking de estudios…</span>
+                <div class="skeleton-grid" aria-hidden="true"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
             </div>
 
             <div id="studiosContent" style="display: none;">
@@ -465,9 +468,9 @@
         <div id="annualRankingView" class="view">
             <h2>Ranking Anual</h2>
             
-            <div id="annualLoader" class="loader">
-                <div class="spinner"></div>
-                Cargando tu ranking anual…
+            <div id="annualLoader" class="loader" role="status" aria-live="polite">
+                <span class="loader-text">Cargando tu ranking anual…</span>
+                <div class="skeleton-grid" aria-hidden="true"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
             </div>
 
             <div id="annualContent" style="display: none;">
@@ -499,9 +502,9 @@
         <div id="favoritesView" class="view">
             <h2>Lista Favoritos</h2>
             
-            <div id="favoritesLoader" class="loader">
-                <div class="spinner"></div>
-                Cargando tus favoritos…
+            <div id="favoritesLoader" class="loader" role="status" aria-live="polite">
+                <span class="loader-text">Cargando tus favoritos…</span>
+                <div class="skeleton-grid" aria-hidden="true"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
             </div>
 
             <div id="favoritesContent" style="display: none;">
@@ -764,6 +767,7 @@
     <script src="js/core/state.js"></script>
     <script src="js/services/anilist.js"></script>
     <script src="js/services/image-queue.js"></script>
+    <script src="js/services/local-store.js"></script>
     <script src="js/services/sheets-api.js"></script>
     <script src="js/services/anilist-link.js"></script>
     <script src="js/services/cloud-sync.js"></script>

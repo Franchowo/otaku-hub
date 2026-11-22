@@ -209,7 +209,7 @@ async function startAnilistLinking() {
             <ul class="link-unmatched">${unmatched.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}`);
 
         // Recargar con los IDs nuevos (las portadas pasarán a pedirse por ID).
-        _masterData = []; _mangaData = [];
+        invalidateList('master'); invalidateList('manga');
         reloadActiveView();
     } catch (err) {
         updateLinkProgress({ note: 'Se detuvo por un error. Lo vinculado hasta ahora queda guardado.' });
