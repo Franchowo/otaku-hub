@@ -10,11 +10,19 @@
 // =====================================================================
 
 function getAccessKey() {
-    try { return localStorage.getItem(AUTH_STORAGE_KEY) || ''; } catch (e) { return ''; }
+    try {
+        return localStorage.getItem(AUTH_STORAGE_KEY) || '';
+    } catch (e) {
+        return '';
+    }
 }
 
 function setAccessKey(key) {
-    try { localStorage.setItem(AUTH_STORAGE_KEY, key); } catch (e) { /* almacenamiento bloqueado */ }
+    try {
+        localStorage.setItem(AUTH_STORAGE_KEY, key);
+    } catch (e) {
+        /* almacenamiento bloqueado */
+    }
 }
 
 // URL base para lecturas JSONP. Uso: `${sheetsUrl()}sheet=FAVS&callback=...`
@@ -29,18 +37,28 @@ function withAuth(payload) {
 
 // Verifica una clave contra el servidor (acción "ping" de Auth.gs).
 function verifyAccessKey(key) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
         const cbName = '__otakuAuthCb_' + Date.now();
         const script = document.createElement('script');
-        const cleanup = () => { delete window[cbName]; script.remove(); clearTimeout(timer); };
-        const timer = setTimeout(() => { cleanup(); resolve('timeout'); }, 15000);
-        window[cbName] = (res) => {
+        const cleanup = () => {
+            delete window[cbName];
+            script.remove();
+            clearTimeout(timer);
+        };
+        const timer = setTimeout(() => {
+            cleanup();
+            resolve('timeout');
+        }, 15000);
+        window[cbName] = res => {
             cleanup();
             if (res && res.auth === 'ok') resolve('ok');
             else if (res && res.message === 'UNAUTHORIZED') resolve('denied');
             else resolve('server-outdated');
         };
-        script.onerror = () => { cleanup(); resolve('network'); };
+        script.onerror = () => {
+            cleanup();
+            resolve('network');
+        };
         script.src = `${WEB_APP_URL}?action=ping&key=${encodeURIComponent(key)}&callback=${cbName}&_=${Date.now()}`;
         document.body.appendChild(script);
     });
@@ -61,24 +79,32 @@ const AUTH_LOCK_KEY = 'otaku_hub_auth_lock_until';
 const AUTH_LEVEL_KEY = 'otaku_hub_auth_lock_level';
 
 function readNumber(storageKey) {
-    try { return parseInt(localStorage.getItem(storageKey), 10) || 0; } catch (e) { return 0; }
+    try {
+        return parseInt(localStorage.getItem(storageKey), 10) || 0;
+    } catch (e) {
+        return 0;
+    }
 }
 
 function writeValue(storageKey, value) {
     try {
         if (value === null) localStorage.removeItem(storageKey);
         else localStorage.setItem(storageKey, String(value));
-    } catch (e) { /* almacenamiento bloqueado */ }
+    } catch (e) {
+        /* almacenamiento bloqueado */
+    }
 }
 
 function getLockUntil() {
     let until = readNumber(AUTH_LOCK_KEY);
     const maxUntil = Date.now() + LOCKOUT_STEPS_MS[LOCKOUT_STEPS_MS.length - 1];
-    if (until > maxUntil) {                 // bloqueos antiguos de 30 días → máximo 24 h
+    if (until > maxUntil) {
+        // bloqueos antiguos de 30 días → máximo 24 h
         until = maxUntil;
         writeValue(AUTH_LOCK_KEY, until);
     }
-    if (until && Date.now() >= until) {     // la espera ya terminó (el nivel se conserva)
+    if (until && Date.now() >= until) {
+        // la espera ya terminó (el nivel se conserva)
         writeValue(AUTH_LOCK_KEY, null);
         return 0;
     }
@@ -97,7 +123,7 @@ function registerFailedAttempt() {
         return 0;
     }
     writeValue(AUTH_FAILS_KEY, fails);
-    return MAX_FAILED_ATTEMPTS - fails;        // intentos restantes
+    return MAX_FAILED_ATTEMPTS - fails; // intentos restantes
 }
 
 function resetFailedAttempts() {
@@ -118,7 +144,8 @@ function lockedMessage(until) {
 // para no tener que volver a introducirla.
 function requestPersistentStorage() {
     if (navigator.storage && navigator.storage.persist) {
-        navigator.storage.persisted()
+        navigator.storage
+            .persisted()
             .then(already => already || navigator.storage.persist())
             .catch(() => {});
     }
@@ -143,32 +170,46 @@ function showLockScreen(message) {
     const input = document.getElementById('authKeyInput');
     const btn = document.getElementById('authSubmit');
 
-    const applyLock = (until) => {
-        input.disabled = true; btn.disabled = true;
+    const applyLock = until => {
+        input.disabled = true;
+        btn.disabled = true;
         msg.textContent = lockedMessage(until);
         // Reactivar el formulario solo cuando termine la espera.
-        setTimeout(() => {
-            if (getLockUntil()) return applyLock(getLockUntil());
-            input.disabled = false; btn.disabled = false;
-            msg.textContent = 'Ya puedes volver a intentarlo.';
-            input.focus();
-        }, Math.max(1000, until - Date.now() + 500));
+        setTimeout(
+            () => {
+                if (getLockUntil()) return applyLock(getLockUntil());
+                input.disabled = false;
+                btn.disabled = false;
+                msg.textContent = 'Ya puedes volver a intentarlo.';
+                input.focus();
+            },
+            Math.max(1000, until - Date.now() + 500)
+        );
     };
 
     const lockUntil = getLockUntil();
-    if (lockUntil) { applyLock(lockUntil); return; }
+    if (lockUntil) {
+        applyLock(lockUntil);
+        return;
+    }
     if (message) msg.textContent = message;
     input.focus();
 
-    document.getElementById('authForm').addEventListener('submit', async (ev) => {
+    document.getElementById('authForm').addEventListener('submit', async ev => {
         ev.preventDefault();
         const until = getLockUntil();
-        if (until) { applyLock(until); return; }
+        if (until) {
+            applyLock(until);
+            return;
+        }
         const key = input.value.trim();
         if (!key) return;
-        btn.disabled = true; btn.textContent = 'Verificando... ⏳'; msg.textContent = '';
+        btn.disabled = true;
+        btn.textContent = 'Verificando... ⏳';
+        msg.textContent = '';
         const result = await verifyAccessKey(key);
-        btn.disabled = false; btn.textContent = 'Entrar';
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
         if (result === 'ok') {
             setAccessKey(key);
             resetFailedAttempts();
@@ -184,10 +225,12 @@ function showLockScreen(message) {
         if (result === 'denied') {
             const remaining = registerFailedAttempt();
             input.value = '';
-            if (remaining === 0) { applyLock(getLockUntil()); return; }
-            msg.textContent = remaining === 1
-                ? '❌ Clave incorrecta. Te queda 1 intento.'
-                : `❌ Clave incorrecta. Te quedan ${remaining} intentos.`;
+            if (remaining === 0) {
+                applyLock(getLockUntil());
+                return;
+            }
+            msg.textContent =
+                remaining === 1 ? '❌ Clave incorrecta. Te queda 1 intento.' : `❌ Clave incorrecta. Te quedan ${remaining} intentos.`;
             input.focus();
             return;
         }
@@ -201,9 +244,15 @@ function showLockScreen(message) {
 }
 
 async function otakuLogout() {
-    const ok = await confirmDialog({ title: 'Cerrar sesión', message: 'Tendrás que volver a introducir la clave en este dispositivo. También se borrará la copia de tus listas guardada en él.', confirmText: 'Cerrar sesión' });
+    const ok = await confirmDialog({
+        title: 'Cerrar sesión',
+        message: 'Tendrás que volver a introducir la clave en este dispositivo. También se borrará la copia de tus listas guardada en él.',
+        confirmText: 'Cerrar sesión'
+    });
     if (!ok) return;
-    try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
+    try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (e) {}
     forgetLocalData();
     showLockScreen('Sesión cerrada en este dispositivo.');
 }
@@ -215,11 +264,17 @@ async function otakuLogout() {
 // conserva: no contiene la clave y se envía al volver a entrar.
 function forgetLocalData() {
     if (typeof clearSheetSnapshots === 'function') clearSheetSnapshots();
-    if (typeof _masterData !== 'undefined') { _masterData = []; _mangaData = []; _favsRawData = []; }
+    if (typeof _masterData !== 'undefined') {
+        _masterData = [];
+        _mangaData = [];
+        _favsRawData = [];
+    }
 }
 
 function onAccessRevoked() {
-    try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
+    try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (e) {}
     forgetLocalData();
     showLockScreen('🔑 Tu clave ya no es válida. Introduce la clave actual.');
 }

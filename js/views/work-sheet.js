@@ -42,7 +42,10 @@ function cachedCoverFor(item, type) {
 
 function openWorkSheet(type, key) {
     const item = findWork(type, key);
-    if (!item) { toast('No se encontró la obra (recarga la lista).', { type: 'error' }); return; }
+    if (!item) {
+        toast('No se encontró la obra (recarga la lista).', { type: 'error' });
+        return;
+    }
     closeWorkSheet();
 
     const title = type === 'manga' ? item.manga : item.anime;
@@ -56,8 +59,12 @@ function openWorkSheet(type, key) {
             <div class="work-sheet-body" id="workSheetBody"></div>
         </div>`;
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closeWorkSheet(); });
-    overlay.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.querySelector('.dialog-overlay')) closeWorkSheet(); });
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) closeWorkSheet();
+    });
+    overlay.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !document.querySelector('.dialog-overlay')) closeWorkSheet();
+    });
 
     renderWorkSheetView(type, item);
     overlay.querySelector('.work-sheet-close').focus();
@@ -68,9 +75,10 @@ function renderWorkSheetView(type, item) {
     const body = document.getElementById('workSheetBody');
     const title = type === 'manga' ? item.manga : item.anime;
     const score = parseFloat(item.score) || 0;
-    const meta = type === 'manga'
-        ? `${esc(item.author || 'Autor desconocido')} · ${esc(item.year || '')}`
-        : `${esc(seasonLabel(item.season))} ${esc(item.year || '')} · ${esc(item.studio || 'Estudio desconocido')}`;
+    const meta =
+        type === 'manga'
+            ? `${esc(item.author || 'Autor desconocido')} · ${esc(item.year || '')}`
+            : `${esc(seasonLabel(item.season))} ${esc(item.year || '')} · ${esc(item.studio || 'Estudio desconocido')}`;
     const cover = cachedCoverFor(item, type);
 
     body.innerHTML = `
@@ -88,9 +96,13 @@ function renderWorkSheetView(type, item) {
         <div class="work-sheet-anilist" id="workSheetAnilist"><div class="skeleton work-sheet-skeleton"></div></div>
         <div class="work-sheet-actions">
             <button type="button" class="chip-btn accent-cyan" onclick="editWorkSheet('${type}', ${jsArg(workKey(item, type))})">✏️ Editar</button>
-            ${type === 'anime' ? `
+            ${
+                type === 'anime'
+                    ? `
                 <button type="button" class="chip-btn accent-green" onclick="addAnimeToAnnualRanking(${jsArg(item.anime)}, ${jsArg(item.score)}); closeWorkSheet();">🏆 Al Ranking Anual</button>
-                <button type="button" class="chip-btn accent-yellow" onclick="rateWorkInCalificador(${jsArg(item.anime)})">🎯 Calificar episodios</button>` : ''}
+                <button type="button" class="chip-btn accent-yellow" onclick="rateWorkInCalificador(${jsArg(item.anime)})">🎯 Calificar episodios</button>`
+                    : ''
+            }
             <button type="button" class="chip-btn accent-red" onclick="deleteWorkSheet('${type}', ${jsArg(workKey(item, type))})">🗑️ Borrar</button>
         </div>`;
 
@@ -108,12 +120,16 @@ async function loadWorkSheetAnilistInfo(type, item, title) {
         }
     }`;
     try {
-        const json = await fetchAnilist(query, item.anilistId
-            ? { id: item.anilistId, type: type.toUpperCase() }
-            : { search: title, type: type.toUpperCase() });
+        const json = await fetchAnilist(
+            query,
+            item.anilistId ? { id: item.anilistId, type: type.toUpperCase() } : { search: title, type: type.toUpperCase() }
+        );
         const media = json?.data?.Media;
         if (!box()) return;
-        if (!media) { box().innerHTML = '<p class="work-sheet-note">No se encontró en AniList.</p>'; return; }
+        if (!media) {
+            box().innerHTML = '<p class="work-sheet-note">No se encontró en AniList.</p>';
+            return;
+        }
 
         const img = document.getElementById('workSheetCover');
         if (img && media.coverImage?.large && (!img.src || img.src.startsWith('data:'))) img.src = media.coverImage.large;
@@ -121,10 +137,20 @@ async function loadWorkSheetAnilistInfo(type, item, title) {
         const global = media.averageScore ? (media.averageScore / 10).toFixed(1) : null;
         const mine = parseFloat(item.score) || 0;
         const diff = global ? mine - parseFloat(global) : null;
-        const diffText = diff === null ? '' : Math.abs(diff) < 0.3 ? 'Coincides con la media' : diff > 0 ? `+${diff.toFixed(1)} sobre la media` : `${diff.toFixed(1)} bajo la media`;
-        const length = type === 'manga'
-            ? [media.volumes && `${media.volumes} tomos`, media.chapters && `${media.chapters} capítulos`].filter(Boolean).join(' · ')
-            : media.episodes ? `${media.episodes} episodios` : '';
+        const diffText =
+            diff === null
+                ? ''
+                : Math.abs(diff) < 0.3
+                  ? 'Coincides con la media'
+                  : diff > 0
+                    ? `+${diff.toFixed(1)} sobre la media`
+                    : `${diff.toFixed(1)} bajo la media`;
+        const length =
+            type === 'manga'
+                ? [media.volumes && `${media.volumes} tomos`, media.chapters && `${media.chapters} capítulos`].filter(Boolean).join(' · ')
+                : media.episodes
+                  ? `${media.episodes} episodios`
+                  : '';
         const synopsis = htmlToText(media.description).trim();
 
         box().innerHTML = `
@@ -138,7 +164,8 @@ async function loadWorkSheetAnilistInfo(type, item, title) {
             <a class="work-sheet-link" href="${esc(media.siteUrl)}" target="_blank" rel="noopener">Ver en AniList ↗</a>
             ${item.anilistId ? '' : `<p class="work-sheet-note">Esta obra aún no está vinculada con AniList: los datos son del resultado más parecido. Vincúlala editando su AniList ID (${media.id}).</p>`}`;
     } catch (err) {
-        if (box()) box().innerHTML = `<p class="work-sheet-note">No se pudieron cargar los datos de AniList${err.message === 'RATE_LIMIT' ? ' (límite de peticiones, prueba en un minuto)' : ''}.</p>`;
+        if (box())
+            box().innerHTML = `<p class="work-sheet-note">No se pudieron cargar los datos de AniList${err.message === 'RATE_LIMIT' ? ' (límite de peticiones, prueba en un minuto)' : ''}.</p>`;
     }
 }
 
@@ -154,9 +181,16 @@ function rateWorkInCalificador(title) {
 // --- Editar y borrar (Code.gs v3) ---
 async function ensureEditableWork(item) {
     let version = 1;
-    try { version = await getServerVersion(); } catch (err) { toast(err.message, { type: 'error' }); return false; }
+    try {
+        version = await getServerVersion();
+    } catch (err) {
+        toast(err.message, { type: 'error' });
+        return false;
+    }
     if (version < 3 || !item._row) {
-        toast('Para editar o borrar desde la app, actualiza el Apps Script a la versión 3 (pasos en docs/APPS-SCRIPT.md).', { type: 'error' });
+        toast('Para editar o borrar desde la app, actualiza el Apps Script a la versión 3 (pasos en docs/APPS-SCRIPT.md).', {
+            type: 'error'
+        });
         return false;
     }
     return true;
@@ -167,7 +201,12 @@ async function editWorkSheet(type, key) {
     if (!item || !(await ensureEditableWork(item))) return;
     const body = document.getElementById('workSheetBody');
     const title = type === 'manga' ? item.manga : item.anime;
-    const seasonOptions = ['Winter', 'Spring', 'Summer', 'Fall'].map(s => `<option value="${s}" ${String(item.season).toLowerCase() === s.toLowerCase() ? 'selected' : ''}>${seasonLabel(s)}</option>`).join('');
+    const seasonOptions = ['Winter', 'Spring', 'Summer', 'Fall']
+        .map(
+            s =>
+                `<option value="${s}" ${String(item.season).toLowerCase() === s.toLowerCase() ? 'selected' : ''}>${seasonLabel(s)}</option>`
+        )
+        .join('');
 
     body.innerHTML = `
         <form class="work-edit-form" id="workEditForm">
@@ -190,11 +229,24 @@ async function editWorkSheet(type, key) {
     document.getElementById('workEditForm').addEventListener('submit', async e => {
         e.preventDefault();
         const save = document.getElementById('weSave');
-        const fields = type === 'manga'
-            ? { manga: document.getElementById('weTitle').value.trim(), year: parseInt(document.getElementById('weYear').value, 10), author: document.getElementById('weCreator').value.trim() || 'Desconocido', score: parseInt(document.getElementById('weScore').value, 10) }
-            : { anime: document.getElementById('weTitle').value.trim(), season: document.getElementById('weSeason').value, year: parseInt(document.getElementById('weYear').value, 10), studio: document.getElementById('weCreator').value.trim() || 'Desconocido', score: parseInt(document.getElementById('weScore').value, 10) };
+        const fields =
+            type === 'manga'
+                ? {
+                      manga: document.getElementById('weTitle').value.trim(),
+                      year: parseInt(document.getElementById('weYear').value, 10),
+                      author: document.getElementById('weCreator').value.trim() || 'Desconocido',
+                      score: parseInt(document.getElementById('weScore').value, 10)
+                  }
+                : {
+                      anime: document.getElementById('weTitle').value.trim(),
+                      season: document.getElementById('weSeason').value,
+                      year: parseInt(document.getElementById('weYear').value, 10),
+                      studio: document.getElementById('weCreator').value.trim() || 'Desconocido',
+                      score: parseInt(document.getElementById('weScore').value, 10)
+                  };
         fields.anilistId = parseInt(document.getElementById('weAnilist').value, 10) || '';
-        save.disabled = true; save.textContent = 'Guardando…';
+        save.disabled = true;
+        save.textContent = 'Guardando…';
         try {
             await sheetsWrite({ action: 'update_entry', target: type, row: item._row, title, fields }, { minVersion: 3 });
             toast(`"${type === 'manga' ? fields.manga : fields.anime}" actualizado.`, { type: 'success' });
@@ -202,7 +254,8 @@ async function editWorkSheet(type, key) {
             refreshAfterWorkChange(type);
         } catch (err) {
             toast(err.message, { type: 'error' });
-            save.disabled = false; save.textContent = 'Guardar cambios';
+            save.disabled = false;
+            save.textContent = 'Guardar cambios';
         }
     });
 }
@@ -211,7 +264,12 @@ async function deleteWorkSheet(type, key) {
     const item = findWork(type, key);
     if (!item || !(await ensureEditableWork(item))) return;
     const title = type === 'manga' ? item.manga : item.anime;
-    const ok = await confirmDialog({ title: `Borrar "${title}"`, message: 'Se eliminará su fila de tu Google Sheets. No se puede deshacer desde la app.', confirmText: 'Borrar', danger: true });
+    const ok = await confirmDialog({
+        title: `Borrar "${title}"`,
+        message: 'Se eliminará su fila de tu Google Sheets. No se puede deshacer desde la app.',
+        confirmText: 'Borrar',
+        danger: true
+    });
     if (!ok) return;
     try {
         await sheetsWrite({ action: 'delete_entry', target: type, row: item._row, title }, { minVersion: 3 });

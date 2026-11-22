@@ -8,26 +8,35 @@
 // Requiere Code.gs v2 (ver docs/APPS-SCRIPT.md).
 // =====================================================================
 
-const LINK_BATCH = 10;            // títulos por consulta GraphQL
-const LINK_DELAY_MS = 2100;       // ~28 consultas/min: por debajo del límite de AniList
-const LINK_MIN_SCORE = 4;         // puntuación mínima para aceptar un candidato
-const LINK_SAVE_EVERY = 50;       // IDs por escritura en Sheets
+const LINK_BATCH = 10; // títulos por consulta GraphQL
+const LINK_DELAY_MS = 2100; // ~28 consultas/min: por debajo del límite de AniList
+const LINK_MIN_SCORE = 4; // puntuación mínima para aceptar un candidato
+const LINK_SAVE_EVERY = 50; // IDs por escritura en Sheets
 
 let _linkCancelled = false;
 
 function normalizeTitle(str) {
-    return String(str || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return String(str || '')
+        .normalize('NFKD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
 }
 
 function tokensOf(str) {
-    return String(str || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(t => t.length > 2 && t !== 'studio' && t !== 'studios');
+    return String(str || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.length > 2 && t !== 'studio' && t !== 'studios');
 }
 
 // Puntúa un candidato de AniList frente a una obra registrada.
 function scoreAnilistCandidate(entry, media, index, type) {
     const target = normalizeTitle(entry.title);
     const titles = [media.title?.romaji, media.title?.english, media.title?.native, ...(media.synonyms || [])]
-        .map(normalizeTitle).filter(Boolean);
+        .map(normalizeTitle)
+        .filter(Boolean);
     let score = 0;
 
     if (target && titles.includes(target)) score += 4;
@@ -63,14 +72,20 @@ function pickBestCandidate(entry, medias, type) {
 
 function buildLinkQuery(batch, type) {
     const defs = batch.map((_, i) => `$s${i}: String`).join(', ');
-    const extra = type === 'anime'
-        ? 'season seasonYear studios(isMain: true) { nodes { name } }'
-        : 'staff(sort: RELEVANCE, perPage: 6) { nodes { name { full } } }';
-    const body = batch.map((_, i) =>
-        `q${i}: Page(page: 1, perPage: 8) { media(search: $s${i}, type: ${type.toUpperCase()}, sort: SEARCH_MATCH) { id title { romaji english native } synonyms startDate { year } ${extra} } }`
-    ).join(' ');
+    const extra =
+        type === 'anime'
+            ? 'season seasonYear studios(isMain: true) { nodes { name } }'
+            : 'staff(sort: RELEVANCE, perPage: 6) { nodes { name { full } } }';
+    const body = batch
+        .map(
+            (_, i) =>
+                `q${i}: Page(page: 1, perPage: 8) { media(search: $s${i}, type: ${type.toUpperCase()}, sort: SEARCH_MATCH) { id title { romaji english native } synonyms startDate { year } ${extra} } }`
+        )
+        .join(' ');
     const variables = {};
-    batch.forEach((entry, i) => { variables[`s${i}`] = entry.title; });
+    batch.forEach((entry, i) => {
+        variables[`s${i}`] = entry.title;
+    });
     return { query: `query(${defs}) { ${body} }`, variables };
 }
 
@@ -94,7 +109,8 @@ async function linkCollection(type, entries, progress) {
 
     const flush = async () => {
         if (pendingSave.length === 0) return;
-        const items = pendingSave; pendingSave = [];
+        const items = pendingSave;
+        pendingSave = [];
         const result = await sheetsWrite({ action: 'set_anilist_ids', target: type, items }, { minVersion: 2 });
         linked += result.data?.updated ?? items.length;
     };
@@ -135,7 +151,10 @@ function showLinkPanel() {
     document.body.appendChild(overlay);
     document.getElementById('linkAction').addEventListener('click', () => {
         if (overlay.dataset.finished) overlay.remove();
-        else { _linkCancelled = true; updateLinkProgress({ note: 'Cancelando tras la consulta en curso…' }); }
+        else {
+            _linkCancelled = true;
+            updateLinkProgress({ note: 'Cancelando tras la consulta en curso…' });
+        }
     });
 }
 
@@ -159,7 +178,10 @@ async function startAnilistLinking() {
     try {
         const version = await getServerVersion();
         if (version < 2) {
-            toast('Para vincular tus obras necesitas actualizar el Apps Script a la versión 2 (pasos en docs/APPS-SCRIPT.md del repositorio).', { type: 'error' });
+            toast(
+                'Para vincular tus obras necesitas actualizar el Apps Script a la versión 2 (pasos en docs/APPS-SCRIPT.md del repositorio).',
+                { type: 'error' }
+            );
             return;
         }
     } catch (err) {
@@ -172,19 +194,24 @@ async function startAnilistLinking() {
     updateLinkProgress({ note: 'Cargando tus listas…' });
 
     try {
-        _masterData = []; _mangaData = [];
+        _masterData = [];
+        _mangaData = [];
         await new Promise((resolve, reject) => {
-            sheetsReadOnce('master', null).then(data => {
-                _masterData = data.map(item => Object.assign(item, { anilistId: readAnilistId(item) }));
-                populateFilterDropdowns(_masterData);
-                initMangaDataFetch(true, resolve);
-            }).catch(reject);
+            sheetsReadOnce('master', null)
+                .then(data => {
+                    _masterData = data.map(item => Object.assign(item, { anilistId: readAnilistId(item) }));
+                    populateFilterDropdowns(_masterData);
+                    initMangaDataFetch(true, resolve);
+                })
+                .catch(reject);
             setTimeout(() => reject(new Error('No se pudieron cargar las listas.')), 60000);
         });
 
-        const animeEntries = _masterData.filter(a => !a.anilistId && a._row && a.anime)
+        const animeEntries = _masterData
+            .filter(a => !a.anilistId && a._row && a.anime)
             .map(a => ({ row: a._row, title: String(a.anime).trim(), year: a.year, season: a.season, studio: a.studio }));
-        const mangaEntries = _mangaData.filter(m => !m.anilistId && m._row && m.manga)
+        const mangaEntries = _mangaData
+            .filter(m => !m.anilistId && m._row && m.manga)
             .map(m => ({ row: m._row, title: String(m.manga).trim(), year: m.year, author: m.author }));
         const total = animeEntries.length + mangaEntries.length;
 
@@ -194,7 +221,7 @@ async function startAnilistLinking() {
             return;
         }
 
-        const minutes = Math.max(1, Math.round((total / LINK_BATCH) * LINK_DELAY_MS / 60000));
+        const minutes = Math.max(1, Math.round(((total / LINK_BATCH) * LINK_DELAY_MS) / 60000));
         updateLinkProgress({ done: 0, total, note: `Revisando ${total} obras (≈${minutes} min). Puedes dejar la app abierta.` });
 
         const progress = { done: 0, total };
@@ -205,11 +232,16 @@ async function startAnilistLinking() {
         updateLinkProgress({ note: _linkCancelled ? 'Cancelado. Lo vinculado hasta ahora queda guardado.' : 'Terminado.' });
         finishLinkPanel(`
             <p>✅ Vinculados: <strong>${anime.linked}</strong> animes y <strong>${manga.linked}</strong> mangas.</p>
-            ${unmatched.length ? `<p>⚠️ Sin coincidencia clara (${unmatched.length}). Puedes escribir su ID a mano en la columna "AniList ID":</p>
-            <ul class="link-unmatched">${unmatched.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}`);
+            ${
+                unmatched.length
+                    ? `<p>⚠️ Sin coincidencia clara (${unmatched.length}). Puedes escribir su ID a mano en la columna "AniList ID":</p>
+            <ul class="link-unmatched">${unmatched.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`
+                    : ''
+            }`);
 
         // Recargar con los IDs nuevos (las portadas pasarán a pedirse por ID).
-        invalidateList('master'); invalidateList('manga');
+        invalidateList('master');
+        invalidateList('manga');
         reloadActiveView();
     } catch (err) {
         updateLinkProgress({ note: 'Se detuvo por un error. Lo vinculado hasta ahora queda guardado.' });

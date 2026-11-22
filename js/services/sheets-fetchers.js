@@ -38,14 +38,22 @@ function invalidateList(key) {
 const SAFE_REFRESH_VIEWS = ['hubView', 'detailView', 'statsView', 'studiosView', 'timeMachineView', 'mangaLibraryView'];
 function refreshIfShowing() {
     const view = document.querySelector('.view.active');
-    const busy = document.getElementById('workSheetOverlay') || document.querySelector('.dialog-overlay') || document.getElementById('searchOverlay');
+    const busy =
+        document.getElementById('workSheetOverlay') ||
+        document.querySelector('.dialog-overlay') ||
+        document.getElementById('searchOverlay');
     if (view && SAFE_REFRESH_VIEWS.includes(view.id) && !busy) refreshCurrentView();
 }
 
 // opts: { key, sheetName, apply(data), deliver(), onError(err) }
 function loadListWithSnapshot({ key, sheetName, apply, deliver, onError }) {
     let delivered = false;
-    const deliverOnce = () => { if (!delivered) { delivered = true; deliver(); } };
+    const deliverOnce = () => {
+        if (!delivered) {
+            delivered = true;
+            deliver();
+        }
+    };
 
     if (!_skipSnapshotOnce[key]) {
         loadSheetSnapshot(key).then(snapshot => {
@@ -57,15 +65,18 @@ function loadListWithSnapshot({ key, sheetName, apply, deliver, onError }) {
     }
     _skipSnapshotOnce[key] = false;
 
-    sheetsReadOnce(key, sheetName).then(data => {
-        const json = JSON.stringify(data);
-        if (delivered && json === _lastRawJson[key]) return;   // ya se pintó lo mismo
-        _lastRawJson[key] = json;
-        apply(data);
-        if (delivered) refreshIfShowing(); else deliverOnce();
-    }).catch(err => {
-        if (!delivered) onError(err);
-    });
+    sheetsReadOnce(key, sheetName)
+        .then(data => {
+            const json = JSON.stringify(data);
+            if (delivered && json === _lastRawJson[key]) return; // ya se pintó lo mismo
+            _lastRawJson[key] = json;
+            apply(data);
+            if (delivered) refreshIfShowing();
+            else deliverOnce();
+        })
+        .catch(err => {
+            if (!delivered) onError(err);
+        });
 }
 
 function normalizeMasterRows(data) {
@@ -73,23 +84,33 @@ function normalizeMasterRows(data) {
 }
 
 function initMasterDataFetch(callbackSuccess) {
-    if(_masterData.length > 0) {
-        if(callbackSuccess) callbackSuccess();
+    if (_masterData.length > 0) {
+        if (callbackSuccess) callbackSuccess();
         else applyFiltersAndRender();
         return;
     }
 
     setLoadersVisible(MASTER_LOADERS, true);
     loadListWithSnapshot({
-        key: 'master', sheetName: null,
-        apply: data => { _masterData = normalizeMasterRows(data); populateFilterDropdowns(_masterData); },
-        deliver: () => { if(callbackSuccess) callbackSuccess(); else applyFiltersAndRender(); },
-        onError: err => { setLoadersVisible(MASTER_LOADERS, false); showViewError(err.message); }
+        key: 'master',
+        sheetName: null,
+        apply: data => {
+            _masterData = normalizeMasterRows(data);
+            populateFilterDropdowns(_masterData);
+        },
+        deliver: () => {
+            if (callbackSuccess) callbackSuccess();
+            else applyFiltersAndRender();
+        },
+        onError: err => {
+            setLoadersVisible(MASTER_LOADERS, false);
+            showViewError(err.message);
+        }
     });
 }
 
 function initFavoritesDataFetch(forceRefresh = false) {
-    if(_favsRawData.length > 0 && !forceRefresh) {
+    if (_favsRawData.length > 0 && !forceRefresh) {
         renderFavoritesView();
         return;
     }
@@ -97,73 +118,91 @@ function initFavoritesDataFetch(forceRefresh = false) {
     document.getElementById('favoritesLoader').style.display = 'block';
     document.getElementById('favoritesContent').style.display = 'none';
 
-    sheetsReadOnce('favs', 'FAVS').then(data => {
-        _favsRawData = data;
-        processFavoritesData();
-        renderFavoritesView();
-    }).catch(err => {
-        document.getElementById('favoritesLoader').style.display = 'none';
-        showViewError(`No se pudo cargar la hoja FAVS. ${err.message}`);
-    });
+    sheetsReadOnce('favs', 'FAVS')
+        .then(data => {
+            _favsRawData = data;
+            processFavoritesData();
+            renderFavoritesView();
+        })
+        .catch(err => {
+            document.getElementById('favoritesLoader').style.display = 'none';
+            showViewError(`No se pudo cargar la hoja FAVS. ${err.message}`);
+        });
 }
 
 function initMangaDataFetch(forceRefresh = false, callbackSuccess = null) {
-    if(_mangaData.length > 0 && !forceRefresh) {
-        if(callbackSuccess) callbackSuccess();
+    if (_mangaData.length > 0 && !forceRefresh) {
+        if (callbackSuccess) callbackSuccess();
         else renderMangaLibrary();
         return;
     }
 
-    if(document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'block';
-    if(document.getElementById('mangaContent')) document.getElementById('mangaContent').style.display = 'none';
+    if (document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'block';
+    if (document.getElementById('mangaContent')) document.getElementById('mangaContent').style.display = 'none';
     if (forceRefresh) _skipSnapshotOnce.manga = true;
 
     loadListWithSnapshot({
-        key: 'manga', sheetName: 'FULL LIST MANGA',
-        apply: data => { _mangaData = normalizeMangaRows(data); populateMangaFilterDropdowns(_mangaData); },
-        deliver: () => { if(callbackSuccess) callbackSuccess(); else renderMangaLibrary(); },
+        key: 'manga',
+        sheetName: 'FULL LIST MANGA',
+        apply: data => {
+            _mangaData = normalizeMangaRows(data);
+            populateMangaFilterDropdowns(_mangaData);
+        },
+        deliver: () => {
+            if (callbackSuccess) callbackSuccess();
+            else renderMangaLibrary();
+        },
         onError: err => {
-            if(document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'none';
+            if (document.getElementById('mangaLoader')) document.getElementById('mangaLoader').style.display = 'none';
             showViewError(`No se pudo cargar la hoja FULL LIST MANGA. ${err.message}`);
         }
     });
 }
 
 function normalizeMangaRows(data) {
-    return data.map(item => {
-        let mangaName = "";
-        for(let key in item) {
-            let lowerKey = key.toLowerCase();
-            if(lowerKey.includes('manga') || lowerKey.includes('title')) { mangaName = item[key]; break; }
-        }
-        if(!mangaName) mangaName = item[Object.keys(item)[0]];
+    return data
+        .map(item => {
+            let mangaName = '';
+            for (let key in item) {
+                let lowerKey = key.toLowerCase();
+                if (lowerKey.includes('manga') || lowerKey.includes('title')) {
+                    mangaName = item[key];
+                    break;
+                }
+            }
+            if (!mangaName) mangaName = item[Object.keys(item)[0]];
 
-        return {
-            manga: mangaName,
-            year: item.Year || item.year || item.Año || item.año || '????',
-            author: item.Author || item.author || item.Autor || item.autor || item.Serialization || item.serialization || 'Desconocido',
-            score: parseFloat(item.Score || item.score || item.Nota || item.nota || 0),
-            anilistId: readAnilistId(item),
-            _row: item._row || null
-        };
-    }).filter(m => m.manga);
+            return {
+                manga: mangaName,
+                year: item.Year || item.year || item.Año || item.año || '????',
+                author: item.Author || item.author || item.Autor || item.autor || item.Serialization || item.serialization || 'Desconocido',
+                score: parseFloat(item.Score || item.score || item.Nota || item.nota || 0),
+                anilistId: readAnilistId(item),
+                _row: item._row || null
+            };
+        })
+        .filter(m => m.manga);
 }
 
 // FUNCIONES PARA RELLENAR LOS DROPDOWNS
 function populateMangaFilterDropdowns(data) {
     const yearSelect = document.getElementById('mangaFilterYear');
     const authorSelect = document.getElementById('mangaFilterAuthor');
-    
+
     if (!yearSelect || !authorSelect) return;
 
-    const years = [...new Set(data.map(item => item.year))].filter(y => y && y !== '????').sort((a,b) => b - a);
+    const years = [...new Set(data.map(item => item.year))].filter(y => y && y !== '????').sort((a, b) => b - a);
     const authors = [...new Set(data.map(item => item.author))].filter(a => a && a !== 'Desconocido').sort();
 
     yearSelect.innerHTML = '<option value="all">Todos</option>';
     authorSelect.innerHTML = '<option value="all">Todos</option>';
 
-    years.forEach(y => { yearSelect.insertAdjacentHTML('beforeend', `<option value="${esc(y)}">${esc(y)}</option>`); });
-    authors.forEach(a => { authorSelect.insertAdjacentHTML('beforeend', `<option value="${esc(a)}">${esc(a)}</option>`); });
+    years.forEach(y => {
+        yearSelect.insertAdjacentHTML('beforeend', `<option value="${esc(y)}">${esc(y)}</option>`);
+    });
+    authors.forEach(a => {
+        authorSelect.insertAdjacentHTML('beforeend', `<option value="${esc(a)}">${esc(a)}</option>`);
+    });
 }
 
 function initTimeMachineDataFetch() {
@@ -171,7 +210,10 @@ function initTimeMachineDataFetch() {
     document.getElementById('timeMachineContent').style.display = 'none';
 
     if (_masterData.length === 0) {
-        initMasterDataFetch(() => { if (_mangaData.length === 0) initMangaDataFetch(false, buildTimeMachine); else buildTimeMachine(); });
+        initMasterDataFetch(() => {
+            if (_mangaData.length === 0) initMangaDataFetch(false, buildTimeMachine);
+            else buildTimeMachine();
+        });
     } else if (_mangaData.length === 0) {
         initMangaDataFetch(false, buildTimeMachine);
     } else {

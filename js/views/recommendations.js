@@ -11,33 +11,49 @@ const RECOM_SHOWN = 8;
 let _recomCache = { anime: [], manga: [] };
 
 function initRecommendationsFetch() {
-    document.getElementById('recomLoader').style.display = 'block'; document.getElementById('recomContent').style.display = 'none';
-    document.getElementById('recomStatusBar').innerText = "Analizando tus favoritos y cruzando datos con AniList…";
+    document.getElementById('recomLoader').style.display = 'block';
+    document.getElementById('recomContent').style.display = 'none';
+    document.getElementById('recomStatusBar').innerText = 'Analizando tus favoritos y cruzando datos con AniList…';
 
     if (_masterData.length === 0) {
-        initMasterDataFetch(() => { if (_mangaData.length === 0) initMangaDataFetch(false, buildRecommendations); else buildRecommendations(); });
+        initMasterDataFetch(() => {
+            if (_mangaData.length === 0) initMangaDataFetch(false, buildRecommendations);
+            else buildRecommendations();
+        });
     } else if (_mangaData.length === 0) {
         initMangaDataFetch(false, buildRecommendations);
-    } else { buildRecommendations(); }
+    } else {
+        buildRecommendations();
+    }
 }
 
 // Elige favoritos: los de nota más alta, con algo de azar (se baraja dentro de cada nota).
 function pickSeeds(list, titleKey) {
     const favs = list.filter(x => parseFloat(x.score) >= 8 && x[titleKey]);
-    const shuffled = favs.map(x => ({ x, r: Math.random() })).sort((a, b) => (b.x.score - a.x.score) || (a.r - b.r)).map(o => o.x);
+    const shuffled = favs
+        .map(x => ({ x, r: Math.random() }))
+        .sort((a, b) => b.x.score - a.x.score || a.r - b.r)
+        .map(o => o.x);
     // Mitad de las mejores notas y mitad al azar del resto de favoritos.
     const top = shuffled.slice(0, Math.ceil(RECOM_SEEDS / 2));
-    const rest = shuffled.slice(top.length).sort(() => Math.random() - 0.5).slice(0, RECOM_SEEDS - top.length);
+    const rest = shuffled
+        .slice(top.length)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, RECOM_SEEDS - top.length);
     return [...top, ...rest];
 }
 
 async function aggregatedRecommendations(type, seeds, owned) {
     if (!seeds.length) return [];
     const defs = seeds.map((_, i) => `$i${i}: Int, $s${i}: String`).join(', ');
-    const body = seeds.map((_, i) => `q${i}: Page(page: 1, perPage: 1) { media(id: $i${i}, search: $s${i}, type: ${type}) {
+    const body = seeds
+        .map(
+            (_, i) => `q${i}: Page(page: 1, perPage: 1) { media(id: $i${i}, search: $s${i}, type: ${type}) {
         recommendations(sort: RATING_DESC, perPage: 15) { nodes { rating mediaRecommendation {
             id siteUrl title { romaji english } coverImage { large } season seasonYear startDate { year month } averageScore
-        } } } } }`).join(' ');
+        } } } } }`
+        )
+        .join(' ');
     const variables = {};
     seeds.forEach((seed, i) => {
         if (seed.anilistId) variables[`i${i}`] = seed.anilistId;
@@ -71,43 +87,83 @@ async function topGlobalFallback(type, owned) {
     const gql = `query($page: Int) { Page(page: $page, perPage: 30) { media(type: ${type}, sort: SCORE_DESC) { id siteUrl title { romaji english } coverImage { large } season seasonYear startDate { year month } } } }`;
     const res = await fetchAnilist(gql, { page: Math.floor(Math.random() * 5) + 1 });
     const hidden = hiddenDiscoveries();
-    return (res?.data?.Page?.media || []).filter(m => !owned.has(m) && !hidden.has(m.id)).slice(0, RECOM_SHOWN).map(media => ({ media, because: [] }));
+    return (res?.data?.Page?.media || [])
+        .filter(m => !owned.has(m) && !hidden.has(m.id))
+        .slice(0, RECOM_SHOWN)
+        .map(media => ({ media, because: [] }));
 }
 
 async function buildRecommendations() {
-    document.getElementById('recomLoader').style.display = 'block'; document.getElementById('recomContent').style.display = 'none';
+    document.getElementById('recomLoader').style.display = 'block';
+    document.getElementById('recomContent').style.display = 'none';
     const status = document.getElementById('recomStatusBar');
 
     const sections = [
-        { type: 'ANIME', key: 'anime', list: _masterData, titleKey: 'anime', grid: 'recomAnimeGrid', title: 'recomAnimeTitle', owned: buildOwnedIndex(_masterData, 'anime') },
-        { type: 'MANGA', key: 'manga', list: _mangaData, titleKey: 'manga', grid: 'recomMangaGrid', title: 'recomMangaTitle', owned: buildOwnedIndex(_mangaData, 'manga') },
+        {
+            type: 'ANIME',
+            key: 'anime',
+            list: _masterData,
+            titleKey: 'anime',
+            grid: 'recomAnimeGrid',
+            title: 'recomAnimeTitle',
+            owned: buildOwnedIndex(_masterData, 'anime')
+        },
+        {
+            type: 'MANGA',
+            key: 'manga',
+            list: _mangaData,
+            titleKey: 'manga',
+            grid: 'recomMangaGrid',
+            title: 'recomMangaTitle',
+            owned: buildOwnedIndex(_mangaData, 'manga')
+        }
     ];
 
     for (const sec of sections) {
         const seeds = pickSeeds(sec.list, sec.titleKey);
-        status.innerText = seeds.length ? `Combinando recomendaciones de ${seeds.length} de tus ${sec.key === 'anime' ? 'animes' : 'mangas'} favoritos…` : 'Buscando joyas en el top global…';
+        status.innerText = seeds.length
+            ? `Combinando recomendaciones de ${seeds.length} de tus ${sec.key === 'anime' ? 'animes' : 'mangas'} favoritos…`
+            : 'Buscando joyas en el top global…';
         let recs = [];
-        try { recs = await aggregatedRecommendations(sec.type, seeds, sec.owned); } catch (e) { /* se prueba el top global */ }
+        try {
+            recs = await aggregatedRecommendations(sec.type, seeds, sec.owned);
+        } catch (e) {
+            /* se prueba el top global */
+        }
         let fromFavorites = recs.length > 0;
-        if (!fromFavorites) { try { recs = await topGlobalFallback(sec.type, sec.owned); } catch (e) { recs = []; } }
+        if (!fromFavorites) {
+            try {
+                recs = await topGlobalFallback(sec.type, sec.owned);
+            } catch (e) {
+                recs = [];
+            }
+        }
         _recomCache[sec.key] = recs.map(r => r.media);
 
         document.getElementById(sec.title).innerText = fromFavorites
-            ? (sec.key === 'anime' ? 'Recomendado por tus animes favoritos' : 'Recomendado por tus mangas favoritos')
-            : (sec.key === 'anime' ? 'Joyas globales que te faltan por ver' : 'Mangas aclamados que debes leer');
+            ? sec.key === 'anime'
+                ? 'Recomendado por tus animes favoritos'
+                : 'Recomendado por tus mangas favoritos'
+            : sec.key === 'anime'
+              ? 'Joyas globales que te faltan por ver'
+              : 'Mangas aclamados que debes leer';
         const grid = document.getElementById(sec.grid);
-        grid.innerHTML = recs.length ? recs.map(r => recomCardHTML(r, sec.key)).join('')
+        grid.innerHTML = recs.length
+            ? recs.map(r => recomCardHTML(r, sec.key)).join('')
             : '<div style="color:rgba(255,255,255,0.6); text-align:center; grid-column:1/-1;">No hemos podido cargar recomendaciones.</div>';
     }
 
-    document.getElementById('recomLoader').style.display = 'none'; document.getElementById('recomContent').style.display = 'block';
+    document.getElementById('recomLoader').style.display = 'none';
+    document.getElementById('recomContent').style.display = 'block';
 }
 
 function recomCardHTML(rec, key) {
     const m = rec.media;
     const title = m.title?.romaji || m.title?.english || '';
-    const because = rec.because && rec.because.length
-        ? `<span class="recom-because" title="Porque te gustó ${esc(rec.because.join(', '))}">Por ${esc(rec.because.slice(0, 2).join(' y '))}${rec.because.length > 2 ? ` y ${rec.because.length - 2} más` : ''}</span>` : '';
+    const because =
+        rec.because && rec.because.length
+            ? `<span class="recom-because" title="Porque te gustó ${esc(rec.because.join(', '))}">Por ${esc(rec.because.slice(0, 2).join(' y '))}${rec.because.length > 2 ? ` y ${rec.because.length - 2} más` : ''}</span>`
+            : '';
     return `
         <div class="recom-card ${key}-recom" data-id="${m.id}">
             <a class="recom-card-img-container" href="${esc(m.siteUrl || `https://anilist.co/${key}/${m.id}`)}" target="_blank" rel="noopener" aria-label="${esc(title)} en AniList">
@@ -125,7 +181,11 @@ function recomCardHTML(rec, key) {
 async function recomToPlanner(id) {
     const media = _recomCache.anime.find(m => m.id === id);
     if (!media) return;
-    try { await addToPlanificador(media); } catch (err) { toast(err.message, { type: 'error' }); }
+    try {
+        await addToPlanificador(media);
+    } catch (err) {
+        toast(err.message, { type: 'error' });
+    }
 }
 
 function recomHide(id, key) {

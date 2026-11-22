@@ -1,0 +1,24 @@
+{
+  "name": "otaku-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OTAKU HUB: tu anime y manga en un solo sitio (PWA sobre Google Sheets y AniList).",
+  "scripts": {
+    "test": "node tests/run.js",
+    "test:online": "node tests/run.js --online",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "serve": "python3 -m http.server 8000"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "globals": "17.14.0",
+    "playwright": "1.63.0",
+    "prettier": "3.10.1"
+  }
+}

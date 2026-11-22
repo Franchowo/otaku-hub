@@ -22,13 +22,18 @@ async function loadMediaMeta(type, ids, onProgress) {
         try {
             const json = await fetchAnilist(
                 `query($ids: [Int]) { Page(page: 1, perPage: 50) { media(id_in: $ids, type: ${type}) { id averageScore genres format } } }`,
-                { ids: batch });
+                { ids: batch }
+            );
             (json?.data?.Page?.media || []).forEach(m => {
                 meta[m.id] = { averageScore: m.averageScore ? m.averageScore / 10 : null, genres: m.genres || [], format: m.format };
             });
         } catch (err) {
-            if (err.message === 'RATE_LIMIT') { await new Promise(r => setTimeout(r, 60000)); i -= META_BATCH; continue; }
-            break;   // sin conexión: se usa lo que haya
+            if (err.message === 'RATE_LIMIT') {
+                await new Promise(r => setTimeout(r, 60000));
+                i -= META_BATCH;
+                continue;
+            }
+            break; // sin conexión: se usa lo que haya
         }
         if (i + META_BATCH < missing.length) await new Promise(r => setTimeout(r, 800));
     }

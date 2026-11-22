@@ -6,9 +6,17 @@
 // Úsalo SIEMPRE con datos que vengan de Sheets, AniList o del usuario:
 // un título con comillas o "<" no debe romper el HTML ni ejecutar nada.
 function esc(value) {
-    return String(value ?? '').replace(/[&<>"']/g, ch => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[ch]));
+    return String(value ?? '').replace(
+        /[&<>"']/g,
+        ch =>
+            ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[ch]
+    );
 }
 
 // Argumento seguro para atributos onclick="fn(...)".
@@ -20,7 +28,8 @@ function jsArg(value) {
 // ¿Ya tengo esta obra registrada? Compara por ID de AniList y, si la obra
 // aún no está vinculada, por título (romaji o inglés, sin mayúsculas).
 function buildOwnedIndex(items, titleKey) {
-    const ids = new Set(), titles = new Set();
+    const ids = new Set(),
+        titles = new Set();
     items.forEach(item => {
         if (item.anilistId) ids.add(item.anilistId);
         if (item[titleKey]) titles.add(String(item[titleKey]).toLowerCase().trim());
@@ -36,10 +45,15 @@ function buildOwnedIndex(items, titleKey) {
 }
 
 // Obras que has ocultado en Gacha/Recomendaciones ("no me interesa").
-function hiddenDiscoveries() { return new Set(readStoredJSON('discover_hidden', [])); }
+function hiddenDiscoveries() {
+    return new Set(readStoredJSON('discover_hidden', []));
+}
 function hideDiscovery(id) {
-    const set = hiddenDiscoveries(); set.add(id);
-    try { localStorage.setItem('discover_hidden', JSON.stringify([...set])); } catch (e) {}
+    const set = hiddenDiscoveries();
+    set.add(id);
+    try {
+        localStorage.setItem('discover_hidden', JSON.stringify([...set]));
+    } catch (e) {}
 }
 
 // Convierte el HTML de las sinopsis de AniList en texto plano seguro.
@@ -59,7 +73,10 @@ function loadHtml2Canvas() {
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
             script.onload = () => resolve(window.html2canvas);
-            script.onerror = () => { _html2canvasPromise = null; reject(new Error('No se pudo descargar el generador de imágenes. Revisa tu conexión.')); };
+            script.onerror = () => {
+                _html2canvasPromise = null;
+                reject(new Error('No se pudo descargar el generador de imágenes. Revisa tu conexión.'));
+            };
             document.head.appendChild(script);
         });
     }
@@ -78,17 +95,23 @@ function reloadActiveView() {
 function showViewError(message, retry = reloadActiveView) {
     const view = document.querySelector('.view.active');
     if (!view) return;
-    view.querySelectorAll('.loader').forEach(l => { l.style.display = 'none'; });
+    view.querySelectorAll('.loader').forEach(l => {
+        l.style.display = 'none';
+    });
 
     let box = view.querySelector('.load-error');
     if (!box) {
         box = document.createElement('div');
         box.className = 'load-error';
         const heading = view.querySelector('h2');
-        if (heading) heading.after(box); else view.prepend(box);
+        if (heading) heading.after(box);
+        else view.prepend(box);
     }
     box.innerHTML = `<p>⚠️ ${esc(message)}</p><button type="button" class="btn-reload">🔄 Reintentar</button>`;
-    box.querySelector('button').addEventListener('click', () => { box.remove(); retry(); });
+    box.querySelector('button').addEventListener('click', () => {
+        box.remove();
+        retry();
+    });
 }
 
 function clearViewErrors() {

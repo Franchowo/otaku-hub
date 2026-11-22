@@ -1,0 +1,65 @@
+# Comprobaciones automáticas de OTAKU HUB.
+# - En cada PR y en cada push a main: ESLint, formato (Prettier) y pruebas.
+# - Cada lunes (o a mano, desde la pestaña Actions): prueba contra AniList
+#   real, para detectar si AniList cambia algo. Va aparte porque depende de
+#   un servicio externo y puede fallar sin que la app tenga la culpa.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, formato y pruebas
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Instalar Chromium para las pruebas
+        run: npx playwright install --with-deps chromium
+      - name: ESLint
+        run: npm run lint
+      - name: Formato (Prettier)
+        run: npm run format:check
+      - name: Pruebas (backend y navegador)
+        run: npm test
+      - name: Guardar capturas si algo falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-pruebas
+          path: tests/output/
+          retention-days: 7
+
+  online:
+    name: Prueba contra AniList real
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:online

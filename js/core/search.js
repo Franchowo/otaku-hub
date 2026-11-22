@@ -6,7 +6,10 @@
 let _searchSelected = 0;
 
 function normalizeForSearch(str) {
-    return String(str || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    return String(str || '')
+        .normalize('NFKD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase();
 }
 
 function openGlobalSearch() {
@@ -25,12 +28,19 @@ function openGlobalSearch() {
     document.body.appendChild(overlay);
 
     const input = document.getElementById('globalSearchInput');
-    const close = () => { overlay.remove(); if (previousFocus && previousFocus.focus) previousFocus.focus(); };
-    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    const close = () => {
+        overlay.remove();
+        if (previousFocus && previousFocus.focus) previousFocus.focus();
+    };
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) close();
+    });
     overlay.addEventListener('keydown', e => {
         const items = [...overlay.querySelectorAll('.search-result')];
-        if (e.key === 'Escape') { e.preventDefault(); close(); }
-        else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            close();
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
             if (!items.length) return;
             _searchSelected = (_searchSelected + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
@@ -40,7 +50,9 @@ function openGlobalSearch() {
             items[_searchSelected].click();
         }
     });
-    overlay.addEventListener('click', e => { if (e.target.closest('.search-result')) close(); });
+    overlay.addEventListener('click', e => {
+        if (e.target.closest('.search-result')) close();
+    });
     input.addEventListener('input', () => renderSearchResults(input.value));
     input.focus();
     renderSearchResults('');
@@ -75,21 +87,42 @@ function renderSearchResults(query) {
 
     if (q.length >= 2) {
         const animes = _masterData.filter(a => normalizeForSearch(a.anime).includes(q)).slice(0, 8);
-        animes.forEach(a => results.push({ kind: 'Anime', icon: '📺', title: a.anime, sub: `${seasonLabel(a.season)} ${a.year} · ${a.studio || ''} · ${a.score}⭐`, href: buildHash('detailView', { q: a.anime }) }));
+        animes.forEach(a =>
+            results.push({
+                kind: 'Anime',
+                icon: '📺',
+                title: a.anime,
+                sub: `${seasonLabel(a.season)} ${a.year} · ${a.studio || ''} · ${a.score}⭐`,
+                href: buildHash('detailView', { q: a.anime })
+            })
+        );
         const mangas = _mangaData.filter(m => normalizeForSearch(m.manga).includes(q)).slice(0, 8);
-        mangas.forEach(m => results.push({ kind: 'Manga', icon: '📖', title: m.manga, sub: `${m.year} · ${m.author} · ${m.score}⭐`, href: buildHash('mangaLibraryView', { q: m.manga }) }));
+        mangas.forEach(m =>
+            results.push({
+                kind: 'Manga',
+                icon: '📖',
+                title: m.manga,
+                sub: `${m.year} · ${m.author} · ${m.score}⭐`,
+                href: buildHash('mangaLibraryView', { q: m.manga })
+            })
+        );
     }
 
     // Con texto, primero tus obras y luego las secciones.
     if (q) results.sort((a, b) => (a.kind === 'Sección') - (b.kind === 'Sección'));
     const shown = results.slice(0, q ? 14 : 8);
     _searchSelected = 0;
-    list.innerHTML = shown.length ? shown.map((r, i) => `
+    list.innerHTML = shown.length
+        ? shown
+              .map(
+                  (r, i) => `
         <li><a class="search-result" role="option" aria-selected="${i === 0}" href="${r.href}">
             <span class="search-result-icon" aria-hidden="true">${r.icon}</span>
             <span class="search-result-text"><span class="search-result-title">${esc(r.title)}</span><span class="search-result-sub">${esc(r.sub)}</span></span>
             <span class="search-result-kind">${r.kind}</span>
-        </a></li>`).join('')
+        </a></li>`
+              )
+              .join('')
         : `<li class="search-empty">Sin resultados para "${esc(query)}"${_masterData.length ? '' : ' (cargando tus listas…)'}</li>`;
 }
 
