@@ -35,6 +35,13 @@ function buildOwnedIndex(items, titleKey) {
     };
 }
 
+// Obras que has ocultado en Gacha/Recomendaciones ("no me interesa").
+function hiddenDiscoveries() { return new Set(readStoredJSON('discover_hidden', [])); }
+function hideDiscovery(id) {
+    const set = hiddenDiscoveries(); set.add(id);
+    try { localStorage.setItem('discover_hidden', JSON.stringify([...set])); } catch (e) {}
+}
+
 // Convierte el HTML de las sinopsis de AniList en texto plano seguro.
 // DOMParser crea un documento inerte: no ejecuta scripts ni carga imágenes.
 function htmlToText(html) {

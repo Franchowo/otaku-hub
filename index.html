@@ -474,23 +474,29 @@
             </div>
 
             <div id="annualContent" style="display: none;">
+                <div class="annual-year-bar">
+                    <label for="annualYearSelect">Año</label>
+                    <select id="annualYearSelect" onchange="selectAnnualYear(this.value)"></select>
+                    <button type="button" class="chip-btn accent-purple chip-btn--sm" id="btnArchiveAnnual" onclick="archiveAnnualRanking()" title="Guarda la lista actual como un año cerrado y empieza una nueva">📦 Archivar año</button>
+                </div>
+                <div class="annual-archive-note" id="annualArchiveNote" hidden></div>
                 <div class="panel-box ranking-annual-box">
-                    <div class="panel-header">
+                    <div class="panel-header annual-edit-only">
                         <span>Añadir Anime al Ranking</span>
                         <span style="font-size:0.75rem; color:var(--neon-cyan)">Buscador Interno</span>
                     </div>
                     
-                    <div class="annual-search-wrapper">
+                    <div class="annual-search-wrapper annual-edit-only">
                         <input type="text" id="annualSearchInput" placeholder="Escribe para buscar entre tus animes registrados..." oninput="searchInternalAnime()">
                         <div id="annualSearchResults" class="annual-search-results" style="display: none;"></div>
                     </div>
 
                     <div class="panel-header" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <span>Tu Clasificación Anual</span>
+                        <span id="annualListTitle">Tu Clasificación Anual</span>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                            <button class="chip-btn accent-green chip-btn--sm" onclick="saveAnnualRankingToCloud()">☁️ Guardar Sheet</button>
+                            <button class="chip-btn accent-green chip-btn--sm annual-edit-only" onclick="saveAnnualRankingToCloud()">☁️ Guardar Sheet</button>
                             <button class="chip-btn accent-cyan chip-btn--sm" onclick="openTierlistModal()">🎨 Exportar Tierlist</button>
-                            <button class="chip-btn accent-red chip-btn--sm" onclick="resetAnnualRanking()">↺ Reiniciar Año</button>
+                            <button class="chip-btn accent-red chip-btn--sm annual-edit-only" onclick="resetAnnualRanking()">↺ Reiniciar Año</button>
                         </div>
                     </div>
 
@@ -541,29 +547,37 @@
 
         <div id="rankerView" class="view">
             <h2>Opening Ranker</h2>
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-                <button class="btn btn-reset" style="width: auto; padding: 10px 20px; margin: 0;" onclick="resetApp()">↺ Reiniciar Sistema</button>
+            <div class="ranker-toolbar">
+                <button type="button" class="chip-btn accent-red chip-btn--sm" onclick="resetApp()">↺ Reiniciar</button>
             </div>
-            
+
             <div id="step-1" class="screen active">
-                <textarea id="input" placeholder="Pega los nombres de los animes, uno por línea..."></textarea>
-                <button class="btn" onclick="startApp()">🚀 Iniciar Fase de Descartes</button>
+                <p class="ranker-help">Escribe animes (uno por línea) o añade los de un año de tu lista. Buscaremos sus openings con vídeo y canción.</p>
+                <div class="ranker-import">
+                    <label for="rankerImportYear">Mis animes de</label>
+                    <select id="rankerImportYear"></select>
+                    <button type="button" class="chip-btn accent-cyan" onclick="importRankerYear()">＋ Añadir</button>
+                </div>
+                <textarea id="input" aria-label="Animes, uno por línea" placeholder="Frieren&#10;Bocchi the Rock!&#10;…"></textarea>
+                <button type="button" class="btn" id="btn-start-ranker" onclick="startApp()">🔎 Buscar sus openings</button>
             </div>
-            
+
             <div id="step-2" class="screen">
-                <p style="text-align: center; color: #94a3b8; margin-bottom: 20px;">Confirma los que quieres mantener (✔) y los que no (X).</p>
-                <div id="discard-list" style="max-height: 400px; overflow-y: auto; padding-right: 5px;"></div>
-                <button class="btn" id="btn-to-rating" onclick="prepareRating()">Siguiente: Cargar Portadas y Valorar ➡️</button>
+                <p class="ranker-help">Elige qué openings entran (✔) y cuáles no (✕). Puedes escucharlos antes de decidir.</p>
+                <p class="ranker-help" id="ranker-discard-count"></p>
+                <div id="discard-list" class="ranker-list"></div>
+                <button type="button" class="btn" id="btn-to-rating" onclick="prepareRating()">Siguiente: dar estrellas ➡️</button>
             </div>
-            
+
             <div id="step-3" class="screen">
-                <div id="rating-list" style="max-height: 500px; overflow-y: auto; padding-right: 5px;"></div>
-                <button class="btn" onclick="startDuels()">⚔️ Comenzar Duelos</button>
+                <p class="ranker-help">Da 1-3 estrellas: un opening con más estrellas siempre quedará por encima. Los duelos solo comparan openings con las mismas estrellas.</p>
+                <div id="rating-list" class="ranker-list"></div>
+                <button type="button" class="btn" onclick="startDuels()">⚔️ Comenzar duelos</button>
             </div>
-            
+
             <div id="step-4" class="screen">
                 <div class="progress-bar"><div id="progress-fill"></div></div>
-                <div id="duel-box"></div>
+                <div id="duel-box" aria-live="polite"></div>
             </div>
         </div>
 
@@ -578,7 +592,7 @@
             <div id="recomContent" style="display: none;">
                 <div class="recom-header-controls">
                     <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0; max-width: 600px;">
-                        El sistema selecciona aleatoriamente obras que has valorado con nota alta y busca sugerencias afines en la base de datos global.
+                        Combinamos las recomendaciones de AniList para varios de tus favoritos (nota ≥ 8): sale primero lo que recomiendan varios a la vez. Pulsa 📅 para añadir al Planificador o 🙅 para no volver a verlo.
                     </p>
                     <button class="chip-btn accent-yellow" onclick="initRecommendationsFetch()">🔄 Recargar Sugerencias</button>
                 </div>
@@ -624,7 +638,9 @@
                     </div>
                     <div style="flex-grow: 1;">
                         <h3 id="calificadorAnimeTitle" style="text-align: left; margin-bottom: 5px; color: var(--neon-cyan);">Nombre Anime</h3>
-                        <div id="calificadorAnimeMeta" style="color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-bottom: 20px;">12 Capítulos Registrados</div>
+                        <div id="calificadorAnimeMeta" style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 20px;">12 Capítulos Registrados
+                        </div>
+                        <button type="button" class="chip-btn accent-cyan chip-btn--sm calif-episodes-btn" onclick="changeCalificadorEpisodes()">✏️ Cambiar nº de episodios</button>
                         
                         <div class="stats-grid-extended" style="grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div class="kpi-card cyan" style="padding: 10px;">
@@ -637,6 +653,7 @@
                             </div>
                         </div>
 
+                        <div class="calif-final" id="calificadorFinalProposal" hidden></div>
                         <button id="btnSaveCalificador" class="main-btn" style="margin-top: 15px; background: linear-gradient(90deg, var(--neon-cyan), #0055ff);" onclick="saveCurrentCalificadorToCloud()">💾 Guardar Progreso Actual</button>
                     </div>
                 </div>
@@ -722,14 +739,14 @@
             
             <div class="filter-panel" style="justify-content: center; border-color: rgba(255, 0, 127, 0.3);">
                 <div class="filter-group">
-                    <label>Formato</label>
+                    <label for="gachaFormat">Formato</label>
                     <select id="gachaFormat" style="font-size: 1.1rem; font-weight: bold;">
                         <option value="ANIME">📺 Anime</option>
                         <option value="MANGA">📖 Manga</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Época</label>
+                    <label for="gachaDecade">Época</label>
                     <select id="gachaDecade" style="font-size: 1.1rem; font-weight: bold;">
                         <option value="all">Todas las épocas</option>
                         <option value="2020">2020s (Actualidad)</option>
@@ -738,11 +755,17 @@
                         <option value="1990">1990s (Retro)</option>
                     </select>
                 </div>
+                <div class="filter-group">
+                    <label for="gachaGenre">Género</label>
+                    <select id="gachaGenre" style="font-size: 1.1rem; font-weight: bold;">
+                        <option value="all">Cualquiera</option>
+                    </select>
+                </div>
             </div>
 
             <div class="gacha-container">
                 <p style="color: rgba(255,255,255,0.5); text-align: center; margin-top: 0; font-size: 0.9rem;">
-                    El algoritmo buscará entre las obras más populares de AniList y filtrará automáticamente todo lo que ya tienes registrado en tu Hub.
+                    Una obra al azar entre las más populares de AniList, quitando lo que ya tienes y lo que has marcado como "No me interesa".
                 </p>
                 
                 <button class="gacha-btn" onclick="pullGacha()">Tirar de la Ruleta</button>

@@ -33,7 +33,7 @@ async function searchAnimeCalificador() {
     const resultsGrid = document.getElementById('calificadorResultsGrid'), loader = document.getElementById('calificadorLoader'), trackerSection = document.getElementById('calificadorTrackerSection');
     resultsGrid.innerHTML = ''; trackerSection.style.display = 'none'; loader.style.display = 'block';
 
-    const gql = `query($search: String) { Page(page: 1, perPage: 6) { media(search: $search, type: ANIME) { id title { romaji } episodes coverImage { large } } } }`;
+    const gql = `query($search: String) { Page(page: 1, perPage: 6) { media(search: $search, type: ANIME) { id title { romaji } episodes status nextAiringEpisode { episode } coverImage { large } } } }`;
 
     try {
         const data = await fetchAnilist(gql, { search: query });
@@ -43,17 +43,29 @@ async function searchAnimeCalificador() {
         if (medias.length === 0) { resultsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6);">No se encontraron resultados.</div>'; return; }
 
         medias.forEach(anime => {
-            const epCount = anime.episodes || 12;
+            const epCount = anime.episodes;
+            const airedSoFar = anime.nextAiringEpisode ? anime.nextAiringEpisode.episode - 1 : null;
             const imgUrl = anime.coverImage?.large || FALLBACK_IMG;
             const titleRomaji = anime.title.romaji;
             
             const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer'; card.setAttribute('role', 'button'); card.tabIndex = 0;
-            card.innerHTML = `<div class="recom-card-img-container"><img src="${esc(imgUrl)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span class="recom-card-title" title="${esc(titleRomaji)}">${esc(titleRomaji)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">${esc(epCount)} Caps</span>`;
+            card.innerHTML = `<div class="recom-card-img-container"><img src="${esc(imgUrl)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span class="recom-card-title" title="${esc(titleRomaji)}">${esc(titleRomaji)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">${epCount ? `${esc(epCount)} episodios` : airedSoFar !== null ? `En emisión (van ${esc(airedSoFar)})` : 'Episodios por confirmar'}</span>`;
             
-            card.onclick = () => {
-                const existingAnime = Array.isArray(_calificadorSavedProgress) ? _calificadorSavedProgress.find(a => a && a.title === titleRomaji) : null;
-                if (existingAnime && Array.isArray(existingAnime.scores)) { loadCalificadorTracker(existingAnime.title, existingAnime.episodes, existingAnime.cover, existingAnime.scores, existingAnime.id); } 
-                else { loadCalificadorTracker(titleRomaji, epCount, imgUrl); }
+            card.onclick = async () => {
+                const existingAnime = Array.isArray(_calificadorSavedProgress) ? _calificadorSavedProgress.find(a => a && (a.id === `al-${anime.id}` || String(a.title).toLowerCase() === titleRomaji.toLowerCase())) : null;
+                if (existingAnime && Array.isArray(existingAnime.scores)) { loadCalificadorTracker(existingAnime.title, existingAnime.episodes, existingAnime.cover, existingAnime.scores, existingAnime.id); return; }
+                let episodes = epCount;
+                if (!episodes) {
+                    // En emisión o sin confirmar: AniList aún no sabe cuántos tendrá.
+                    episodes = await promptNumberDialog({
+                        title: '¿Cuántos episodios tendrá?',
+                        message: `AniList aún no lo confirma${airedSoFar !== null ? ` (van ${airedSoFar} emitidos)` : ''}. Podrás cambiarlo después.`,
+                        value: Math.max(12, airedSoFar || 0), min: 1, max: 2000, confirmText: 'Empezar'
+                    });
+                    if (episodes === null) return;
+                }
+                // El id "al-<AniList>" permite registrar luego el anime con su ID exacto.
+                loadCalificadorTracker(titleRomaji, episodes, imgUrl, null, `al-${anime.id}`);
             };
             resultsGrid.appendChild(card);
         });
@@ -109,7 +121,7 @@ function loadCalificadorTracker(title, episodes, imgUrl, existingScores = null, 
     document.getElementById('calificadorResultsGrid').innerHTML = ''; document.getElementById('calificadorSearchInput').value = '';
     const trackerSection = document.getElementById('calificadorTrackerSection'); trackerSection.style.display = 'block'; trackerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
-    document.getElementById('calificadorAnimeTitle').innerText = title; 
+    document.getElementById('calificadorAnimeTitle').textContent = title; 
     document.getElementById('calificadorAnimeMeta').innerText = `${episodes} Capítulos Registrados`; 
     document.getElementById('calificadorAnimeCover').src = imgUrl;
 
@@ -117,14 +129,7 @@ function loadCalificadorTracker(title, episodes, imgUrl, existingScores = null, 
     _calificadorCurrentId = id || 'calif-' + Date.now();
 
     // Lógica de cálculo de Puntos de Estado (Hitos) cada 3 episodios
-    let milestones = [];
-    for (let i = 3; i <= episodes; i += 3) {
-        milestones.push({ ep: i, isFinal: i === episodes });
-    }
-    // Si el total no es múltiplo de 3, añadimos un hito final extra para el resto
-    if (episodes % 3 !== 0 && episodes > 0) {
-        milestones.push({ ep: episodes, isFinal: true });
-    }
+    const milestones = buildMilestones(episodes);
 
     // Inicializamos o recuperamos datos asegurando el nuevo formato JSON
     if (existingScores && Array.isArray(existingScores) && existingScores.length > 0 && typeof existingScores[0] === 'object') {
@@ -141,6 +146,33 @@ function loadCalificadorTracker(title, episodes, imgUrl, existingScores = null, 
 
     renderCalificadorList();
     calculateCalificadorStats(); 
+}
+
+// Hitos cada 3 episodios + hito final (también si el total no es múltiplo de 3).
+function buildMilestones(episodes) {
+    const milestones = [];
+    for (let i = 3; i <= episodes; i += 3) milestones.push({ ep: i, isFinal: i === episodes });
+    if (episodes % 3 !== 0 && episodes > 0) milestones.push({ ep: episodes, isFinal: true });
+    return milestones;
+}
+
+// Cambiar el total (p. ej. un anime en emisión que al final tuvo más episodios).
+// Se conservan las evaluaciones de los hitos que siguen existiendo; la final
+// solo se conserva si el último episodio no cambia.
+async function changeCalificadorEpisodes() {
+    const episodes = await promptNumberDialog({ title: 'Número de episodios', message: 'Total de episodios del anime. Las evaluaciones ya hechas se conservan.', value: _calificadorEpisodesCount, min: 1, max: 2000, confirmText: 'Cambiar' });
+    if (episodes === null || episodes === _calificadorEpisodesCount) return;
+    const previous = _calificadorCurrentScores;
+    _calificadorCurrentScores = buildMilestones(episodes).map(m => {
+        const old = previous.find(p => p.ep === m.ep && p.isFinal === m.isFinal) || (!m.isFinal && previous.find(p => p.ep === m.ep && !p.isFinal));
+        return old ? { ...old, isFinal: m.isFinal } : { ep: m.ep, isFinal: m.isFinal, completed: false, score: 0, answers: m.isFinal ? [5,5,5,5] : [3,3,3,3] };
+    });
+    _calificadorEpisodesCount = episodes;
+    document.getElementById('calificadorAnimeMeta').innerText = `${episodes} Capítulos Registrados`;
+    _calificadorDirty = true;
+    renderCalificadorList();
+    calculateCalificadorStats();
+    toast('Episodios actualizados. Recuerda guardar el progreso.', { type: 'info' });
 }
 
 function renderCalificadorList() {
@@ -323,6 +355,8 @@ function calculateCalificadorStats() {
     const tensCount = document.getElementById('calificadorTensCount');
     tensCount.innerText = perfectHits;
 
+    renderCalificadorFinalProposal(average, completedCPs.some(cp => cp.isFinal));
+
     if (perfectHits > 0) {
         badge.className = 'kpi-card magenta'; 
         badge.style.borderColor = 'var(--neon-magenta)'; 
@@ -338,7 +372,7 @@ function calculateCalificadorStats() {
 }
 
 function saveCurrentCalificadorToCloud() {
-    const btn = document.getElementById('btnSaveCalificador'), title = document.getElementById('calificadorAnimeTitle').innerText, cover = document.getElementById('calificadorAnimeCover').src;
+    const btn = document.getElementById('btnSaveCalificador'), title = document.getElementById('calificadorAnimeTitle').textContent, cover = document.getElementById('calificadorAnimeCover').src;
     if (!Array.isArray(_calificadorSavedProgress)) _calificadorSavedProgress = [];
     const existingIndex = _calificadorSavedProgress.findIndex(a => a.id === _calificadorCurrentId);
     const animeData = { id: _calificadorCurrentId, title: title, episodes: _calificadorEpisodesCount, cover: cover, scores: [..._calificadorCurrentScores] };
@@ -380,4 +414,54 @@ function syncCalificadorToCloud(change, callbackSuccess, callbackError) {
         if(statusLabel) { statusLabel.innerText = "No guardado ❌"; statusLabel.title = err.message; statusLabel.style.color = "var(--neon-red)"; }
         if(callbackError) callbackError(err);
     });
+}
+
+// ---------------------------------------------------------------------
+// CERRAR EL CICLO: con el hito final evaluado, proponer la nota y
+// registrarla (o editarla si el anime ya está en tu lista).
+// ---------------------------------------------------------------------
+function calificadorAnilistId() {
+    const m = /^al-(\d+)$/.exec(String(_calificadorCurrentId || ''));
+    return m ? parseInt(m[1], 10) : null;
+}
+
+function renderCalificadorFinalProposal(average, finalDone) {
+    const box = document.getElementById('calificadorFinalProposal');
+    if (!box) return;
+    if (!finalDone) { box.hidden = true; box.innerHTML = ''; return; }
+    const proposed = Math.min(10, Math.max(1, Math.round(average)));
+    const title = document.getElementById('calificadorAnimeTitle').textContent;
+    const id = calificadorAnilistId();
+    const owned = _masterData.find(a => (id && a.anilistId === id) || String(a.anime).toLowerCase() === title.toLowerCase());
+    box.hidden = false;
+    box.innerHTML = owned
+        ? `<span>🏁 Nota propuesta: <strong>${proposed}/10</strong>. Ya está en tu lista con ${esc(owned.score)}⭐.</span>
+           <button type="button" class="chip-btn accent-green chip-btn--sm" onclick="openWorkSheet('anime', ${jsArg(workKey(owned, 'anime'))})">Ver / editar nota</button>`
+        : `<span>🏁 Nota propuesta: <strong>${proposed}/10</strong></span>
+           <button type="button" class="chip-btn accent-green chip-btn--sm" onclick="registerFromCalificador(${proposed})">📥 Registrar en mi lista</button>`;
+}
+
+// Deja el formulario de registro relleno (título, temporada, año, estudio,
+// nota e ID de AniList) para que solo tengas que revisar y enviar.
+async function registerFromCalificador(score) {
+    const title = document.getElementById('calificadorAnimeTitle').textContent;
+    const id = calificadorAnilistId();
+    // Guardar el progreso antes de salir, para no perderlo ni bloquear la navegación.
+    if (_calificadorDirty) saveCurrentCalificadorToCloud();
+    _calificadorDirty = false;
+    switchView('formView');
+    document.getElementById('anime').value = title;
+    document.getElementById('score').value = score; updateScoreData(score);
+    if (!id) return;
+    try {
+        const json = await fetchAnilist(`query($id: Int) { Media(id: $id, type: ANIME) { id title { romaji } season seasonYear startDate { year month } studios(isMain: true) { nodes { name } } } }`, { id });
+        const m = json?.data?.Media;
+        if (!m) return;
+        const season = m.season ? m.season.charAt(0) + m.season.slice(1).toLowerCase() : null;
+        if (season) document.getElementById('season').value = season;
+        if (m.seasonYear || m.startDate?.year) document.getElementById('year').value = m.seasonYear || m.startDate.year;
+        const studios = (m.studios?.nodes || []).map(n => n.name).join(', ');
+        if (studios) document.getElementById('studio').value = studios;
+        _selectedAnimeMedia = { id: m.id, title };
+    } catch (e) { /* el usuario puede completar el resto a mano */ }
 }

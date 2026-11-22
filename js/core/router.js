@@ -22,7 +22,7 @@ const VIEW_META = {
     studiosView:         { slug: 'estudios',        label: 'Estudios',        icon: '🏢', desc: 'Ranking de estudios con 5 o más animes.' },
     top150View:          { slug: 'top-150',         label: 'TOP 150',         icon: '💯', desc: 'Tu salón de la fama, con subidas y bajadas.' },
     annualRankingView:   { slug: 'ranking-anual',   label: 'Anual',           icon: '🏆', desc: 'Ordena lo que has visto este año y exporta la tierlist.' },
-    rankerView:          { slug: 'opening-ranker',  label: 'Openings',        icon: '⚔️', desc: 'Ordena openings a base de duelos.' },
+    rankerView:          { slug: 'opening-ranker',  label: 'Openings',        icon: '⚔️', desc: 'Escucha tus openings y ordénalos a base de duelos.' },
     planificadorView:    { slug: 'planificador',    label: 'Planificador',    icon: '📅', desc: 'Marca qué quieres ver de cada temporada.' },
     recommendationsView: { slug: 'recomendaciones', label: 'Recomendaciones', icon: '💡', desc: 'Sugerencias a partir de lo que mejor has puntuado.' },
     gachaView:           { slug: 'gacha',           label: 'Gacha',           icon: '🎰', desc: 'Una obra popular al azar que aún no tienes.' },
@@ -152,6 +152,8 @@ function showView(viewId, params = {}) {
         initCalificadorFetch();
     } else if(viewId === 'planificadorView') {
         initMasterDataFetch(() => initPlanificadorFetch());
+    } else if(viewId === 'rankerView') {
+        initMasterDataFetch(() => fillRankerYears());
     } else if(viewId === 'gachaView') {
         initMasterDataFetch(() => initMangaDataFetch(false, () => {}));
     }

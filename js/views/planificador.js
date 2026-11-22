@@ -217,3 +217,20 @@ grid.appendChild(card);
                 throw err;
             }
         }
+
+        // Añadir una obra al planificador desde otras vistas (Gacha,
+        // Recomendaciones). media: { id, title:{romaji}, coverImage, season, seasonYear, startDate }.
+        async function addToPlanificador(media, status = 'interesa') {
+            const month = media.startDate && media.startDate.month;
+            const rawSeason = media.season || (month ? ['WINTER', 'WINTER', 'WINTER', 'SPRING', 'SPRING', 'SPRING', 'SUMMER', 'SUMMER', 'SUMMER', 'FALL', 'FALL', 'FALL'][month - 1] : null);
+            const season = rawSeason ? rawSeason.charAt(0) + rawSeason.slice(1).toLowerCase() : currentAnimeSeason();
+            const item = {
+                id: String(media.id), title: media.title?.romaji || media.title?.english || '',
+                cover: media.coverImage?.large || media.coverImage?.extraLarge || '',
+                year: media.seasonYear || media.startDate?.year || new Date().getFullYear(), season, status
+            };
+            const result = await sheetsWrite({ action: 'upsert_rows', sheet: 'PLANIFICADOR_STATE', items: [item] }, { minVersion: 2 });
+            _planificadorSavedProgress = _planificadorSavedProgress.filter(p => String(p.id) !== item.id);
+            _planificadorSavedProgress.push(item);
+            toast(result.queued ? `"${item.title}" se añadirá al Planificador al volver la conexión.` : `"${item.title}" añadido al Planificador (${seasonLabel(season)} ${item.year}).`, { type: 'success' });
+        }
