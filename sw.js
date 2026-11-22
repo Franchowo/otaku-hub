@@ -10,7 +10,7 @@
 // Si añades un archivo a la app, inclúyelo en APP_SHELL. CACHE_NAME no se
 // edita a mano: `npm run sw:version` lo calcula a partir del contenido
 // (las pruebas fallan si se te olvida).
-const CACHE_NAME = 'otaku-hub-34ec3e12';
+const CACHE_NAME = 'otaku-hub-67ecf330';
 const COVERS_CACHE = 'otaku-hub-covers';
 const RUNTIME_CACHE = 'otaku-hub-runtime';
 const MAX_COVERS = 800;

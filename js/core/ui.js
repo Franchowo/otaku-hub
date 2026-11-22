@@ -255,9 +255,39 @@ function applyTheme(mode) {
 
 function cycleTheme() {
     const order = ['auto', 'light', 'dark'];
+    const before = effectiveTheme();
     const next = order[(order.indexOf(currentThemeMode()) + 1) % order.length];
-    applyTheme(next);
+    switchThemeAnimated(next, before !== effectiveTheme(next));
     toast(`Tema: ${THEME_LABELS[next]}`, { type: 'info', duration: 1800 });
+}
+
+// El nuevo tema se extiende en círculo desde el botón 🌓 (View Transitions,
+// Chrome/Edge/Safari recientes). Si el navegador no lo admite o el sistema
+// pide reducir movimiento, los colores cambian con un fundido corto.
+function switchThemeAnimated(mode, visibleChange) {
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!visibleChange || reduce) return applyTheme(mode);
+    const btn = document.getElementById('themeToggle');
+    if (!document.startViewTransition || !btn) {
+        const root = document.documentElement;
+        root.classList.add('theme-fading');
+        applyTheme(mode);
+        setTimeout(() => root.classList.remove('theme-fading'), 450);
+        return;
+    }
+    const r = btn.getBoundingClientRect();
+    const x = r.left + r.width / 2,
+        y = r.top + r.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    const transition = document.startViewTransition(() => applyTheme(mode));
+    transition.ready
+        .then(() =>
+            document.documentElement.animate(
+                { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+                { duration: 560, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', pseudoElement: '::view-transition-new(root)' }
+            )
+        )
+        .catch(() => {});
 }
 
 applyTheme(currentThemeMode());

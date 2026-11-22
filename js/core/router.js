@@ -130,6 +130,23 @@ window.addEventListener('hashchange', onRouteChange);
 // derecha (avanzas) o por la izquierda (vuelves).
 const VIEW_ORDER = NAV_GROUPS.flatMap(g => g.views);
 
+// Durante el primer momento en una pantalla, sus tarjetas entran en cascada
+// (styles.css: .view-entering). Se quita al rato o en cuanto escribes o
+// cambias un filtro, para que filtrar no repita la animación.
+let _enteringTimer = null;
+function markViewEntering(container) {
+    container.classList.add('view-entering');
+    clearTimeout(_enteringTimer);
+    const stop = () => {
+        container.classList.remove('view-entering');
+        container.removeEventListener('input', stop);
+        container.removeEventListener('change', stop);
+    };
+    container.addEventListener('input', stop);
+    container.addEventListener('change', stop);
+    _enteringTimer = setTimeout(stop, 1800);
+}
+
 function showView(viewId, params = {}) {
     if (!document.getElementById(viewId)) viewId = 'hubView';
     const from = VIEW_ORDER.indexOf(_currentView),
@@ -147,6 +164,7 @@ function showView(viewId, params = {}) {
     container.classList.remove('form-mode', 'hub-mode');
     if (navDir) container.dataset.navDir = navDir;
     else delete container.dataset.navDir;
+    markViewEntering(container);
     renderNavState(viewId);
     document.title = viewId === 'hubView' ? 'OTAKU HUB' : `${VIEW_META[viewId].label} · OTAKU HUB`;
     window.scrollTo({ top: 0 });

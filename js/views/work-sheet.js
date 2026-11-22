@@ -36,14 +36,14 @@ function closeWorkSheet() {
     if (overlay._previousFocus && overlay._previousFocus.focus) overlay._previousFocus.focus({ preventScroll: true });
 }
 
-// Al cerrar: la ficha se desvanece y la portada vuelve volando a su tarjeta.
-// La ficha real se quita al momento (el resto de la app no espera); lo que
-// se anima es una copia sin ids ni foco.
+// Al cerrar: la ficha baja un poco y se desvanece mientras la portada
+// vuelve volando a su tarjeta. La ficha real se quita al momento (el resto
+// de la app no espera); lo que se anima es una copia sin ids ni foco.
 function animateWorkSheetClose(overlay) {
     const coverImg = overlay.querySelector('#workSheetCover');
     // Solo la ficha de obra (el Wrapped y la página de estudio usan la misma ventana).
     if (!coverImg || prefersReducedMotion() || !document.body.animate) return;
-    const from = coverImg && coverImg.getBoundingClientRect();
+    const from = coverImg.getBoundingClientRect();
     const origin = overlay._originImg && overlay._originImg.isConnected ? overlay._originImg : null;
     const ghost = overlay.cloneNode(true);
     ghost.removeAttribute('id');
@@ -52,16 +52,30 @@ function animateWorkSheetClose(overlay) {
     ghost.setAttribute('inert', '');
     ghost.classList.add('sheet-overlay--closing');
     document.body.appendChild(ghost);
+    const sheet = ghost.querySelector('.work-sheet');
+    const sheetBody = overlay.querySelector('.work-sheet');
+    if (sheet && sheetBody) sheet.scrollTop = sheetBody.scrollTop;
     const ghostCover = ghost.querySelector('.work-sheet-cover img');
-    if (origin && ghostCover) ghostCover.style.opacity = '0';
+    const flies = origin && !coverImg.src.startsWith('data:');
+    if (flies && ghostCover) ghostCover.style.opacity = '0';
+    const mobile = matchMedia('(max-width: 640px)').matches;
+    if (sheet)
+        sheet.animate(
+            mobile
+                ? [{ transform: 'none' }, { transform: 'translateY(100%)' }]
+                : [
+                      { transform: 'none', opacity: 1 },
+                      { transform: 'translateY(10px) scale(0.96)', opacity: 0 }
+                  ],
+            { duration: mobile ? 280 : 200, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }
+        );
     ghost
-        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-in' })
+        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: mobile ? 280 : 240, easing: 'ease-in', fill: 'forwards' })
         .finished.catch(() => {})
         .then(() => ghost.remove());
-    if (origin && coverImg && !coverImg.src.startsWith('data:')) {
+    if (flies) {
         origin.style.visibility = 'hidden';
-        const flight = flyElement(coverImg.src, from, origin.getBoundingClientRect(), { duration: 260, radiusFrom: 12, radiusTo: 6 });
-        // flyElement va de "from" a "to": aquí el destino es la tarjeta de origen.
+        const flight = flyElement(coverImg.src, from, origin.getBoundingClientRect(), { duration: 360, radiusFrom: 12, radiusTo: 6 });
         if (flight) flight.done.then(() => (origin.style.visibility = ''));
         else origin.style.visibility = '';
     }
@@ -95,7 +109,7 @@ function openWorkSheet(type, key) {
     const title = type === 'manga' ? item.manga : item.anime;
     const overlay = document.createElement('div');
     overlay.id = 'workSheetOverlay';
-    overlay.className = 'sheet-overlay';
+    overlay.className = 'sheet-overlay sheet-overlay--js';
     overlay._previousFocus = previousFocus;
     overlay._originImg = originImg;
     overlay.innerHTML = `
@@ -118,18 +132,61 @@ function openWorkSheet(type, key) {
     loadWorkSheetAnilistInfo(type, item, title);
 }
 
-// Al abrir: la portada de la tarjeta vuela hasta su sitio en la ficha.
+// Al abrir: la ficha crece desde la tarjeta tocada (en móvil sube desde
+// abajo), la portada vuela hasta su sitio y el resto de la ficha aparece
+// en cascada.
 function animateWorkSheetOpen(overlay, originImg) {
+    if (prefersReducedMotion() || !document.body.animate) return;
+    const sheet = overlay.querySelector('.work-sheet');
     const target = overlay.querySelector('#workSheetCover');
-    if (!originImg || !target) return;
-    const flight = flyElement(originImg.currentSrc || originImg.src, originImg.getBoundingClientRect(), target.getBoundingClientRect(), {
-        duration: 340,
-        radiusFrom: 6,
-        radiusTo: 12
-    });
+    const mobile = matchMedia('(max-width: 640px)').matches;
+    // Medir antes de animar: durante la animación la ficha está desplazada.
+    const targetRect = target && target.getBoundingClientRect();
+    const originRect = originImg && originImg.getBoundingClientRect();
+    overlay.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+    if (sheet) {
+        if (mobile) {
+            sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: 460, easing: EASE_OUT });
+        } else {
+            // El origen de la escala es el punto de la ficha más cercano a la tarjeta.
+            const s = sheet.getBoundingClientRect();
+            const o = originRect;
+            if (o) {
+                const x = Math.min(Math.max(o.left + o.width / 2 - s.left, 0), s.width);
+                const y = Math.min(Math.max(o.top + o.height / 2 - s.top, 0), s.height);
+                sheet.style.transformOrigin = `${x}px ${y}px`;
+            }
+            sheet.animate(
+                [
+                    { transform: 'scale(0.9)', opacity: 0 },
+                    { transform: 'none', opacity: 1 }
+                ],
+                { duration: 420, easing: EASE_OUT }
+            );
+        }
+    }
+    staggerIn(overlay.querySelectorAll('.work-sheet-info > *, .work-sheet-actions > *'), { delay: 120, step: 35 });
+    if (!originImg || !target || !rectOnScreen(targetRect)) return;
+    const flight = flyElement(
+        originImg.currentSrc || originImg.src,
+        originRect,
+        () => (target.isConnected ? target.getBoundingClientRect() : targetRect),
+        {
+            // En móvil la ficha sube a la vez: misma curva y duración para que la portada no se quede atrás.
+            duration: mobile ? 460 : 480,
+            easing: mobile ? 'out' : 'inOut',
+            lift: !mobile,
+            radiusFrom: 6,
+            radiusTo: 12
+        }
+    );
     if (!flight) return;
     target.style.opacity = '0';
-    flight.done.then(() => (target.style.opacity = ''));
+    originImg.style.visibility = 'hidden';
+    flight.done.then(() => {
+        target.style.opacity = '';
+        originImg.style.visibility = '';
+    });
 }
 
 // --- Color de la portada ---------------------------------------------
@@ -258,6 +315,7 @@ async function loadWorkSheetAnilistInfo(type, item, title) {
             ${synopsis ? `<p class="work-sheet-synopsis">${esc(synopsis.length > 420 ? synopsis.slice(0, 420).trim() + '…' : synopsis)}</p>` : ''}
             <a class="work-sheet-link" href="${esc(media.siteUrl)}" target="_blank" rel="noopener">Ver en AniList ↗</a>
             ${item.anilistId ? '' : `<p class="work-sheet-note">Esta obra aún no está vinculada con AniList: los datos son del resultado más parecido. Vincúlala editando su AniList ID (${media.id}).</p>`}`;
+        staggerIn(box().children, { step: 50 });
     } catch (err) {
         if (box())
             box().innerHTML = `<p class="work-sheet-note">No se pudieron cargar los datos de AniList${err.message === 'RATE_LIMIT' ? ' (límite de peticiones, prueba en un minuto)' : ''}.</p>`;
