@@ -192,7 +192,89 @@ function saveStudiosSnapshot() {
             renderTopStudiosView();
         }
 
-        function renderAnnualRankingView() { document.getElementById('annualLoader').style.display = 'none'; document.getElementById('annualContent').style.display = 'block'; renderAnnualRankingList(); }
+        function renderAnnualRankingView() {
+            document.getElementById('annualLoader').style.display = 'none'; document.getElementById('annualContent').style.display = 'block';
+            loadAnnualArchiveYears();
+            renderAnnualRankingList();
+        }
+
+        // ------------------------------------------------------------
+        // HISTORIAL POR AÑO
+        // La lista "actual" es la de siempre (RANKING_ANUAL). Al archivar,
+        // se copia a RANKING_ANUAL_<año> (Code.gs v4) y se empieza una nueva.
+        // Los años archivados se ven en modo lectura y se pueden exportar.
+        // También se guarda una copia en el dispositivo (sirve sin conexión
+        // y con un Apps Script anterior a la v4).
+        // ------------------------------------------------------------
+        let _annualViewYear = 'current';
+        let _annualArchiveYears = [];
+
+        function localAnnualArchive() { return readStoredJSON('annual_archive', {}); }
+
+        async function loadAnnualArchiveYears() {
+            const local = Object.keys(localAnnualArchive());
+            let remote = [];
+            try {
+                if ((await getServerVersion()) >= 4) {
+                    const res = await sheetsWrite({ action: 'list_tabs' }, { minVersion: 4, queueable: false });
+                    remote = ((res.data && res.data.data) || []).map(n => n.replace('RANKING_ANUAL_', ''));
+                }
+            } catch (e) { /* sin conexión: solo los años guardados en el dispositivo */ }
+            _annualArchiveYears = [...new Set([...remote, ...local])].sort((a, b) => b - a);
+            const select = document.getElementById('annualYearSelect');
+            select.innerHTML = `<option value="current">En curso</option>` + _annualArchiveYears.map(y => `<option value="${esc(y)}">${esc(y)} (archivado)</option>`).join('');
+            select.value = _annualViewYear;
+        }
+
+        async function selectAnnualYear(value) {
+            _annualViewYear = value;
+            renderAnnualRankingList();
+            if (value === 'current') return;
+            const local = localAnnualArchive()[value];
+            try {
+                if ((await getServerVersion()) >= 4) {
+                    const data = await sheetsReadOnce(`annual_${value}`, `RANKING_ANUAL_${value}`);
+                    const list = data.map(i => ({ id: i.id, name: i.name, score: i.score }));
+                    const archive = localAnnualArchive(); archive[value] = list;
+                    localStorage.setItem('annual_archive', JSON.stringify(archive));
+                }
+            } catch (e) {
+                if (!local) toast(`No se pudo cargar ${value}: ${e.message}`, { type: 'error' });
+            }
+            if (_annualViewYear === value) renderAnnualRankingList();
+        }
+
+        // Lista que se está viendo (la actual o la de un año archivado).
+        function displayedAnnualList() {
+            return _annualViewYear === 'current' ? _annualRanking : (localAnnualArchive()[_annualViewYear] || []);
+        }
+
+        async function archiveAnnualRanking() {
+            if (_annualRanking.length === 0) return toast('La lista está vacía: no hay nada que archivar.', { type: 'info' });
+            const now = new Date();
+            const suggested = now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();   // en enero-marzo se suele cerrar el año anterior
+            const year = await promptNumberDialog({ title: 'Archivar año', message: '¿De qué año es esta lista? Se guardará aparte y empezarás una lista nueva.', value: suggested, min: 1990, max: now.getFullYear() + 1, confirmText: 'Archivar' });
+            if (year === null) return;
+            const archive = localAnnualArchive();
+            if (archive[year] && !(await confirmDialog({ title: `Ya existe ${year}`, message: `Ya hay un ranking archivado de ${year}. ¿Sustituirlo por la lista actual?`, confirmText: 'Sustituir', danger: true }))) return;
+
+            const list = _annualRanking.slice();
+            let version = 1;
+            try { version = await getServerVersion(); } catch (e) { /* sin conexión */ }
+            try {
+                if (version >= 4) await sheetsWrite({ action: 'updateTab', tabName: `RANKING_ANUAL_${year}`, payload: list }, { minVersion: 4 });
+            } catch (e) {
+                return toast(`No se archivó: ${e.message}`, { type: 'error' });
+            }
+            archive[year] = list;
+            localStorage.setItem('annual_archive', JSON.stringify(archive));
+            _annualRanking = []; saveAnnualLocal();
+            sheetsWrite({ action: 'save_annual', payload: [] }).catch(() => {});
+            _annualViewYear = 'current';
+            await loadAnnualArchiveYears();
+            renderAnnualRankingList();
+            toast(version >= 4 ? `Ranking de ${year} archivado. ¡Lista nueva en marcha!` : `Ranking de ${year} archivado en este dispositivo (actualiza el Apps Script a la v4 para guardarlo también en Sheets).`, { type: 'success', duration: 6000 });
+        }
 
         function searchInternalAnime() {
             const input = document.getElementById('annualSearchInput'), resultsBox = document.getElementById('annualSearchResults'), val = input.value.toLowerCase().trim();
@@ -247,6 +329,25 @@ function saveStudiosSnapshot() {
 
         function renderAnnualRankingList() {
             const listContainer = document.getElementById('annualRankingList'); if(!listContainer) return; listContainer.innerHTML = '';
+            const readOnly = _annualViewYear !== 'current';
+            document.querySelectorAll('#annualRankingView .annual-edit-only').forEach(el => { el.hidden = readOnly; });
+            document.getElementById('btnArchiveAnnual').hidden = readOnly;
+            document.getElementById('annualListTitle').textContent = readOnly ? `Ranking de ${_annualViewYear}` : 'Tu Clasificación Anual';
+            const note = document.getElementById('annualArchiveNote');
+            note.hidden = !readOnly;
+            note.textContent = readOnly ? `Estás viendo ${_annualViewYear} (archivado, solo lectura). Puedes exportar su tierlist.` : '';
+            if (readOnly) {
+                const list = displayedAnnualList();
+                listContainer.innerHTML = list.length ? list.map((item, index) => `
+                    <div class="draggable-item annual-readonly">
+                        <span class="rank-pos-badge ${index < 10 ? 'top-10' : 'out-zone'}">${index < 10 ? index + 1 : 'OUT'}</span>
+                        <div class="img-container" style="width: 48px; height: 68px; flex-shrink: 0; border-radius: 8px;"><img data-type="anime" data-title="${esc(item.name)}" alt="" class="img-thumb" src="${FALLBACK_IMG}"></div>
+                        <span style="flex-grow:1; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(item.name)}</span>
+                        <span style="font-weight:bold; color:var(--neon-magenta); font-size:0.9rem; padding-right:10px;">${esc(item.score)}⭐</span>
+                    </div>`).join('') : '<div style="text-align:center; padding:30px; color:rgba(255,255,255,0.6);">Cargando…</div>';
+                listContainer.querySelectorAll('img[data-title]').forEach(img => globalImageObserver.observe(img));
+                return;
+            }
             if (_annualRanking.length === 0) { listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:rgba(255,255,255,0.6); font-size:0.9rem;">El ranking está vacío. Usa el buscador superior para indexar series.</div>'; return; }
 
             _annualRanking.forEach((item, index) => {
@@ -286,11 +387,13 @@ function saveStudiosSnapshot() {
         }
 
         function openTierlistModal() {
+    const header = document.querySelector('#tierlistCaptureTarget .tierlist-canvas-header');
+    if (header) header.textContent = _annualViewYear === 'current' ? 'ANIMES COMPLETADOS DEL AÑO' : `ANIMES COMPLETADOS EN ${_annualViewYear}`;
     const container = document.getElementById('tierlistRowsContainer'); if(!container) return; container.innerHTML = '';
     const colorPalette = { 10: '#6f42c1', 9: '#4a76a8', 8: '#17a2b8', 7: '#28a745', 6: '#7cb342', 5: '#ffc107', 4: '#ff9800', 3: '#fb8c00', 2: '#e53935', 1: '#c62828' };
 
     for (let score = 10; score >= 1; score--) {
-        const rowItems = _annualRanking.filter(item => parseInt(item.score) === score);
+        const rowItems = displayedAnnualList().filter(item => parseInt(item.score) === score);
         const rowBlock = document.createElement('div'); rowBlock.className = 'tierlist-row';
         let itemsHTML = '';
         

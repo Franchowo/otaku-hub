@@ -24,6 +24,12 @@ cuanto despliegas.
 - Una acción desconocida **ya no registra un anime vacío**, y `updateTab` ya no
   puede vaciar FULL LIST.
 
+## Qué trae la versión 4
+- **Historial del Ranking Anual**: al pulsar **📦 Archivar año**, la lista se
+  guarda en una pestaña `RANKING_ANUAL_<año>` y empiezas una nueva. Los años
+  archivados se consultan (y se exporta su tierlist) desde el selector de año.
+  Sin la v4 el archivo se guarda solo en el dispositivo.
+
 ## Qué trae la versión 3
 - **Editar y borrar** animes y mangas desde la **ficha de obra** (toca cualquier
   portada de tu colección). Solo se modifica la fila si su título sigue

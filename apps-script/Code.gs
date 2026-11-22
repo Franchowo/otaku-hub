@@ -22,13 +22,22 @@
  * Versión 3:
  *  - "update_entry" / "delete_entry": editar o borrar un anime/manga desde la
  *    ficha de la app. Solo actúan si el título de la fila sigue coincidiendo.
+ *
+ * Versión 4:
+ *  - Historial del Ranking Anual: pestañas RANKING_ANUAL_<año> (se leen y se
+ *    guardan como las de ranking) y "list_tabs" para saber qué años hay.
  */
 
-var OTAKU_API_VERSION = 3;
+var OTAKU_API_VERSION = 4;
 
 var MANGA_SHEET = 'FULL LIST MANGA';
 var RANKING_TABS = ['TOP150', 'TOP_150', 'RANKING_ANUAL'];
 var PROTECTED_SHEETS = ['FAVS', MANGA_SHEET, 'TOP150', 'TOP_150', 'RANKING_ANUAL', 'OTAKU_STATE', 'CALIFICADOR_STATE', 'PLANIFICADOR_STATE'];
+var ANNUAL_ARCHIVE_PATTERN = /^RANKING_ANUAL_\d{4}$/;
+
+function isRankingTab_(name) {
+  return RANKING_TABS.indexOf(name) !== -1 || ANNUAL_ARCHIVE_PATTERN.test(String(name || ''));
+}
 var ANILIST_HEADER = 'AniList ID';
 
 // Hojas de estado que admiten guardado por fila (clave = columna A "id").
@@ -71,7 +80,7 @@ function loadState_() {
 function mainAnimeSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getActiveSheet();
-  if (PROTECTED_SHEETS.indexOf(sheet.getName()) !== -1) sheet = ss.getSheets()[0];
+  if (PROTECTED_SHEETS.indexOf(sheet.getName()) !== -1 || ANNUAL_ARCHIVE_PATTERN.test(sheet.getName())) sheet = ss.getSheets()[0];
   return sheet;
 }
 
@@ -93,7 +102,7 @@ function readSheet_(sheetName) {
     if (!row[0] || row[0].toString().trim() === '') continue;
     var itemObj = {};
 
-    if (RANKING_TABS.indexOf(sheetName) !== -1) {
+    if (isRankingTab_(sheetName)) {
       itemObj = { id: row[0].toString(), name: row[1].toString(), score: parseFloat(row[2]) || 0 };
     } else if (sheetName === 'CALIFICADOR_STATE') {
       var scores = [];
@@ -136,8 +145,8 @@ function handlePost(e) {
   }
 
   // Las lecturas no necesitan bloqueo.
-  if (data.action === 'read') {
-    try { return json_(readSheet_(data.sheet)); }
+  if (data.action === 'read' || data.action === 'list_tabs') {
+    try { return json_(data.action === 'read' ? readSheet_(data.sheet) : listArchiveTabs_()); }
     catch (error) { return json_({ status: 'error', message: error.toString() }); }
   }
 
@@ -164,7 +173,7 @@ function dispatchWrite_(data) {
     case 'save_top150': return replaceRankingTab_('TOP_150', data.payload || data.data);
     case 'save_annual': return replaceRankingTab_('RANKING_ANUAL', data.payload || data.data);
     case 'updateTab':
-      if (RANKING_TABS.indexOf(data.tabName) === -1) throw new Error('Pestaña no permitida: ' + data.tabName);
+      if (!isRankingTab_(data.tabName)) throw new Error('Pestaña no permitida: ' + data.tabName);
       return replaceRankingTab_(data.tabName, data.payload || data.data);
     case 'upsert_rows': return upsertRows_(data.sheet, data.items);
     case 'delete_rows': return deleteRows_(data.sheet, data.ids);
@@ -179,6 +188,15 @@ function dispatchWrite_(data) {
       // Antes, cualquier acción desconocida acababa registrando un anime vacío.
       throw new Error('Acción desconocida: ' + data.action);
   }
+}
+
+// Años archivados del Ranking Anual (pestañas RANKING_ANUAL_<año>), del más reciente al más antiguo.
+function listArchiveTabs_() {
+  var names = SpreadsheetApp.getActiveSpreadsheet().getSheets()
+    .map(function (sh) { return sh.getName(); })
+    .filter(function (n) { return ANNUAL_ARCHIVE_PATTERN.test(n); })
+    .sort().reverse();
+  return { status: 'success', data: names };
 }
 
 function saveState_(data) {
