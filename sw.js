@@ -2,7 +2,7 @@
 // Estrategia: "red primero" para los archivos propios (siempre ves la última
 // versión) y caché como respaldo sin conexión. Las peticiones a Google Sheets,
 // AniList, etc. NUNCA se cachean (pueden contener tu clave y datos privados).
-const CACHE_NAME = 'otaku-hub-v5';
+const CACHE_NAME = 'otaku-hub-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const APP_SHELL = [
   './css/auth.css',
   './js/config.js',
   './js/core/utils.js',
+  './js/core/ui.js',
   './js/core/auth.js',
   './js/core/state.js',
   './js/services/anilist.js',

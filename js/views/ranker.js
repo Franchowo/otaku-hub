@@ -1,12 +1,20 @@
 // --- RANKER ---
 let state = JSON.parse(localStorage.getItem('ranker_data')) || { songs: [], pool: [], index: 0, duelsTotal: 0, duelsDone: 0 };
 function save() { localStorage.setItem('ranker_data', JSON.stringify(state)); }
-function resetApp() { if(confirm('¿Seguro que quieres borrar todo y empezar de cero en el Opening Ranker?')) { localStorage.removeItem('ranker_data'); location.reload(); } }
+async function resetApp() {
+    const ok = await confirmDialog({ title: 'Reiniciar Opening Ranker', message: 'Se borrarán la lista, las estrellas y los duelos. No se puede deshacer.', confirmText: 'Reiniciar', danger: true });
+    if (!ok) return;
+    localStorage.removeItem('ranker_data');
+    state = { songs: [], pool: [], index: 0, duelsTotal: 0, duelsDone: 0 };
+    document.getElementById('input').value = '';
+    goToStep(1);
+    toast('Opening Ranker reiniciado.', { type: 'success' });
+}
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 function startApp() {
     const input = document.getElementById('input').value; const lines = input.split('\n').filter(l => l.trim() !== '');
-    if (lines.length === 0) return alert("Por favor, introduce al menos un anime.");
+    if (lines.length === 0) return toast("Escribe al menos un anime (uno por línea).", { type: 'error' });
     state.songs = lines.map(name => ({ id: Date.now() + Math.random(), name: name, img: null, stars: 0, elo: 1000, action: null }));
     save(); goToStep(2); renderDiscard();
 }
@@ -22,7 +30,7 @@ function markItem(id, actionType) { const song = state.songs.find(x => String(x.
 
 async function prepareRating() {
     const keptSongs = state.songs.filter(s => s.action === 'keep');
-    if (keptSongs.length === 0) return alert("Debes mantener (✔) al menos un anime para continuar.");
+    if (keptSongs.length === 0) return toast("Mantén (✔) al menos un anime para continuar.", { type: 'error' });
     state.songs = keptSongs;
     const btn = document.getElementById('btn-to-rating'); btn.disabled = true;
     
@@ -53,9 +61,9 @@ function setStars(id, val) { const song = state.songs.find(s => String(s.id) ===
 
 function startDuels() {
     const ratedSongs = state.songs.filter(s => s.stars > 0);
-    if (ratedSongs.length < 2) return alert("Debes dar estrellas a por lo menos 2 animes para combatir.");
+    if (ratedSongs.length < 2) return toast("Da estrellas al menos a 2 animes para empezar los duelos.", { type: 'error' });
     const topRatedCount = ratedSongs.filter(s => s.stars >= 2).length;
-    if (topRatedCount > 20) { state.pool = ratedSongs.filter(s => s.stars >= 2); alert("✨ Tienes más de 20 animes valorados con 2 o 3 estrellas. Para agilizar los duelos y centrarnos en el TOP 20, los de 1 estrella se han descartado automáticamente."); } 
+    if (topRatedCount > 20) { state.pool = ratedSongs.filter(s => s.stars >= 2); toast("Tienes más de 20 animes con 2-3 estrellas: los de 1 estrella se han apartado para centrarse en el TOP 20.", { type: 'info', duration: 7000 }); } 
     else { state.pool = ratedSongs; }
     state.duelsTotal = state.pool.length * 2; state.duelsDone = 0; state.pool.forEach(s => s.elo = s.stars * 500);
     save(); goToStep(4); renderDuel();

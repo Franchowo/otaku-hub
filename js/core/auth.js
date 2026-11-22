@@ -196,8 +196,9 @@ function showLockScreen(message) {
     });
 }
 
-function otakuLogout() {
-    if (!confirm('¿Cerrar sesión en este dispositivo? Tendrás que volver a introducir la clave.')) return;
+async function otakuLogout() {
+    const ok = await confirmDialog({ title: 'Cerrar sesión', message: 'Tendrás que volver a introducir la clave en este dispositivo.', confirmText: 'Cerrar sesión' });
+    if (!ok) return;
     try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
     showLockScreen('Sesión cerrada en este dispositivo.');
 }

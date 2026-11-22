@@ -159,11 +159,11 @@ async function startAnilistLinking() {
     try {
         const version = await getServerVersion();
         if (version < 2) {
-            alert('Para vincular tus obras necesitas actualizar el Apps Script a la versión 2.\nLos pasos están en docs/APPS-SCRIPT.md del repositorio.');
+            toast('Para vincular tus obras necesitas actualizar el Apps Script a la versión 2 (pasos en docs/APPS-SCRIPT.md del repositorio).', { type: 'error' });
             return;
         }
     } catch (err) {
-        alert(err.message);
+        toast(err.message, { type: 'error' });
         return;
     }
 

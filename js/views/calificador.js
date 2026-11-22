@@ -40,14 +40,14 @@ async function searchAnimeCalificador() {
         loader.style.display = 'none';
         
         const medias = data?.data?.Page?.media || [];
-        if (medias.length === 0) { resultsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4);">No se encontraron resultados.</div>'; return; }
+        if (medias.length === 0) { resultsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.6);">No se encontraron resultados.</div>'; return; }
 
         medias.forEach(anime => {
             const epCount = anime.episodes || 12;
             const imgUrl = anime.coverImage?.large || FALLBACK_IMG;
             const titleRomaji = anime.title.romaji;
             
-            const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer';
+            const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer'; card.setAttribute('role', 'button'); card.tabIndex = 0;
             card.innerHTML = `<div class="recom-card-img-container"><img src="${esc(imgUrl)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"></div><span class="recom-card-title" title="${esc(titleRomaji)}">${esc(titleRomaji)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">${esc(epCount)} Caps</span>`;
             
             card.onclick = () => {
@@ -80,15 +80,17 @@ function renderCalificadorSavedGrid() {
         const totalHitos = anime.scores.length || 1;
         const pct = (completed / totalHitos) * 100;
         
-        const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer';
+        const card = document.createElement('div'); card.className = 'recom-card anime-recom'; card.style.cursor = 'pointer'; card.setAttribute('role', 'button'); card.tabIndex = 0;
         card.innerHTML = `<div class="recom-card-img-container" style="position:relative;"><img src="${esc(anime.cover)}" alt="" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';"><div style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(255,255,255,0.2);"><div style="width:${pct}%; height:100%; background:var(--neon-cyan);"></div></div></div><span class="recom-card-title" title="${esc(anime.title)}">${esc(anime.title)}</span><span style="font-size: 0.75rem; color: var(--neon-cyan); margin-top: 5px; font-weight: bold;">Progreso: ${Math.round(pct)}%</span><button class="clear-cache-btn" style="border:none; color:var(--neon-red); margin-top:5px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCalificadorProgress(${jsArg(anime.id)})">Eliminar</button>`;
         card.onclick = () => { document.getElementById('calificadorResultsGrid').innerHTML = ''; loadCalificadorTracker(anime.title, anime.episodes, anime.cover, anime.scores, anime.id); };
         grid.appendChild(card);
     });
 }
 
-function deleteCalificadorProgress(id) {
-    if(confirm("¿Eliminar este progreso? No podrás recuperarlo.")) {
+async function deleteCalificadorProgress(id) {
+    const anime = _calificadorSavedProgress.find(a => a.id === id);
+    const ok = await confirmDialog({ title: 'Eliminar evaluación', message: `Se borrará el progreso de "${anime ? anime.title : 'este anime'}" también en Sheets.`, confirmText: 'Eliminar', danger: true });
+    if (ok) {
         _calificadorSavedProgress = _calificadorSavedProgress.filter(a => a.id !== id); renderCalificadorSavedGrid(); syncCalificadorToCloud({ remove: id });
         if(_calificadorCurrentId === id) { document.getElementById('calificadorTrackerSection').style.display = 'none'; }
     }
@@ -156,9 +158,9 @@ function renderCalificadorList() {
         item.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:4px;">
                 <span style="font-weight: 700; color: ${isFinal ? 'var(--neon-yellow)' : '#fff'}; font-size: 0.95rem;">${title}</span>
-                <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">${cp.completed ? 'Formulario guardado ✔️' : 'Evaluación pendiente...'}</span>
+                <span style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">${cp.completed ? 'Formulario guardado ✔️' : 'Evaluación pendiente...'}</span>
             </div>
-            <button class="btn-icon" style="width: auto; padding: 10px 18px; font-size: 0.85rem; font-weight: bold; border-radius: 10px; transition: 0.3s; ${btnStyle}" onclick="openCalificadorForm(${index})" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${btnText}</button>
+            <button class="btn-icon calif-step-btn" style="${btnStyle}" onclick="openCalificadorForm(${index})">${btnText}</button>
         `;
         list.appendChild(item);
     });
@@ -321,7 +323,7 @@ function calculateCalificadorStats() {
         badge.className = 'kpi-card'; 
         badge.style.borderColor = 'var(--glass-border)'; 
         badge.style.boxShadow = 'none';
-        tensCount.style.color = 'rgba(255,255,255,0.3)';
+        tensCount.style.color = 'rgba(255,255,255,0.6)';
     }
 }
 
@@ -339,7 +341,7 @@ function saveCurrentCalificadorToCloud() {
         btn.innerText = savedLabel(result, "¡Progreso Guardado! ✔️"); setTimeout(() => { btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false; }, 2000);
     }, err => {
         // Antes el botón se quedaba bloqueado en "Sincronizando..." para siempre.
-        alert(`No se guardó el progreso: ${err.message}`);
+        toast(`No se guardó el progreso: ${err.message}`, { type: 'error' });
         btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false;
     });
 }

@@ -94,7 +94,7 @@
             }
 
             if(eligibleStudios.length === 0) { 
-                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,255,255,0.3);">No hay estudios individuales con ≥ 5 animes.</div>'; 
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,255,255,0.6);">No hay estudios individuales con ≥ 5 animes.</div>'; 
                 document.getElementById('studiosLoader').style.display = 'none'; 
                 document.getElementById('studiosContent').style.display = 'block'; 
                 return; 
@@ -134,14 +134,14 @@
                     let rankDiff = pastData.rank - studio.currentRank;
                     if (rankDiff > 0) rankDiffHtml = `<span style="color: var(--neon-green); font-size: 0.75rem;">▲ ${rankDiff}</span>`;
                     else if (rankDiff < 0) rankDiffHtml = `<span style="color: var(--neon-red); font-size: 0.75rem;">▼ ${Math.abs(rankDiff)}</span>`;
-                    else rankDiffHtml = `<span style="color: rgba(255,255,255,0.2); font-size: 0.75rem;">=</span>`;
+                    else rankDiffHtml = `<span style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">=</span>`;
                     
                     let rawDiff = studio.avg - pastData.avg;
                     let avgDiffStr = Math.abs(rawDiff).toFixed(2);
                     
                     if (rawDiff > 0.001) avgDiffHtml = `<span style="color: var(--neon-green); font-size: 0.75rem; font-weight: bold;">(▲ +${avgDiffStr})</span>`;
                     else if (rawDiff < -0.001) avgDiffHtml = `<span style="color: var(--neon-red); font-size: 0.75rem; font-weight: bold;">(▼ -${avgDiffStr})</span>`;
-                    else avgDiffHtml = `<span style="color: rgba(255,255,255,0.3); font-size: 0.75rem; font-weight: bold;">(=)</span>`;
+                    else avgDiffHtml = `<span style="color: rgba(255,255,255,0.6); font-size: 0.75rem; font-weight: bold;">(=)</span>`;
                 } else {
                     rankDiffHtml = `<span style="color: var(--neon-cyan); font-size: 0.65rem; border: 1px solid var(--neon-cyan); padding: 1px 4px; border-radius: 4px;">NEW</span>`;
                     avgDiffHtml = `<span style="color: var(--neon-cyan); font-size: 0.75rem; font-weight: bold;">(NEW)</span>`;
@@ -150,11 +150,11 @@
                 // Generador del botón de ciclo (solo si hay más de 1 anime empatado con la nota máxima)
                 let cycleBtnHtml = '';
                 if (studio.topAnimes.length > 1) {
-                    cycleBtnHtml = `<div onclick="cycleStudioCover(event, ${jsArg(studio.name)})" style="position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.75); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 10px; border: 1px solid var(--neon-cyan); backdrop-filter: blur(4px); transition: transform 0.2s;" onmouseover="this.style.transform='rotate(90deg)'" onmouseout="this.style.transform='rotate(0deg)'" title="Clic para cambiar portada (${studio.topAnimes.length} opciones con nota ${esc(studio.maxScore)})">🔄</div>`;
+                    cycleBtnHtml = `<button type="button" class="cycle-cover-btn" onclick="cycleStudioCover(event, ${jsArg(studio.name)})" title="Cambiar portada (${studio.topAnimes.length} opciones con nota ${esc(studio.maxScore)})" aria-label="Cambiar portada destacada de ${esc(studio.name)}">🔄</button>`;
                 }
 
                 container.insertAdjacentHTML('beforeend', `
-                    <div class="studio-card" onclick="filterByStudioDirect(${jsArg(studio.name)})">
+                    <div class="studio-card" role="button" tabindex="0" aria-label="Ver estadísticas de ${esc(studio.name)}" onclick="filterByStudioDirect(${jsArg(studio.name)})">
                         
                         <div class="studio-card-rank" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; position: absolute; top: 12px; right: 15px; z-index: 2;">
                             <div style="${rankBadgeStyle}">${rankIcon} #${index + 1}</div>
@@ -171,7 +171,7 @@
                             <span class="studio-card-name" title="${esc(studio.name)}">${esc(studio.name)}</span>
                             <span class="studio-card-count" style="margin-bottom:2px;">${studio.count} animes</span>
                             
-                            <span style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Obra destacada: ${esc(studio.bestAnime)}">👑 ${esc(studio.bestAnime)}</span>
+                            <span style="font-size:0.65rem; color:rgba(255,255,255,0.6); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Obra destacada: ${esc(studio.bestAnime)}">👑 ${esc(studio.bestAnime)}</span>
                             
                             <div style="display: flex; align-items: center; gap: 6px; margin-top: auto;">
                                 <span class="studio-card-badge ${scoreTone}" style="margin:0; align-self:center;">${studio.avg.toFixed(2)} MEDIA</span>
@@ -192,7 +192,7 @@
 function saveStudiosSnapshot() {
             if(!window.currentStudiosData) return;
             localStorage.setItem('otaku_hub_studios_snapshot', JSON.stringify(window.currentStudiosData));
-            alert("Referencia guardada correctamente. A partir de ahora el progreso (subidas y bajadas) se calculará en base a las estadísticas exactas de este momento.");
+            toast('Referencia fijada: las subidas y bajadas se calcularán desde este momento.', { type: 'success' });
             renderTopStudiosView();
         }
 
@@ -214,17 +214,31 @@ function saveStudiosSnapshot() {
         }
 
         function addAnimeToAnnualRanking(title, score) {
-            if (_annualRanking.some(item => item.name.toLowerCase() === title.toLowerCase())) { alert("Esta serie ya está incluida en tu Ranking Anual."); return; }
+            if (_annualRanking.some(item => item.name.toLowerCase() === title.toLowerCase())) { toast(`"${title}" ya está en tu Ranking Anual.`, { type: 'info' }); return; }
             _annualRanking.push({ id: Date.now() + Math.random(), name: title, score: score }); localStorage.setItem('annual_ranking_data', JSON.stringify(_annualRanking)); renderAnnualRankingList();
         }
 
-        function removeAnimeFromAnnualRanking(id) { _annualRanking = _annualRanking.filter(item => String(item.id) !== String(id)); localStorage.setItem('annual_ranking_data', JSON.stringify(_annualRanking)); renderAnnualRankingList(); }
+        function saveAnnualLocal() { localStorage.setItem('annual_ranking_data', JSON.stringify(_annualRanking)); }
 
-        function resetAnnualRanking() { if (confirm("🚨 ¿Seguro que quieres reiniciar el Ranking Anual? Esto vaciará por completo la lista y volverás a empezar desde cero.")) { _annualRanking = []; localStorage.setItem('annual_ranking_data', JSON.stringify(_annualRanking)); renderAnnualRankingList(); } }
+        function removeAnimeFromAnnualRanking(id) {
+            const index = _annualRanking.findIndex(item => String(item.id) === String(id));
+            if (index === -1) return;
+            const [removed] = _annualRanking.splice(index, 1);
+            saveAnnualLocal(); renderAnnualRankingList();
+            toastUndo(`"${removed.name}" quitado del ranking.`, () => { _annualRanking.splice(index, 0, removed); saveAnnualLocal(); renderAnnualRankingList(); });
+        }
+
+        async function resetAnnualRanking() {
+            const ok = await confirmDialog({ title: 'Reiniciar Ranking Anual', message: 'La lista quedará vacía en este dispositivo (en Sheets no cambia hasta que pulses "Guardar Sheet").', confirmText: 'Reiniciar', danger: true });
+            if (!ok) return;
+            const backup = _annualRanking;
+            _annualRanking = []; saveAnnualLocal(); renderAnnualRankingList();
+            toastUndo('Ranking Anual reiniciado.', () => { _annualRanking = backup; saveAnnualLocal(); renderAnnualRankingList(); });
+        }
 
         function renderAnnualRankingList() {
             const listContainer = document.getElementById('annualRankingList'); if(!listContainer) return; listContainer.innerHTML = '';
-            if (_annualRanking.length === 0) { listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:rgba(255,255,255,0.2); font-size:0.9rem;">El ranking está vacío. Usa el buscador superior para indexar series.</div>'; return; }
+            if (_annualRanking.length === 0) { listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:rgba(255,255,255,0.6); font-size:0.9rem;">El ranking está vacío. Usa el buscador superior para indexar series.</div>'; return; }
 
             _annualRanking.forEach((item, index) => {
                 const displayPos = (index < 10) ? (index + 1) : "OUT", badgeClass = (index < 10) ? "top-10" : "out-zone", imgId = `annual-img-${item.id}`;
@@ -254,7 +268,7 @@ function saveStudiosSnapshot() {
         function renderFavoritesView() {
             const container = document.getElementById('favoritesRankingList'); document.getElementById('favCounterBadge').innerText = `${_favoritesRanking.length} Series Únicas`; container.innerHTML = '';
             document.getElementById('favoritesLoader').style.display = 'none'; document.getElementById('favoritesContent').style.display = 'block';
-            if (_favoritesRanking.length === 0) { container.innerHTML = '<div style="text-align:center; padding:40px; color:rgba(255,255,255,0.25); font-size:0.95rem;">Tu pestaña "FAVS" está vacía o el backend no está devolviendo datos de esta pestaña.</div>'; return; }
+            if (_favoritesRanking.length === 0) { container.innerHTML = '<div style="text-align:center; padding:40px; color:rgba(255,255,255,0.6); font-size:0.95rem;">Tu pestaña "FAVS" está vacía o el backend no está devolviendo datos de esta pestaña.</div>'; return; }
 
             _favoritesRanking.forEach((favItem, index) => {
                 const currentRank = index + 1; let metalTierClass = 'fav-bronze';
@@ -313,8 +327,8 @@ function saveStudiosSnapshot() {
         function closeTierlistModal() { document.getElementById('tierlistModalWrapper').style.display = 'none'; }
 
         function downloadTierlistImage() {
-            const target = document.getElementById('tierlistCaptureTarget'); if (!target) return alert("Error de inicialización del canvas.");
+            const target = document.getElementById('tierlistCaptureTarget'); if (!target) return toast("No se pudo preparar la imagen.", { type: 'error' });
             html2canvas(target, { scale: 4, useCORS: true, allowTaint: false, logging: false, backgroundColor: "#000000" }).then(canvas => {
                 const downloadLink = document.createElement('a'); downloadLink.download = 'Anime_Tierlist_UHD.png'; downloadLink.href = canvas.toDataURL('image/png'); downloadLink.click();
-            }).catch(() => { alert("Ocurrió un contratiempo al procesar el render."); });
+            }).catch(() => { toast("No se pudo generar la imagen de la tierlist.", { type: 'error' }); });
         }
