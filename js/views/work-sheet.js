@@ -30,6 +30,7 @@ function workSheetAttrs(item, type) {
 function closeWorkSheet() {
     const overlay = document.getElementById('workSheetOverlay');
     if (!overlay) return;
+    if (overlay._cleanup) overlay._cleanup();
     overlay.remove();
     if (overlay._previousFocus && overlay._previousFocus.focus) overlay._previousFocus.focus();
 }

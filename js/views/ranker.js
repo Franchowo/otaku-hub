@@ -146,6 +146,7 @@ async function fetchOpeningsForAnilistId(anilistId) {
         try { res = await fetch(url, { headers: { Accept: 'application/json' } }); }
         catch (e) { return null; }
         if (res.status === 429) { await delay(5000); continue; }
+        if (res.status >= 500) return null;   // AnimeThemes caído: "no respondió", no "sin openings"
         if (!res.ok) continue;
         let json;
         try { json = await res.json(); } catch (e) { continue; }

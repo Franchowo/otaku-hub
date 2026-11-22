@@ -1577,32 +1577,20 @@ button, input, select, textarea { font-family: inherit; }
 .studio-work-meta { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
 .studio-work .detail-score-badge { margin: 0; }
 
-/* --- Wrapped (se dibuja fuera de pantalla y se convierte en imagen) --- */
-.wrapped-stage { position: fixed; left: -10000px; top: 0; }
-.wrapped-card {
-    width: 360px; height: 640px; box-sizing: border-box; padding: 26px 24px; overflow: hidden;
-    display: flex; flex-direction: column; gap: 10px; color: #fff; font-family: var(--font-sans);
-    background: radial-gradient(circle at 20% 10%, rgba(189, 0, 255, 0.35), transparent 45%), radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.25), transparent 50%), #05050c;
+/* --- Wrapped: vista previa a pantalla completa (la imagen se dibuja en un canvas) --- */
+.wrapped-overlay {
+    position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(3px);
 }
-.wrapped-brand { font-size: 12px; font-weight: 900; letter-spacing: 3px; color: var(--neon-cyan); }
-.wrapped-year { font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -1px; }
-.wrapped-sub { font-size: 11px; letter-spacing: 2px; color: rgba(255, 255, 255, 0.75); }
-.wrapped-numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0; }
-.wrapped-numbers div { display: flex; flex-direction: column; padding: 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.07); }
-.wrapped-numbers strong { font-size: 26px; font-weight: 900; }
-.wrapped-numbers span { font-size: 10px; color: rgba(255, 255, 255, 0.75); }
-.wrapped-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--neon-magenta); }
-.wrapped-top { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.wrapped-top li { display: grid; grid-template-columns: 34px 18px 1fr auto; gap: 8px; align-items: center; }
-.wrapped-top img { width: 34px; height: 48px; object-fit: cover; border-radius: 4px; background: #111122; }
-.wrapped-rank { font-weight: 900; color: var(--neon-cyan); }
-.wrapped-title { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wrapped-score { font-size: 12px; color: rgba(255, 255, 255, 0.85); }
-.wrapped-facts { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
-.wrapped-facts div { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.07); }
-.wrapped-facts span { font-size: 10px; color: rgba(255, 255, 255, 0.75); text-transform: uppercase; letter-spacing: 1px; }
-.wrapped-facts strong { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wrapped-preview img { display: block; width: min(100%, 320px); margin: 24px auto var(--space-3); border-radius: var(--radius-md); }
+.wrapped-preview { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); max-width: 100%; max-height: 100%; }
+/* La imagen entera siempre cabe: se limita por alto (9:16) y por ancho. */
+.wrapped-preview img {
+    display: block; height: auto; width: auto;
+    max-height: calc(100vh - 120px); max-width: min(100%, calc((100vh - 120px) * 9 / 16));
+    max-height: calc(100dvh - 120px); max-width: min(100%, calc((100dvh - 120px) * 9 / 16));
+    border-radius: var(--radius-md); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+.wrapped-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
 .tm-year-container { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; justify-content: center; }
 .viz-svg { max-width: 760px; }
 @media (max-width: 480px) {
