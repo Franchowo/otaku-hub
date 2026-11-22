@@ -150,7 +150,7 @@ async function buildRecommendations() {
         const grid = document.getElementById(sec.grid);
         grid.innerHTML = recs.length
             ? recs.map(r => recomCardHTML(r, sec.key)).join('')
-            : '<div style="color:rgba(255,255,255,0.6); text-align:center; grid-column:1/-1;">No hemos podido cargar recomendaciones.</div>';
+            : '<div style="color:rgba(var(--fg-rgb), 0.6); text-align:center; grid-column:1/-1;">No hemos podido cargar recomendaciones.</div>';
     }
 
     document.getElementById('recomLoader').style.display = 'none';

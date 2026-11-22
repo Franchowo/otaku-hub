@@ -168,7 +168,7 @@ function seasonsSectionHTML(all) {
     const rows = [...years].sort((a, b) => b - a).slice(0, 15);
     return `
         <h3 id="insSeasons" class="insights-title">Tus temporadas</h3>
-        <p class="insights-help">Cada casilla es una temporada; cuanto más clara, mejor nota media. Toca una para ver el detalle.</p>
+        <p class="insights-help">Cada casilla es una temporada; su color indica la nota media (escala debajo). Toca una para ver el detalle.</p>
         ${vizHeatmap(rows, SEASON_ORDER, cells, { caption: 'Nota media por temporada (últimos 15 años)', colLabel: seasonLabel })}`;
 }
 

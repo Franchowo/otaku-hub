@@ -97,7 +97,7 @@ function renderTopStudiosView() {
 
     if (eligibleStudios.length === 0) {
         container.innerHTML =
-            '<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,255,255,0.6);">No hay estudios individuales con ≥ 5 animes.</div>';
+            '<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(var(--fg-rgb), 0.6);">No hay estudios individuales con ≥ 5 animes.</div>';
         document.getElementById('studiosLoader').style.display = 'none';
         document.getElementById('studiosContent').style.display = 'block';
         return;
@@ -111,7 +111,7 @@ function renderTopStudiosView() {
         // --- LÓGICA VISUAL: BEST 10, WORST 10 Y CLARIDAD ---
         let rankBadgeStyle = 'font-size: 1.35rem; font-weight: 900;';
         let rankIcon = '';
-        let rankColor = 'rgba(255, 255, 255, 0.5)';
+        let rankColor = 'rgba(var(--fg-rgb), 0.6)';
 
         if (index < 10) {
             rankColor = 'var(--metal-gold)';
@@ -134,7 +134,7 @@ function renderTopStudiosView() {
             if (rankDiff > 0) rankDiffHtml = `<span style="color: var(--neon-green); font-size: 0.75rem;">▲ ${rankDiff}</span>`;
             else if (rankDiff < 0)
                 rankDiffHtml = `<span style="color: var(--neon-red); font-size: 0.75rem;">▼ ${Math.abs(rankDiff)}</span>`;
-            else rankDiffHtml = `<span style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">=</span>`;
+            else rankDiffHtml = `<span style="color: rgba(var(--fg-rgb), 0.6); font-size: 0.75rem;">=</span>`;
 
             let rawDiff = studio.avg - pastData.avg;
             let avgDiffStr = Math.abs(rawDiff).toFixed(2);
@@ -143,7 +143,7 @@ function renderTopStudiosView() {
                 avgDiffHtml = `<span style="color: var(--neon-green); font-size: 0.75rem; font-weight: bold;">(▲ +${avgDiffStr})</span>`;
             else if (rawDiff < -0.001)
                 avgDiffHtml = `<span style="color: var(--neon-red); font-size: 0.75rem; font-weight: bold;">(▼ -${avgDiffStr})</span>`;
-            else avgDiffHtml = `<span style="color: rgba(255,255,255,0.6); font-size: 0.75rem; font-weight: bold;">(=)</span>`;
+            else avgDiffHtml = `<span style="color: rgba(var(--fg-rgb), 0.6); font-size: 0.75rem; font-weight: bold;">(=)</span>`;
         } else {
             rankDiffHtml = `<span style="color: var(--neon-cyan); font-size: 0.65rem; border: 1px solid var(--neon-cyan); padding: 1px 4px; border-radius: 4px;">NEW</span>`;
             avgDiffHtml = `<span style="color: var(--neon-cyan); font-size: 0.75rem; font-weight: bold;">(NEW)</span>`;
@@ -175,7 +175,7 @@ function renderTopStudiosView() {
                             <span class="studio-card-name" title="${esc(studio.name)}">${esc(studio.name)}</span>
                             <span class="studio-card-count" style="margin-bottom:2px;">${studio.count} animes</span>
                             
-                            <span style="font-size:0.65rem; color:rgba(255,255,255,0.6); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Obra destacada: ${esc(studio.bestAnime)}">👑 ${esc(studio.bestAnime)}</span>
+                            <span style="font-size:0.65rem; color:rgba(var(--fg-rgb), 0.6); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Obra destacada: ${esc(studio.bestAnime)}">👑 ${esc(studio.bestAnime)}</span>
                             
                             <div style="display: flex; align-items: center; gap: 6px; margin-top: auto;">
                                 <span class="detail-score-badge score-neon-${Math.min(10, Math.max(1, Math.round(studio.avg)))}" style="margin:0; align-self:center;">${studio.avg.toFixed(2)} media</span>
@@ -452,13 +452,13 @@ function renderAnnualRankingList() {
                     </div>`
                   )
                   .join('')
-            : '<div style="text-align:center; padding:30px; color:rgba(255,255,255,0.6);">Cargando…</div>';
+            : '<div style="text-align:center; padding:30px; color:rgba(var(--fg-rgb), 0.6);">Cargando…</div>';
         listContainer.querySelectorAll('img[data-title]').forEach(img => globalImageObserver.observe(img));
         return;
     }
     if (_annualRanking.length === 0) {
         listContainer.innerHTML =
-            '<div style="text-align:center; padding:30px; color:rgba(255,255,255,0.6); font-size:0.9rem;">El ranking está vacío. Usa el buscador superior para indexar series.</div>';
+            '<div style="text-align:center; padding:30px; color:rgba(var(--fg-rgb), 0.6); font-size:0.9rem;">El ranking está vacío. Usa el buscador superior para indexar series.</div>';
         return;
     }
 
@@ -493,7 +493,7 @@ function renderFavoritesView() {
     document.getElementById('favoritesContent').style.display = 'block';
     if (_favoritesRanking.length === 0) {
         container.innerHTML =
-            '<div style="text-align:center; padding:40px; color:rgba(255,255,255,0.6); font-size:0.95rem;">Tu pestaña "FAVS" está vacía o el backend no está devolviendo datos de esta pestaña.</div>';
+            '<div style="text-align:center; padding:40px; color:rgba(var(--fg-rgb), 0.6); font-size:0.95rem;">Tu pestaña "FAVS" está vacía o el backend no está devolviendo datos de esta pestaña.</div>';
         return;
     }
 

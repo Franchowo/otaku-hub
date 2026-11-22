@@ -7,8 +7,10 @@
 // - Google Sheets (Apps Script) y la API de AniList NUNCA se cachean aquí:
 //   pueden llevar tu clave. La copia de tus datos la gestiona la app en
 //   IndexedDB (js/services/local-store.js).
-// Si añades un archivo a la app, inclúyelo en APP_SHELL y sube CACHE_NAME.
-const CACHE_NAME = 'otaku-hub-v18';
+// Si añades un archivo a la app, inclúyelo en APP_SHELL. CACHE_NAME no se
+// edita a mano: `npm run sw:version` lo calcula a partir del contenido
+// (las pruebas fallan si se te olvida).
+const CACHE_NAME = 'otaku-hub-ffc1e345';
 const COVERS_CACHE = 'otaku-hub-covers';
 const RUNTIME_CACHE = 'otaku-hub-runtime';
 const MAX_COVERS = 800;

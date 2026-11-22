@@ -61,6 +61,8 @@ otaku-hub/
 ├── apps-script/
 │   ├── Auth.gs                # Guardia de autenticación para Apps Script
 │   └── Code.gs                # Lecturas/escrituras en Sheets (backend v5)
+├── scripts/
+│   └── sw-version.js          # Calcula CACHE_NAME (npm run sw:version)
 ├── tests/
 │   ├── run.js                 # Ejecutor (npm test)
 │   ├── unit/                  # Backend y Service Worker (sin navegador)
@@ -74,7 +76,15 @@ otaku-hub/
 Los scripts se cargan en orden al final de `index.html` (scripts clásicos que
 comparten el ámbito global, por eso los `onclick="..."` del HTML siguen
 funcionando). Si añades un archivo nuevo, inclúyelo también en la lista
-`APP_SHELL` de `sw.js` y sube la versión de `CACHE_NAME`.
+`APP_SHELL` de `sw.js` y ejecuta `npm run sw:version` (ver abajo).
+
+## Tema claro y oscuro
+El botón 🌓 de la cabecera alterna entre **automático** (sigue al sistema),
+**claro** ☀️ y **oscuro** 🌙; la elección se guarda en el dispositivo. Los
+colores salen de variables CSS (`--fg-rgb`, `--surface-1`, `--on-accent`…)
+definidas al principio de `css/styles.css` y redefinidas para el tema claro al
+final. Una prueba (`tests/e2e/contraste-temas.test.js`) recorre todas las
+vistas en los dos temas y falla si algún texto no llega al contraste WCAG AA.
 
 ## Sin conexión
 - La última copia de tus listas se guarda en el dispositivo (IndexedDB): la app
@@ -110,6 +120,7 @@ npx playwright install chromium
 | `npm run test:online` | Pruebas contra AniList real (necesitan internet). |
 | `npm run lint` | ESLint: detecta errores como usar una variable que nadie declara. |
 | `npm run format` | Prettier: aplica el formato del proyecto. |
+| `npm run sw:version` | Recalcula `CACHE_NAME` de `sw.js` a partir del contenido de la app. |
 
 Las capturas que generan las pruebas quedan en `tests/output/` (ignorado por git).
 
@@ -118,5 +129,8 @@ cada pull request y en cada push a `main`. La prueba contra AniList real se
 ejecuta cada lunes o a mano desde la pestaña **Actions**.
 
 Una prueba (`tests/unit/service-worker-app-shell.test.js`) avisa si un archivo
-de la página falta en `APP_SHELL` de `sw.js`: sin él, la app fallaría sin
-conexión.
+de la página falta en `APP_SHELL` de `sw.js` (sin él, la app fallaría sin
+conexión) y si `CACHE_NAME` no corresponde al contenido actual. La versión ya
+no se sube a mano: es un resumen (hash) de todos los archivos de la app, así
+que tras cualquier cambio basta con `npm run sw:version` para que los
+navegadores descarguen la versión nueva.

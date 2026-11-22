@@ -117,7 +117,7 @@ async function pullGacha() {
                 <div class="gacha-info">
                     <span style="color: var(--neon-magenta); font-weight: bold; font-size: 0.9rem; letter-spacing: 1px;">¡NUEVO DESCUBRIMIENTO!</span>
                     <div class="gacha-title">${esc(title)}</div>
-                    <div style="display: flex; gap: 15px; align-items: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; font-weight: bold; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 15px; align-items: center; color: rgba(var(--fg-rgb), 0.6); font-size: 0.9rem; font-weight: bold; flex-wrap: wrap;">
                         <span>📅 ${esc(year)}</span>
                         <span>⭐ ${esc(score)} / 10 Media Global</span>
                     </div>

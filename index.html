@@ -9,6 +9,13 @@
         <link rel="manifest" href="./manifest.json" />
         <meta name="theme-color" content="#030308" />
         <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+        <script>
+            // Aplica el tema guardado antes de pintar (evita un destello del tema equivocado).
+            try {
+                var t = localStorage.getItem('otaku_theme');
+                if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        </script>
         <link rel="stylesheet" href="css/styles.css" />
         <link rel="stylesheet" href="css/auth.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -23,6 +30,7 @@
             <nav class="group-nav" id="groupNav" aria-label="Secciones"></nav>
             <div class="header-actions">
                 <button type="button" class="outbox-badge" id="outboxBadge" hidden onclick="flushOutbox()" aria-live="polite"></button>
+                <button type="button" class="icon-btn" id="themeToggle" onclick="cycleTheme()" title="Tema" aria-label="Tema">🌓</button>
                 <button
                     type="button"
                     class="icon-btn"
@@ -198,7 +206,7 @@
                         type="submit"
                         id="mangaSubmitBtn"
                         class="main-btn"
-                        style="background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green)); color: #000"
+                        style="background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green)); color: var(--on-accent)"
                     >
                         Enviar al Registro
                     </button>
@@ -441,7 +449,7 @@
                             <div class="kpi-label">Perfil de Crítico</div>
                         </div>
                         <div class="kpi-card">
-                            <div class="kpi-num" id="kpiGlobalTotal" style="color: rgba(255, 255, 255, 0.6)">0</div>
+                            <div class="kpi-num" id="kpiGlobalTotal" style="color: rgba(var(--fg-rgb), 0.6)">0</div>
                             <div class="kpi-label">Universo Histórico</div>
                         </div>
                     </div>
@@ -449,7 +457,7 @@
                     <div class="top-shelf-section">
                         <div class="shelf-title">
                             👑 Lo más selecto del segmento
-                            <span style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); text-transform: none"
+                            <span style="font-size: 0.75rem; color: rgba(var(--fg-rgb), 0.6); text-transform: none"
                                 >(toca para ver la ficha)</span
                             >
                         </div>
@@ -592,13 +600,13 @@
                         margin-bottom: 25px;
                         flex-wrap: wrap;
                         gap: 10px;
-                        background: rgba(0, 0, 0, 0.4);
+                        background: rgba(var(--shade-rgb), 0.4);
                         padding: 12px 20px;
                         border-radius: 12px;
                         border: 1px solid var(--glass-border);
                     "
                 >
-                    <p style="margin: 0; color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; line-height: 1.4; flex-grow: 1">
+                    <p style="margin: 0; color: rgba(var(--fg-rgb), 0.6); font-size: 0.85rem; line-height: 1.4; flex-grow: 1">
                         Filtro estricto: Solo casas de animación con
                         <strong style="color: var(--neon-cyan)">5 o más animes registrados</strong>. Co-producciones divididas
                         individualmente.
@@ -629,7 +637,7 @@
                 <h2>🏆 El TOP 150 Definitivo</h2>
 
                 <div id="top150ClosedState" style="text-align: center; padding: 40px 20px">
-                    <p style="color: rgba(255, 255, 255, 0.6); margin-bottom: 25px; line-height: 1.5; font-size: 0.95rem">
+                    <p style="color: rgba(var(--fg-rgb), 0.6); margin-bottom: 25px; line-height: 1.5; font-size: 0.95rem">
                         Tu salón de la fama extendido. Abre el TOP para editar tus 150 mejores obras.<br />
                         El sistema analizará automáticamente las subidas, bajadas y nuevas incorporaciones respecto a tu último guardado.
                     </p>
@@ -651,20 +659,14 @@
                         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end">
                             <span id="top150Counter" style="font-size: 0.85rem; color: var(--neon-cyan); font-weight: bold">0 / 150</span>
                             <button class="chip-btn accent-red" onclick="resetTop150()">🗑️ Limpiar</button>
-                            <button
-                                class="clear-cache-btn"
-                                style="border-color: var(--neon-magenta); color: var(--neon-magenta); padding: 8px 12px; font-weight: bold"
-                                onclick="exportTop150Image()"
-                            >
-                                📸 Exportar HD
-                            </button>
+                            <button class="chip-btn accent-magenta" onclick="exportTop150Image()">📸 Exportar HD</button>
                             <button class="btn-toggle-top btn-save" onclick="saveTop150()">💾 Guardar Top 150</button>
                         </div>
                     </div>
 
                     <div id="top150CaptureArea" style="background: var(--bg-color); padding: 5px; border-radius: 12px">
                         <h3
-                            style="display: none; color: #fff; text-shadow: 0 0 10px var(--neon-cyan); margin: 20px 0"
+                            style="display: none; color: var(--text-strong); text-shadow: 0 0 10px var(--neon-cyan); margin: 20px 0"
                             id="top150CaptureTitle"
                         >
                             🏆 MI TOP 150 DEFINITIVO 🏆
@@ -779,7 +781,7 @@
                         </div>
                         <p
                             style="
-                                color: rgba(255, 255, 255, 0.6);
+                                color: rgba(var(--fg-rgb), 0.6);
                                 font-size: 0.85rem;
                                 margin-top: -5px;
                                 margin-bottom: 20px;
@@ -812,7 +814,7 @@
                             width: auto;
                             padding: 12px 25px;
                             background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
-                            color: #04040a;
+                            color: var(--on-accent);
                             font-weight: bold;
                         "
                         onclick="downloadTierlistImage()"
@@ -876,7 +878,7 @@
 
                 <div id="recomContent" style="display: none">
                     <div class="recom-header-controls">
-                        <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; margin: 0; max-width: 600px">
+                        <p style="color: rgba(var(--fg-rgb), 0.6); font-size: 0.9rem; margin: 0; max-width: 600px">
                             Combinamos las recomendaciones de AniList para varios de tus favoritos (nota ≥ 8): sale primero lo que
                             recomiendan varios a la vez. Pulsa 📅 para añadir al Planificador o 🙅 para no volver a verlo.
                         </p>
@@ -910,7 +912,7 @@
                     id="calificadorSavedSection"
                     style="
                         margin-bottom: 30px;
-                        background: rgba(0, 0, 0, 0.4);
+                        background: rgba(var(--shade-rgb), 0.4);
                         padding: 20px;
                         border-radius: 16px;
                         border: 1px solid var(--glass-border);
@@ -985,7 +987,7 @@
                             <h3 id="calificadorAnimeTitle" style="text-align: left; margin-bottom: 5px; color: var(--neon-cyan)">
                                 Nombre Anime
                             </h3>
-                            <div id="calificadorAnimeMeta" style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; margin-bottom: 20px">
+                            <div id="calificadorAnimeMeta" style="color: rgba(var(--fg-rgb), 0.6); font-size: 0.9rem; margin-bottom: 20px">
                                 12 Capítulos Registrados
                             </div>
                             <button
@@ -1006,7 +1008,7 @@
                                     id="calificadorCandidateBadge"
                                     style="padding: 10px; border-color: var(--glass-border); transition: all 0.3s"
                                 >
-                                    <div class="kpi-num" id="calificadorTensCount" style="color: rgba(255, 255, 255, 0.6)">0</div>
+                                    <div class="kpi-num" id="calificadorTensCount" style="color: rgba(var(--fg-rgb), 0.6)">0</div>
                                     <div class="kpi-label">Hitos Excelentes (>8.5)</div>
                                 </div>
                             </div>
@@ -1047,7 +1049,7 @@
                             left: 0;
                             width: 100%;
                             height: 100%;
-                            background: rgba(0, 0, 0, 0.85);
+                            background: rgba(var(--shade-rgb), 0.85);
                             z-index: 9999;
                             align-items: center;
                             justify-content: center;
@@ -1075,7 +1077,7 @@
                             </h3>
                             <p
                                 id="calificadorFormDesc"
-                                style="text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 0.85rem; margin-bottom: 25px"
+                                style="text-align: center; color: var(--text-subtle); font-size: 0.85rem; margin-bottom: 25px"
                             >
                                 Evalúa los parámetros para actualizar la nota media.
                             </p>
@@ -1103,7 +1105,7 @@
                                     class="main-btn"
                                     style="
                                         background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
-                                        color: #000;
+                                        color: var(--on-accent);
                                         margin-top: 0;
                                     "
                                     onclick="submitCalificadorForm()"
@@ -1207,7 +1209,7 @@
                             style="
                                 grid-column: 1/-1;
                                 text-align: center;
-                                color: rgba(255, 255, 255, 0.6);
+                                color: rgba(var(--fg-rgb), 0.6);
                                 padding: 50px 0;
                                 font-size: 1.1rem;
                             "
@@ -1248,7 +1250,7 @@
                 </div>
 
                 <div class="gacha-container">
-                    <p style="color: rgba(255, 255, 255, 0.5); text-align: center; margin-top: 0; font-size: 0.9rem">
+                    <p style="color: var(--text-subtle); text-align: center; margin-top: 0; font-size: 0.9rem">
                         Una obra al azar entre las más populares de AniList, quitando lo que ya tienes y lo que has marcado como "No me
                         interesa".
                     </p>
