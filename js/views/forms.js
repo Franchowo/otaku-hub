@@ -40,7 +40,7 @@ function performSearch() {
             const displayYear = anime.seasonYear || anime.startDate?.year || '????';
             const titleStr = anime.title.romaji;
 
-            item.innerHTML = `<img src="${anime.coverImage?.large || ''}"><div class="info"><span class="title">${titleStr}</span><span class="meta">${displayYear} | ${displaySeasonFormatted} | Studio: ${studiosText}</span></div>`;
+            item.innerHTML = `<img src="${esc(anime.coverImage?.large || FALLBACK_IMG)}" alt=""><div class="info"><span class="title">${esc(titleStr)}</span><span class="meta">${esc(displayYear)} | ${esc(displaySeasonFormatted)} | Studio: ${esc(studiosText)}</span></div>`;
             item.addEventListener('click', function() {
                 animeInput.value = titleStr;
                 if (displayYear !== '????') document.getElementById('year').value = displayYear;
@@ -89,7 +89,7 @@ function performMangaSearch() {
             const titleStr = manga.title.romaji;
             const authorName = manga.staff?.nodes?.[0]?.name?.full || 'Desconocido';
             
-            item.innerHTML = `<img src="${manga.coverImage?.large || ''}"><div class="info"><span class="title">${titleStr}</span><span class="meta">${startYear} | Autor: ${authorName}</span></div>`;
+            item.innerHTML = `<img src="${esc(manga.coverImage?.large || FALLBACK_IMG)}" alt=""><div class="info"><span class="title">${esc(titleStr)}</span><span class="meta">${esc(startYear)} | Autor: ${esc(authorName)}</span></div>`;
             item.addEventListener('click', function() {
                 mangaInput.value = titleStr;
                 if (startYear !== '????') document.getElementById('mangaYear').value = startYear;
@@ -137,10 +137,14 @@ if(animeForm) {
 
         const payload = { anime: document.getElementById('anime').value, season: document.getElementById('season').value, year: parseInt(document.getElementById('year').value), studio: finalStudio, score: parseInt(document.getElementById('score').value) };
 
-        fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withAuth(payload)) }).then(() => {
-            statusMsg.style.color = "#00ff66"; statusMsg.innerText = "¡Anime guardado perfectamente!";
+        sheetsWrite(payload).then(result => {
+            statusMsg.style.color = "#00ff66";
+            statusMsg.innerText = result.confirmed ? "¡Anime guardado perfectamente!" : "Anime enviado (el servidor no confirmó la respuesta).";
             document.getElementById('animeForm').reset(); updateScoreData(7); _masterData = []; 
-        }).catch(() => { statusMsg.style.color = "var(--neon-magenta)"; statusMsg.innerText = "Error de red."; }).finally(() => { submitBtn.disabled = false; submitBtn.innerText = "Enviar al Registro"; });
+        }).catch(err => {
+            // No se resetea el formulario: así no pierdes lo que escribiste.
+            statusMsg.style.color = "var(--neon-magenta)"; statusMsg.innerText = `No se guardó: ${err.message}`;
+        }).finally(() => { submitBtn.disabled = false; submitBtn.innerText = "Enviar al Registro"; });
     });
 }
 
@@ -161,9 +165,13 @@ if(mangaForm) {
             score: parseInt(document.getElementById('mangaScore').value) 
         };
 
-        fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withAuth(payload)) }).then(() => {
-            statusMsg.style.color = "#00ff66"; statusMsg.innerText = "¡Manga registrado con éxito en FULL LIST MANGA!";
-            document.getElementById('mangaForm').reset(); updateMangaScoreData(7); _masterData = []; 
-        }).catch(() => { statusMsg.style.color = "var(--neon-red)"; statusMsg.innerText = "Fallo de conexión al enviar."; }).finally(() => { submitBtn.disabled = false; submitBtn.innerText = "Enviar al Registro"; });
+        sheetsWrite(payload).then(result => {
+            statusMsg.style.color = "#00ff66";
+            statusMsg.innerText = result.confirmed ? "¡Manga registrado con éxito en FULL LIST MANGA!" : "Manga enviado (el servidor no confirmó la respuesta).";
+            // Antes se vaciaba _masterData (anime) y la librería de manga no se refrescaba.
+            document.getElementById('mangaForm').reset(); updateMangaScoreData(7); _mangaData = []; 
+        }).catch(err => {
+            statusMsg.style.color = "var(--neon-red)"; statusMsg.innerText = `No se guardó: ${err.message}`;
+        }).finally(() => { submitBtn.disabled = false; submitBtn.innerText = "Enviar al Registro"; });
     });
 }

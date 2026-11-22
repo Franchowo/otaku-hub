@@ -3,9 +3,22 @@ let _favsRawData = [];
 let _mangaData = []; 
 let _activeFilters = { year: 'all', season: 'all', studio: 'all', score: 'all', query: '' };
 let _sortConfig = { key: 'score', direction: 'desc' }; 
-let _annualRanking = JSON.parse(localStorage.getItem('annual_ranking_data')) || [];
-let _favoritesRanking = []; 
+// Lee JSON de localStorage sin romper la app si está corrupto o bloqueado.
+function readStoredJSON(key, fallback) {
+    try {
+        const value = JSON.parse(localStorage.getItem(key));
+        return value ?? fallback;
+    } catch (e) { return fallback; }
+}
+
+let _annualRanking = readStoredJSON('annual_ranking_data', []);
+let _favoritesRanking = [];
 let dragSrcIndex = null;
+
+// TOP 150: último guardado (para calcular subidas/bajadas) y lista en edición.
+let _savedTop150 = readStoredJSON('saved_top150_data', []);
+let _currentTop150 = [];
+let dragSrcIndexTop150 = null;
 
 let _calificadorCurrentScores = [];
 let _calificadorEpisodesCount = 0;

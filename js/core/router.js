@@ -1,6 +1,7 @@
 // --- ENRUTADOR DE VISTAS ---
 function switchView(viewId) {
     const container = document.getElementById('mainContainer');
+    clearViewErrors();
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     

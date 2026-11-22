@@ -156,8 +156,11 @@ async function processAnilistQueue() {
                 anilistQueue.unshift(...batch);
                 await new Promise(resolve => setTimeout(resolve, 4000));
             } else {
+                // Error de red/servidor: NO se guarda en caché. Antes la portada
+                // "?" quedaba fijada para siempre tras una sola mala conexión;
+                // ahora se vuelve a intentar la próxima vez que se muestre.
+                console.warn('Portadas no disponibles ahora mismo:', err);
                 batch.forEach(task => {
-                    localStorage.setItem(task.cacheKey, FALLBACK_COVER);
                     if(task.el) task.el.src = FALLBACK_COVER;
                 });
             }

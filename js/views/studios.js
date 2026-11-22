@@ -150,12 +150,11 @@
                 // Generador del botón de ciclo (solo si hay más de 1 anime empatado con la nota máxima)
                 let cycleBtnHtml = '';
                 if (studio.topAnimes.length > 1) {
-                    const safeStudioName = studio.name.replace(/'/g, "\\'");
-                    cycleBtnHtml = `<div onclick="cycleStudioCover(event, '${safeStudioName}')" style="position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.75); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 10px; border: 1px solid var(--neon-cyan); backdrop-filter: blur(4px); transition: transform 0.2s;" onmouseover="this.style.transform='rotate(90deg)'" onmouseout="this.style.transform='rotate(0deg)'" title="Clic para cambiar portada (${studio.topAnimes.length} opciones con nota ${studio.maxScore})">🔄</div>`;
+                    cycleBtnHtml = `<div onclick="cycleStudioCover(event, ${jsArg(studio.name)})" style="position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.75); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 10px; border: 1px solid var(--neon-cyan); backdrop-filter: blur(4px); transition: transform 0.2s;" onmouseover="this.style.transform='rotate(90deg)'" onmouseout="this.style.transform='rotate(0deg)'" title="Clic para cambiar portada (${studio.topAnimes.length} opciones con nota ${esc(studio.maxScore)})">🔄</div>`;
                 }
 
                 container.insertAdjacentHTML('beforeend', `
-                    <div class="studio-card" onclick="filterByStudioDirect('${studio.name}')">
+                    <div class="studio-card" onclick="filterByStudioDirect(${jsArg(studio.name)})">
                         
                         <div class="studio-card-rank" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; position: absolute; top: 12px; right: 15px; z-index: 2;">
                             <div style="${rankBadgeStyle}">${rankIcon} #${index + 1}</div>
@@ -165,14 +164,14 @@
                         <!-- Contenedor de imagen modificado con relative y cycleBtnHtml -->
                         <div class="img-container" style="position: relative; width: 60px; height: 85px; flex-shrink: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
                             ${cycleBtnHtml}
-                            <img id="${imgId}" data-type="anime" data-title="${studio.bestAnime}" loading="lazy" class="img-thumb" style="width:100%; height:100%; object-fit:cover;" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='85'><rect width='60' height='85' fill='%23111122'/></svg>">
+                            <img id="${imgId}" data-type="anime" data-title="${esc(studio.bestAnime)}" alt="" loading="lazy" class="img-thumb" style="width:100%; height:100%; object-fit:cover;" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='85'><rect width='60' height='85' fill='%23111122'/></svg>">
                         </div>
                         
                         <div class="studio-details" style="margin-left: 10px; overflow: hidden; padding-right: 50px;">
-                            <span class="studio-card-name" title="${studio.name}">${studio.name}</span>
+                            <span class="studio-card-name" title="${esc(studio.name)}">${esc(studio.name)}</span>
                             <span class="studio-card-count" style="margin-bottom:2px;">${studio.count} animes</span>
                             
-                            <span style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Obra destacada: ${studio.bestAnime}">👑 ${studio.bestAnime}</span>
+                            <span style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-bottom: 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Obra destacada: ${esc(studio.bestAnime)}">👑 ${esc(studio.bestAnime)}</span>
                             
                             <div style="display: flex; align-items: center; gap: 6px; margin-top: auto;">
                                 <span class="studio-card-badge ${scoreTone}" style="margin:0; align-self:center;">${studio.avg.toFixed(2)} MEDIA</span>
@@ -207,7 +206,7 @@ function saveStudiosSnapshot() {
             if (matches.length === 0) { resultsBox.innerHTML = '<div class="annual-search-item" style="cursor:default;">Sin resultados en tu registro</div>'; resultsBox.style.display = 'block'; return; }
             matches.slice(0, 6).forEach(anime => {
                 const row = document.createElement('div'); row.className = 'annual-search-item';
-                row.innerHTML = `<span>${anime.anime}</span><span class="score-tag">${anime.score}⭐</span>`;
+                row.innerHTML = `<span>${esc(anime.anime)}</span><span class="score-tag">${esc(anime.score)}⭐</span>`;
                 row.addEventListener('click', () => { addAnimeToAnnualRanking(anime.anime, anime.score); input.value = ''; resultsBox.style.display = 'none'; });
                 resultsBox.appendChild(row);
             });
@@ -232,10 +231,10 @@ function saveStudiosSnapshot() {
                 const card = document.createElement('div'); card.className = 'draggable-item'; card.setAttribute('draggable', 'true'); card.dataset.index = index;
                 card.innerHTML = `
                     <div class="drag-handle">⋮⋮</div><div class="rank-pos-badge ${badgeClass}">${displayPos}</div>
-                    <div class="img-container" style="width: 48px; height: 68px; flex-shrink: 0; border-radius: 8px;"><img id="${imgId}" data-type="anime" data-title="${item.name}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='68'><rect width='48' height='68' fill='%23111122'/></svg>"></div>
-                    <span style="flex-grow:1; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.name}">${item.name}</span>
-                    <span style="font-weight:bold; color:var(--neon-magenta); font-size:0.9rem; padding-right:10px;">${item.score}⭐</span>
-                    <button class="btn-remove-item" onclick="removeAnimeFromAnnualRanking('${item.id}')" title="Eliminar">✕</button>
+                    <div class="img-container" style="width: 48px; height: 68px; flex-shrink: 0; border-radius: 8px;"><img id="${imgId}" data-type="anime" data-title="${esc(item.name)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='68'><rect width='48' height='68' fill='%23111122'/></svg>"></div>
+                    <span style="flex-grow:1; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(item.name)}">${esc(item.name)}</span>
+                    <span style="font-weight:bold; color:var(--neon-magenta); font-size:0.9rem; padding-right:10px;">${esc(item.score)}⭐</span>
+                    <button class="btn-remove-item" onclick="removeAnimeFromAnnualRanking(${jsArg(item.id)})" title="Eliminar">✕</button>
                 `;
 
                 card.addEventListener('dragstart', (e) => { dragSrcIndex = index; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
@@ -261,7 +260,7 @@ function saveStudiosSnapshot() {
                 const currentRank = index + 1; let metalTierClass = 'fav-bronze';
                 if (currentRank <= 10) metalTierClass = 'fav-gold'; else if (currentRank <= 20) metalTierClass = 'fav-silver';
                 const imgId = `fav-poster-img-${favItem.id}`, card = document.createElement('div'); card.className = `fav-item ${metalTierClass}`;
-                card.innerHTML = `<div class="fav-badge-rank">${currentRank}</div><div class="img-container" style="width: 100px; height: 145px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.6);"><img id="${imgId}" data-type="anime" data-title="${favItem.name}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='145'><rect width='100' height='145' fill='%23111122'/></svg>"></div><div class="fav-title-text" title="${favItem.name}">${favItem.name}</div>`;
+                card.innerHTML = `<div class="fav-badge-rank">${currentRank}</div><div class="img-container" style="width: 100px; height: 145px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.6);"><img id="${imgId}" data-type="anime" data-title="${esc(favItem.name)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='145'><rect width='100' height='145' fill='%23111122'/></svg>"></div><div class="fav-title-text" title="${esc(favItem.name)}">${esc(favItem.name)}</div>`;
                 container.appendChild(card); 
                 
                 const imgEl = document.getElementById(imgId);
@@ -300,7 +299,7 @@ function saveStudiosSnapshot() {
                 imgUrl += (imgUrl.includes('?') ? '&' : '?') + 'nocache=' + Date.now();
             }
             
-            itemsHTML += `<div class="tierlist-square-poster" title="${anime.name}"><img src="${imgUrl}" crossorigin="anonymous" alt=""></div>`;
+            itemsHTML += `<div class="tierlist-square-poster" title="${esc(anime.name)}"><img src="${esc(imgUrl)}" crossorigin="anonymous" alt=""></div>`;
         });
         
         rowBlock.innerHTML = `<div class="tierlist-row-label" style="background-color: ${colorPalette[score]};">${score}</div><div class="tierlist-row-items">${itemsHTML}</div>`;

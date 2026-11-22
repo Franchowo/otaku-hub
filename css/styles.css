@@ -1032,3 +1032,19 @@
                 grid-template-columns: repeat(4, 1fr);
             }
         }
+
+/* --- ESTADO DE ERROR DE CARGA (sustituye a los spinners infinitos) --- */
+.load-error {
+    margin: 20px auto;
+    max-width: 560px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid rgba(255, 0, 51, 0.35);
+    border-radius: 14px;
+    background: rgba(255, 0, 51, 0.05);
+    color: var(--text-color);
+}
+.load-error p { margin: 0 0 14px; line-height: 1.5; }
+
+/* Las sinopsis ahora son texto plano: respetar los saltos de línea. */
+.gacha-desc { white-space: pre-line; }

@@ -6,19 +6,18 @@
             if (_planificadorInitialized) { getSafeEl('planificadorLoader').style.display = 'none'; getSafeEl('planificadorContent').style.display = 'block'; return; }
             getSafeEl('planificadorLoader').style.display = 'block'; getSafeEl('planificadorContent').style.display = 'none';
 
-            window.handlePlanificadorResponse = function(response) {
+            sheetsReadOnce('planificador', 'PLANIFICADOR_STATE').then(data => {
                 getSafeEl('planificadorLoader').style.display = 'none'; getSafeEl('planificadorContent').style.display = 'block';
-                if(response.status === 'success' && response.data && response.data.length > 0 && response.data[0].status !== undefined) {
-                    _planificadorSavedProgress = response.data.map(i => ({ id: String(i.id), year: i.year, season: i.season, title: i.title, cover: i.cover, status: i.status }));
+                if(data.length > 0 && data[0].status !== undefined) {
+                    _planificadorSavedProgress = data.map(i => ({ id: String(i.id), year: i.year, season: i.season, title: i.title, cover: i.cover, status: i.status }));
                 }
                 _planificadorInitialized = true;
-                getSafeEl('planificadorGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar Temporada"</strong> para cargar los animes.</div>';
-                const scriptTag = document.getElementById('jsonpPlanificadorScript'); if(scriptTag) scriptTag.remove();
-            };
-
-            const script = document.createElement('script'); script.id = 'jsonpPlanificadorScript';
-            script.src = `${sheetsUrl()}sheet=PLANIFICADOR_STATE&tab=PLANIFICADOR_STATE&sheetName=PLANIFICADOR_STATE&callback=handlePlanificadorResponse&_=${new Date().getTime()}`;
-            document.body.appendChild(script);
+                getSafeEl('planificadorGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">Tus datos están sincronizados.<br>Selecciona arriba un Año y Temporada y pulsa <strong>"Desplegar"</strong> para cargar los animes.</div>';
+            }).catch(err => {
+                getSafeEl('planificadorLoader').style.display = 'none';
+                // Sin el estado guardado no dejamos editar: guardar sobrescribiría la nube con una lista vacía.
+                showViewError(`No se pudo cargar tu planificador. ${err.message}`);
+            });
         }
 
         async function loadSeasonPlanificador() {
@@ -114,10 +113,10 @@ const sequelBadge = anime.isSequel ? '<span style="background: var(--neon-purple
 card.innerHTML = `
     <div class="plan-card-img">
         ${sequelBadge}
-        <img src="${cover}" alt="cover" onerror="this.src='${FALLBACK_IMG}';">
+        <img src="${esc(cover)}" alt="" loading="lazy" onerror="this.onerror=null; this.src='${FALLBACK_IMG}';">
     </div>
     <div class="plan-card-info">
-        <span class="plan-card-title" title="${title}">${title}</span>
+        <span class="plan-card-title" title="${esc(title)}">${esc(title)}</span>
         <select class="plan-card-select" onchange="updateSeasonPlanStatus('${malId}', this.value)">
             <option value="default" ${status==='default'?'selected':''}>⚪ Sin marcar</option>
             <option value="visto" ${status==='visto'?'selected':''}>🟣 Lo he visto</option>
@@ -133,7 +132,7 @@ grid.appendChild(card);
 
             if (visibleCount === 0 && _currentSeasonData.length > 0 && filterElement) {
                 const filterName = filterElement.options[filterElement.selectedIndex].text;
-                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">No hay animes en esta temporada con el estado <strong>"${filterName}"</strong>.</div>`;
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.4); padding: 50px 0; font-size:1.1rem;">No hay animes en esta temporada con el estado <strong>"${esc(filterName)}"</strong>.</div>`;
             }
             if (autoSyncNeeded) setTimeout(() => syncPlanificadorToCloud(), 1000);
         }
@@ -160,15 +159,17 @@ grid.appendChild(card);
             if(btn) { btn.innerText = "Sincronizando ☁️"; btn.disabled = true; }
             const payload = { action: "save_planificador", payload: _planificadorSavedProgress };
 
-            fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withAuth(payload)) }).then(() => {
+            sheetsWrite(payload).then(result => {
                 if(btn) {
-                    btn.innerText = "¡Guardado! ✔️"; btn.style.borderColor = "var(--neon-green)"; btn.style.color = "var(--neon-green)";
-                    setTimeout(() => { btn.innerText = "☁️ Guardar Cambios"; btn.style.borderColor = "var(--neon-cyan)"; btn.style.color = "var(--neon-cyan)"; btn.disabled = false; }, 2000);
+                    btn.innerText = savedLabel(result); btn.style.borderColor = "var(--neon-green)"; btn.style.color = "var(--neon-green)";
+                    setTimeout(() => { btn.innerText = "☁️ Guardar Cambios"; btn.disabled = false; }, 2000);
                 }
-            }).catch(() => {
+            }).catch(err => {
+                console.warn('Planificador no guardado:', err);
                 if(btn) {
-                    btn.innerText = "Fallo de red ❌"; btn.style.borderColor = "var(--neon-red)"; btn.style.color = "var(--neon-red)";
-                    setTimeout(() => { btn.innerText = "☁️ Guardar Cambios"; btn.disabled = false; }, 2500);
+                    btn.innerText = "No guardado ❌ (reintentar)"; btn.style.borderColor = "var(--neon-red)"; btn.style.color = "var(--neon-red)";
+                    btn.title = err.message;
+                    setTimeout(() => { btn.disabled = false; }, 1500);
                 }
             });
         }

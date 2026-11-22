@@ -12,7 +12,7 @@ function buildTimeMachine() {
     const select = document.getElementById('tmYearSelect');
     select.innerHTML = '<option value="" disabled selected>SELECCIONA UN AÑO</option>';
     sortedYears.forEach(y => {
-        select.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`);
+        select.insertAdjacentHTML('beforeend', `<option value="${esc(y)}">${esc(y)}</option>`);
     });
 }
 
@@ -57,13 +57,13 @@ function renderTimeMachine(year) {
         featuredHTML += `
             <div class="tm-featured-card anime">
                 <div class="img-container" style="width: 80px; height: 115px; border-radius: 8px;">
-                    <img id="tm-best-anime-img" data-type="anime" data-title="${bestAnime.anime}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
+                    <img id="tm-best-anime-img" data-type="anime" data-title="${esc(bestAnime.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px; overflow:hidden;">
                     <span style="color:var(--neon-cyan); font-weight:bold; font-size:0.75rem;">MEJOR ANIME DEL AÑO</span>
-                    <span style="font-weight:900; font-size:1.1rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bestAnime.anime}</span>
-                    <span style="color:rgba(255,255,255,0.5); font-size:0.8rem;">${bestAnime.studio}</span>
-                    <span class="detail-score-badge ${neonClass}" style="margin-top:5px;">${bestAnime.score} ⭐</span>
+                    <span style="font-weight:900; font-size:1.1rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(bestAnime.anime)}</span>
+                    <span style="color:rgba(255,255,255,0.5); font-size:0.8rem;">${esc(bestAnime.studio)}</span>
+                    <span class="detail-score-badge ${neonClass}" style="margin-top:5px;">${esc(bestAnime.score)} ⭐</span>
                 </div>
             </div>
         `;
@@ -76,13 +76,13 @@ function renderTimeMachine(year) {
         featuredHTML += `
             <div class="tm-featured-card manga">
                 <div class="img-container" style="width: 80px; height: 115px; border-radius: 8px;">
-                    <img id="tm-best-manga-img" data-type="manga" data-title="${bestManga.manga}" data-author="${bestManga.author}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
+                    <img id="tm-best-manga-img" data-type="manga" data-title="${esc(bestManga.manga)}" data-author="${esc(bestManga.author)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='115'><rect width='80' height='115' fill='%23111122'/></svg>">
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px; overflow:hidden;">
                     <span style="color:var(--neon-green); font-weight:bold; font-size:0.75rem;">MEJOR MANGA DEL AÑO</span>
-                    <span style="font-weight:900; font-size:1.1rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bestManga.manga}</span>
-                    <span style="color:rgba(255,255,255,0.5); font-size:0.8rem;">Autor: ${bestManga.author}</span>
-                    <span class="detail-score-badge ${neonClass}" style="margin-top:5px;">${bestManga.score} ⭐</span>
+                    <span style="font-weight:900; font-size:1.1rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(bestManga.manga)}</span>
+                    <span style="color:rgba(255,255,255,0.5); font-size:0.8rem;">Autor: ${esc(bestManga.author)}</span>
+                    <span class="detail-score-badge ${neonClass}" style="margin-top:5px;">${esc(bestManga.score)} ⭐</span>
                 </div>
             </div>
         `;
@@ -110,11 +110,11 @@ function renderTimeMachine(year) {
     combined.forEach((item, index) => {
         const imgId = `tm-gallery-img-${index}`;
         const title = item.type === 'anime' ? item.anime : item.manga;
-        const authorAttr = item.type === 'manga' ? `data-author="${item.author}"` : '';
+        const authorAttr = item.type === 'manga' ? `data-author="${esc(item.author)}"` : '';
         const typeAttr = `data-type="${item.type}"`;
         const div = document.createElement('div');
         div.className = `tm-gallery-item ${item.type}`;
-        div.innerHTML = `<img id="${imgId}" ${typeAttr} data-title="${title}" ${authorAttr} title="${title} (${item.score}⭐)" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='130'><rect width='90' height='130' fill='%23111122'/></svg>">`;
+        div.innerHTML = `<img id="${imgId}" ${typeAttr} data-title="${esc(title)}" ${authorAttr} title="${esc(title)} (${esc(item.score)}⭐)" alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='130'><rect width='90' height='130' fill='%23111122'/></svg>">`;
         galleryContainer.appendChild(div);
 
         globalImageObserver.observe(document.getElementById(imgId));
@@ -174,13 +174,13 @@ function populateFilterDropdowns(data) {
     if (yearSelect && studioSelect) {
         yearSelect.innerHTML = '<option value="all">Todos</option>';
         studioSelect.innerHTML = '<option value="all">Todos</option>';
-        years.forEach(y => { if(y) yearSelect.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`); });
-        studios.forEach(s => { studioSelect.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`); });
+        years.forEach(y => { if(y) yearSelect.insertAdjacentHTML('beforeend', `<option value="${esc(y)}">${esc(y)}</option>`); });
+        studios.forEach(s => { studioSelect.insertAdjacentHTML('beforeend', `<option value="${esc(s)}">${esc(s)}</option>`); });
     }
 
     if(detailYearSelect) {
         detailYearSelect.innerHTML = '<option value="all">Todos</option>';
-        years.forEach(y => { if(y) detailYearSelect.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`); });
+        years.forEach(y => { if(y) detailYearSelect.insertAdjacentHTML('beforeend', `<option value="${esc(y)}">${esc(y)}</option>`); });
     }
 }
 
@@ -348,10 +348,10 @@ function applyFiltersAndRender() {
 function renderStatusBar() {
     const bar = document.getElementById('filterStatusBar');
     let badgesHTML = `Mapeando Segmento: `, hasActive = false;
-    if(_activeFilters.year !== 'all') { badgesHTML += `<span class="badge">Año: ${_activeFilters.year}</span> `; hasActive = true; }
-    if(_activeFilters.season !== 'all') { badgesHTML += `<span class="badge">Temporada: ${_activeFilters.season}</span> `; hasActive = true; }
-    if(_activeFilters.studio !== 'all') { badgesHTML += `<span class="badge">Estudio: ${_activeFilters.studio}</span> `; hasActive = true; }
-    if(_activeFilters.score !== 'all') { badgesHTML += `<span class="badge">Nota: ${_activeFilters.score}⭐</span> `; hasActive = true; }
+    if(_activeFilters.year !== 'all') { badgesHTML += `<span class="badge">Año: ${esc(_activeFilters.year)}</span> `; hasActive = true; }
+    if(_activeFilters.season !== 'all') { badgesHTML += `<span class="badge">Temporada: ${esc(_activeFilters.season)}</span> `; hasActive = true; }
+    if(_activeFilters.studio !== 'all') { badgesHTML += `<span class="badge">Estudio: ${esc(_activeFilters.studio)}</span> `; hasActive = true; }
+    if(_activeFilters.score !== 'all') { badgesHTML += `<span class="badge">Nota: ${esc(_activeFilters.score)}⭐</span> `; hasActive = true; }
     bar.innerHTML = hasActive ? badgesHTML : "Mostrando universo completo sin segmentación.";
 }
 
@@ -378,7 +378,7 @@ function renderStudioLeaderboard(studios) {
     const listContainer = document.getElementById('proStudioList'); listContainer.innerHTML = '';
     const sorted = Object.keys(studios).map(name => { return { name: name, count: studios[name].count, avg: (studios[name].sum / studios[name].count).toFixed(1) }; }).sort((a,b) => b.count - a.count);
     if(sorted.length === 0) { listContainer.innerHTML = '<div style="font-size:0.8rem; color:rgba(255,255,255,0.3); text-align:center; padding-top:20px;">Sin estudios.</div>'; return; }
-    sorted.slice(0, 15).forEach(item => { listContainer.insertAdjacentHTML('beforeend', `<div class="ranking-item" onclick="filterByStudioDirect('${item.name}')"><div class="rank-title">${item.name}</div><div class="rank-meta"><span>${item.avg}⭐</span><span style="color:var(--neon-cyan)">(${item.count})</span></div></div>`); });
+    sorted.slice(0, 15).forEach(item => { listContainer.insertAdjacentHTML('beforeend', `<div class="ranking-item" onclick="filterByStudioDirect(${jsArg(item.name)})"><div class="rank-title">${esc(item.name)}</div><div class="rank-meta"><span>${item.avg}⭐</span><span style="color:var(--neon-cyan)">(${item.count})</span></div></div>`); });
 }
 
 function renderTopShelfGallery(filteredData) {
@@ -387,7 +387,7 @@ function renderTopShelfGallery(filteredData) {
     if(topThree.length === 0) { gallery.innerHTML = '<div style="font-size:0.85rem; color:rgba(255,255,255,0.3); padding:10px 5px;">Ningún destacado disponible.</div>'; return; }
     topThree.forEach((anime, idx) => {
         const imgId = `shelf-img-${idx}`;
-        gallery.insertAdjacentHTML('beforeend', `<div class="anime-poster-card"><div class="poster-rank">#${idx+1}</div><div class="img-container"><img id="${imgId}" data-type="anime" data-title="${anime.anime}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='75' height='105'><rect width='75' height='105' fill='%23111122'/></svg>"></div><div class="poster-info"><span class="poster-title" title="${anime.anime}">${anime.anime}</span><span class="poster-studio">${anime.studio || 'Desconocido'} (${anime.year})</span><span class="poster-badge">${anime.score} SCORE</span></div></div>`);
+        gallery.insertAdjacentHTML('beforeend', `<div class="anime-poster-card"><div class="poster-rank">#${idx+1}</div><div class="img-container"><img id="${imgId}" data-type="anime" data-title="${esc(anime.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='75' height='105'><rect width='75' height='105' fill='%23111122'/></svg>"></div><div class="poster-info"><span class="poster-title" title="${esc(anime.anime)}">${esc(anime.anime)}</span><span class="poster-studio">${esc(anime.studio || 'Desconocido')} (${esc(anime.year)})</span><span class="poster-badge">${esc(anime.score)} SCORE</span></div></div>`);
         const imgEl = document.getElementById(imgId);
         if(imgEl) globalImageObserver.observe(imgEl);
     });
@@ -396,7 +396,7 @@ function renderTopShelfGallery(filteredData) {
 function renderDataTable(data) {
     const tbody = document.getElementById('rawTableBody'); document.getElementById('tableCount').innerText = `${data.length} procesados`; tbody.innerHTML = '';
     if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.3);">Sin coincidencias.</td></tr>'; return; }
-    data.forEach(item => { tbody.insertAdjacentHTML('beforeend', `<tr><td style="font-weight:600; color:#fff;" title="${item.anime}">${item.anime}</td><td>${item.season}</td><td>${item.year}</td><td title="${item.studio}">${item.studio}</td><td style="font-weight:bold; color:var(--neon-magenta);">${item.score}</td></tr>`); });
+    data.forEach(item => { tbody.insertAdjacentHTML('beforeend', `<tr><td style="font-weight:600; color:#fff;" title="${esc(item.anime)}">${esc(item.anime)}</td><td>${esc(item.season)}</td><td>${esc(item.year)}</td><td title="${esc(item.studio)}">${esc(item.studio)}</td><td style="font-weight:bold; color:var(--neon-magenta);">${esc(item.score)}</td></tr>`); });
 }
 
 function renderDetailView() {
@@ -449,13 +449,13 @@ function applyDetailFilters() {
         card.className = 'detail-card';
         card.innerHTML = `
             <div class="img-container" style="width:70px; height:98px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.5);">
-                <img id="${cardId}" data-type="anime" data-title="${item.anime}" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='98'><rect width='70' height='98' fill='%23111122'/></svg>">
+                <img id="${cardId}" data-type="anime" data-title="${esc(item.anime)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='98'><rect width='70' height='98' fill='%23111122'/></svg>">
             </div>
             <div class="detail-info">
-                <span class="detail-title" title="${item.anime}">${item.anime}</span>
-                <span class="detail-meta-item">🏢 ${item.studio || 'Desconocido'}</span>
-                <span class="detail-meta-item">📅 ${item.season || '???'} - ${item.year || '????'}</span>
-                <span class="detail-score-badge ${neonClass}">${item.score} / 10 ⭐</span>
+                <span class="detail-title" title="${esc(item.anime)}">${esc(item.anime)}</span>
+                <span class="detail-meta-item">🏢 ${esc(item.studio || 'Desconocido')}</span>
+                <span class="detail-meta-item">📅 ${esc(item.season || '???')} - ${esc(item.year || '????')}</span>
+                <span class="detail-score-badge ${neonClass}">${esc(item.score)} / 10 ⭐</span>
             </div>
         `;
         container.appendChild(card);
@@ -522,13 +522,13 @@ function applyMangaFilters() {
         book.innerHTML = `
             <div class="manga-book-inner">
                 <div class="manga-book-front">
-                    <img id="${imgId}" data-type="manga" data-title="${item.manga}" data-author="${item.author}" loading="lazy" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='175'><rect width='120' height='175' fill='%23111122'/></svg>">
+                    <img id="${imgId}" data-type="manga" data-title="${esc(item.manga)}" data-author="${esc(item.author)}" alt="" loading="lazy" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='175'><rect width='120' height='175' fill='%23111122'/></svg>">
                 </div>
                 <div class="manga-book-back">
-                    <div class="manga-back-title" title="${item.manga}">${item.manga}</div>
-                    <div class="manga-back-meta">Author:<br><span style="color:var(--neon-green); font-weight:bold;">${item.author}</span></div>
-                    <div class="manga-back-meta">Año: ${item.year}</div>
-                    <div class="detail-score-badge ${neonClass}" style="margin-top:auto; font-size:0.75rem; padding:2px 8px;">${item.score} / 10</div>
+                    <div class="manga-back-title" title="${esc(item.manga)}">${esc(item.manga)}</div>
+                    <div class="manga-back-meta">Autor:<br><span style="color:var(--neon-green); font-weight:bold;">${esc(item.author)}</span></div>
+                    <div class="manga-back-meta">Año: ${esc(item.year)}</div>
+                    <div class="detail-score-badge ${neonClass}" style="margin-top:auto; font-size:0.75rem; padding:2px 8px;">${esc(item.score)} / 10</div>
                 </div>
             </div>
         `;
@@ -556,13 +556,13 @@ function saveTop150() {
 
     const payload = { action: "save_top150", payload: _savedTop150 };
 
-    fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withAuth(payload)) })
-    .then(() => {
-        btnStart.innerText = "¡Cambios Registrados y Subidos! ✔️";
+    sheetsWrite(payload)
+    .then(result => {
+        btnStart.innerText = result.confirmed ? "¡Cambios Registrados y Subidos! ✔️" : "Cambios enviados ✔️ (sin confirmar)";
         btnStart.style.background = "var(--neon-green)"; btnStart.style.color = "#000";
         setTimeout(() => { btnStart.innerText = "🔓 Iniciar Top 150"; btnStart.style.background = ""; btnStart.style.color = ""; }, 2500);
-    }).catch(() => {
-        alert("Guardado localmente, pero hubo un error de red al subir a Sheets.");
+    }).catch(err => {
+        alert(`Guardado en este dispositivo, pero NO en Sheets: ${err.message}`);
         btnStart.innerText = "🔓 Iniciar Top 150";
     });
 }
@@ -577,7 +577,7 @@ function searchTop150Anime() {
     if (matches.length === 0) { resultsBox.innerHTML = '<div class="annual-search-item" style="cursor:default;">Sin resultados</div>'; resultsBox.style.display = 'block'; return; }
     matches.slice(0, 5).forEach(anime => {
         const row = document.createElement('div'); row.className = 'annual-search-item';
-        row.innerHTML = `<span>${anime.anime}</span><span class="score-tag">${anime.score}⭐</span>`;
+        row.innerHTML = `<span>${esc(anime.anime)}</span><span class="score-tag">${esc(anime.score)}⭐</span>`;
         row.addEventListener('click', () => { addAnimeToTop150(anime.anime, anime.score); input.value = ''; resultsBox.style.display = 'none'; });
         resultsBox.appendChild(row);
     });
@@ -624,8 +624,8 @@ function renderTop150List() {
         const card = document.createElement('div'); card.className = `top150-item ${tierClass}`; card.setAttribute('draggable', 'true'); card.dataset.index = index;
         card.innerHTML = `
             <div class="drag-handle" style="font-size: 0.9rem; padding-right: 0;">⋮⋮</div>
-            <div class="top150-pos">${currentPos}</div><div class="top150-title" title="${item.name}">${item.name}</div>${trackingBadge}<div class="top150-score">${item.score}⭐</div>
-            <button class="btn-remove-item" onclick="removeAnimeFromTop150('${item.id}')" title="Eliminar" style="font-size: 0.9rem; padding: 2px 6px;">✕</button>
+            <div class="top150-pos">${currentPos}</div><div class="top150-title" title="${esc(item.name)}">${esc(item.name)}</div>${trackingBadge}<div class="top150-score">${esc(item.score)}⭐</div>
+            <button class="btn-remove-item" onclick="removeAnimeFromTop150(${jsArg(item.id)})" title="Eliminar" style="font-size: 0.9rem; padding: 2px 6px;">✕</button>
         `;
 
         card.addEventListener('dragstart', (e) => { dragSrcIndexTop150 = index; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
