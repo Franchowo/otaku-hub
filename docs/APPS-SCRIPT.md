@@ -24,6 +24,12 @@ cuanto despliegas.
 - Una acción desconocida **ya no registra un anime vacío**, y `updateTab` ya no
   puede vaciar FULL LIST.
 
+## Qué trae la versión 3
+- **Editar y borrar** animes y mangas desde la **ficha de obra** (toca cualquier
+  portada de tu colección). Solo se modifica la fila si su título sigue
+  coincidiendo con el que cargó la app; si la hoja cambió entretanto, la app
+  te pide recargar en lugar de tocar otra obra.
+
 ## Pasos (≈3 minutos)
 1. Abre tu proyecto en <https://script.google.com>.
 2. Abre tu archivo principal (el que tenía `handleGet` y `handlePost`, p. ej.

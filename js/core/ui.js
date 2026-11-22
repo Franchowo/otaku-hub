@@ -101,6 +101,42 @@ function confirmDialog({ title = '¿Seguro?', message = '', confirmText = 'Acept
     });
 }
 
+// const n = await promptNumberDialog({ title, message, value, min, max }) -> número o null
+function promptNumberDialog({ title = '', message = '', value = '', min = 1, max = 9999, confirmText = 'Aceptar' } = {}) {
+    return new Promise(resolve => {
+        const previousFocus = document.activeElement;
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.innerHTML = `
+            <form class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+                <h3 class="dialog-title" id="dialogTitle">${esc(title)}</h3>
+                <label class="dialog-msg" for="dialogNumber">${esc(message)}</label>
+                <input type="number" id="dialogNumber" inputmode="numeric" min="${min}" max="${max}" value="${esc(value)}" required style="width:100%; box-sizing:border-box; margin-bottom: 16px;">
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn--ghost" data-answer="no">Cancelar</button>
+                    <button type="submit" class="btn btn--primary">${esc(confirmText)}</button>
+                </div>
+            </form>`;
+        const input = overlay.querySelector('input');
+        const finish = (answer) => {
+            overlay.remove();
+            if (previousFocus && previousFocus.focus) previousFocus.focus();
+            resolve(answer);
+        };
+        overlay.querySelector('form').addEventListener('submit', e => {
+            e.preventDefault();
+            const n = parseInt(input.value, 10);
+            if (Number.isNaN(n) || n < min || n > max) { input.setCustomValidity(`Entre ${min} y ${max}`); input.reportValidity(); return; }
+            finish(n);
+        });
+        input.addEventListener('input', () => input.setCustomValidity(''));
+        overlay.addEventListener('click', e => { if (e.target === overlay || e.target.closest('[data-answer="no"]')) finish(null); });
+        overlay.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); finish(null); } });
+        document.body.appendChild(overlay);
+        input.focus(); input.select();
+    });
+}
+
 // ---------------------------------------------------------------------
 // ACCESIBILIDAD: elementos con role="button" (tarjetas clicables) se
 // activan con Enter/Espacio, como un botón de verdad.

@@ -18,9 +18,13 @@
  *  - Cada fila leída incluye "_row" (su número de fila en la hoja).
  *  - "updateTab" solo puede tocar las pestañas de ranking (antes podía vaciar
  *    cualquier hoja, incluida FULL LIST).
+ *
+ * Versión 3:
+ *  - "update_entry" / "delete_entry": editar o borrar un anime/manga desde la
+ *    ficha de la app. Solo actúan si el título de la fila sigue coincidiendo.
  */
 
-var OTAKU_API_VERSION = 2;
+var OTAKU_API_VERSION = 3;
 
 var MANGA_SHEET = 'FULL LIST MANGA';
 var RANKING_TABS = ['TOP150', 'TOP_150', 'RANKING_ANUAL'];
@@ -165,6 +169,8 @@ function dispatchWrite_(data) {
     case 'upsert_rows': return upsertRows_(data.sheet, data.items);
     case 'delete_rows': return deleteRows_(data.sheet, data.ids);
     case 'set_anilist_ids': return setAnilistIds_(data.target, data.items);
+    case 'update_entry': return updateEntry_(data);
+    case 'delete_entry': return deleteEntry_(data);
     case undefined:
     case null:
     case '':
@@ -299,6 +305,41 @@ function setAnilistIds_(target, items) {
     }
   });
   return { status: 'success', updated: updated, skipped: skipped };
+}
+
+// Hoja y fila de una obra, comprobando que el título no ha cambiado
+// (si se insertaron filas entre medias, se rechaza en vez de tocar otra obra).
+function locateEntry_(data) {
+  var sheet = data.target === 'manga' ? SpreadsheetApp.getActiveSpreadsheet().getSheetByName(MANGA_SHEET) : mainAnimeSheet_();
+  if (!sheet) throw new Error('No existe la hoja de ' + data.target);
+  var row = parseInt(data.row, 10);
+  if (!(row >= 2) || row > sheet.getLastRow()) throw new Error('Fila no válida');
+  var current = String(sheet.getRange(row, 1).getValue()).trim();
+  if (current !== String(data.title || '').trim()) {
+    throw new Error('La hoja ha cambiado desde que se cargó (se esperaba "' + data.title + '" y hay "' + current + '"). Recarga e inténtalo de nuevo.');
+  }
+  return { sheet: sheet, row: row };
+}
+
+function updateEntry_(data) {
+  var loc = locateEntry_(data);
+  var f = data.fields || {};
+  var values = data.target === 'manga'
+    ? [f.manga, f.year, f.author, f.score]
+    : [f.anime, f.season, f.year, f.studio, f.score];
+  if (!values[0] || String(values[0]).trim() === '') throw new Error('Falta el título');
+  loc.sheet.getRange(loc.row, 1, 1, values.length).setValues([values]);
+  if (f.hasOwnProperty('anilistId')) {
+    var col = ensureAnilistColumn_(loc.sheet);
+    loc.sheet.getRange(loc.row, col).setValue(f.anilistId ? parseInt(f.anilistId, 10) : '');
+  }
+  return { status: 'success' };
+}
+
+function deleteEntry_(data) {
+  var loc = locateEntry_(data);
+  loc.sheet.deleteRow(loc.row);
+  return { status: 'success' };
 }
 
 // Registro de un anime o manga nuevo (fila 3, con el formato de la fila 4).

@@ -13,12 +13,10 @@ function readStoredJSON(key, fallback) {
 
 let _annualRanking = readStoredJSON('annual_ranking_data', []);
 let _favoritesRanking = [];
-let dragSrcIndex = null;
 
 // TOP 150: último guardado (para calcular subidas/bajadas) y lista en edición.
 let _savedTop150 = readStoredJSON('saved_top150_data', []);
 let _currentTop150 = [];
-let dragSrcIndexTop150 = null;
 
 let _calificadorCurrentScores = [];
 let _calificadorEpisodesCount = 0;

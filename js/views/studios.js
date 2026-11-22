@@ -236,28 +236,35 @@ function saveStudiosSnapshot() {
             toastUndo('Ranking Anual reiniciado.', () => { _annualRanking = backup; saveAnnualLocal(); renderAnnualRankingList(); });
         }
 
+        // Reordenar con dedo, ratón o teclado (js/core/sortable.js).
+        makeSortable(document.getElementById('annualRankingList'), {
+            itemSelector: '.draggable-item', handleSelector: '.drag-handle',
+            onMove: (from, to) => { moveInArray(_annualRanking, from, to); saveAnnualLocal(); renderAnnualRankingList(); }
+        });
+
+        async function moveAnnualToPosition(index) {
+            const item = _annualRanking[index];
+            const pos = await promptNumberDialog({ title: 'Mover a posición', message: `¿A qué posición mueves "${item.name}"? (1-${_annualRanking.length})`, value: index + 1, max: _annualRanking.length, confirmText: 'Mover' });
+            if (pos === null || pos - 1 === index) return;
+            moveInArray(_annualRanking, index, pos - 1); saveAnnualLocal(); renderAnnualRankingList();
+        }
+
         function renderAnnualRankingList() {
             const listContainer = document.getElementById('annualRankingList'); if(!listContainer) return; listContainer.innerHTML = '';
             if (_annualRanking.length === 0) { listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:rgba(255,255,255,0.6); font-size:0.9rem;">El ranking está vacío. Usa el buscador superior para indexar series.</div>'; return; }
 
             _annualRanking.forEach((item, index) => {
                 const displayPos = (index < 10) ? (index + 1) : "OUT", badgeClass = (index < 10) ? "top-10" : "out-zone", imgId = `annual-img-${item.id}`;
-                const card = document.createElement('div'); card.className = 'draggable-item'; card.setAttribute('draggable', 'true'); card.dataset.index = index;
+                const card = document.createElement('div'); card.className = 'draggable-item'; card.dataset.index = index;
                 card.innerHTML = `
-                    <div class="drag-handle">⋮⋮</div><div class="rank-pos-badge ${badgeClass}">${displayPos}</div>
+                    <button type="button" class="drag-handle" aria-label="Mover ${esc(item.name)}: arrastra o usa las flechas ↑↓">⋮⋮</button>
+                    <button type="button" class="rank-pos-badge ${badgeClass}" onclick="moveAnnualToPosition(${index})" title="Mover a otra posición" aria-label="Posición ${index + 1}. Mover a otra posición">${displayPos}</button>
                     <div class="img-container" style="width: 48px; height: 68px; flex-shrink: 0; border-radius: 8px;"><img id="${imgId}" data-type="anime" data-title="${esc(item.name)}" alt="" class="img-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='68'><rect width='48' height='68' fill='%23111122'/></svg>"></div>
                     <span style="flex-grow:1; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(item.name)}">${esc(item.name)}</span>
                     <span style="font-weight:bold; color:var(--neon-magenta); font-size:0.9rem; padding-right:10px;">${esc(item.score)}⭐</span>
                     <button class="btn-remove-item" onclick="removeAnimeFromAnnualRanking(${jsArg(item.id)})" title="Eliminar">✕</button>
                 `;
 
-                card.addEventListener('dragstart', (e) => { dragSrcIndex = index; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-                card.addEventListener('dragover', (e) => { e.preventDefault(); });
-                card.addEventListener('drop', (e) => {
-                    e.preventDefault(); const targetIndex = parseInt(card.dataset.index);
-                    if (dragSrcIndex !== null && dragSrcIndex !== targetIndex) { const movedItem = _annualRanking.splice(dragSrcIndex, 1)[0]; _annualRanking.splice(targetIndex, 0, movedItem); localStorage.setItem('annual_ranking_data', JSON.stringify(_annualRanking)); renderAnnualRankingList(); }
-                });
-                card.addEventListener('dragend', () => { card.classList.remove('dragging'); dragSrcIndex = null; });
                 listContainer.appendChild(card); 
                 
                 const imgEl = document.getElementById(imgId);
