@@ -12,6 +12,9 @@
  *
  * Desde ese momento, cualquier lectura o escritura sin la clave correcta
  * recibe {status:"error", message:"UNAUTHORIZED"} y NO toca tus hojas.
+ *
+ * El "ping" devuelve también la versión de Code.gs (OTAKU_API_VERSION): la app
+ * la usa para no enviar acciones nuevas a un backend antiguo.
  */
 
 const OTAKU_AUTH_PROPERTY = 'OTAKU_HUB_KEY';
@@ -24,7 +27,8 @@ function doGet(e) {
     return otakuRespond_({ status: 'error', message: 'UNAUTHORIZED' }, callback);
   }
   if (params.action === 'ping') {
-    return otakuRespond_({ status: 'success', auth: 'ok' }, callback);
+    var version = (typeof OTAKU_API_VERSION !== 'undefined') ? OTAKU_API_VERSION : 1;
+    return otakuRespond_({ status: 'success', auth: 'ok', version: version }, callback);
   }
   // Quitar la clave antes de pasar la petición a tu lógica original.
   delete e.parameter.key;
@@ -52,13 +56,18 @@ function doPost(e) {
 /** Compara la clave recibida con la guardada, en tiempo constante. */
 function otakuIsAuthorized_(provided) {
   const expected = PropertiesService.getScriptProperties().getProperty(OTAKU_AUTH_PROPERTY);
-  if (!expected || typeof provided !== 'string' || provided.length === 0) return false;
-
-  const a = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, provided);
-  const b = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, expected);
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-  return diff === 0;
+  let ok = false;
+  if (expected && typeof provided === 'string' && provided.length > 0) {
+    const a = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, provided);
+    const b = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, expected);
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+    ok = diff === 0;
+  }
+  // Cada intento fallido tarda 1 s más: frena a quien pruebe claves a ciegas
+  // sin bloquear a nadie (un bloqueo global permitiría que te bloquearan a ti).
+  if (!ok) Utilities.sleep(1000);
+  return ok;
 }
 
 /** Responde en JSON o JSONP (validando el nombre del callback). */

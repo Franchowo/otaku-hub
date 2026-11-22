@@ -89,7 +89,7 @@ function renderCalificadorSavedGrid() {
 
 function deleteCalificadorProgress(id) {
     if(confirm("¿Eliminar este progreso? No podrás recuperarlo.")) {
-        _calificadorSavedProgress = _calificadorSavedProgress.filter(a => a.id !== id); renderCalificadorSavedGrid(); syncCalificadorToCloud();
+        _calificadorSavedProgress = _calificadorSavedProgress.filter(a => a.id !== id); renderCalificadorSavedGrid(); syncCalificadorToCloud({ remove: id });
         if(_calificadorCurrentId === id) { document.getElementById('calificadorTrackerSection').style.display = 'none'; }
     }
 }
@@ -335,7 +335,7 @@ function saveCurrentCalificadorToCloud() {
     renderCalificadorSavedGrid();
     btn.innerText = "Sincronizando... ⏳"; btn.disabled = true;
 
-    syncCalificadorToCloud(result => {
+    syncCalificadorToCloud({ upsert: animeData }, result => {
         btn.innerText = savedLabel(result, "¡Progreso Guardado! ✔️"); setTimeout(() => { btn.innerText = "💾 Guardar Progreso Actual"; btn.disabled = false; }, 2000);
     }, err => {
         // Antes el botón se quedaba bloqueado en "Sincronizando..." para siempre.
@@ -344,11 +344,23 @@ function saveCurrentCalificadorToCloud() {
     });
 }
 
-function syncCalificadorToCloud(callbackSuccess, callbackError) {
-    const statusLabel = document.getElementById('calificadorSyncStatus'); if(statusLabel) { statusLabel.innerText = "Sincronizando ⏳"; statusLabel.style.color = "var(--neon-yellow)"; }
-    const payload = { action: "save_calificador", payload: _calificadorSavedProgress };
+// Con Code.gs v2 guarda/borra solo la evaluación afectada; con el backend
+// antiguo reescribe la hoja entera como antes.
+async function saveCalificadorChange(change) {
+    const version = await getServerVersion();
+    if (version >= 2 && change && change.upsert) {
+        return sheetsWrite({ action: 'upsert_rows', sheet: 'CALIFICADOR_STATE', items: [change.upsert] }, { minVersion: 2 });
+    }
+    if (version >= 2 && change && change.remove) {
+        return sheetsWrite({ action: 'delete_rows', sheet: 'CALIFICADOR_STATE', ids: [change.remove] }, { minVersion: 2 });
+    }
+    return sheetsWrite({ action: "save_calificador", payload: _calificadorSavedProgress });
+}
 
-    sheetsWrite(payload).then(result => {
+function syncCalificadorToCloud(change, callbackSuccess, callbackError) {
+    const statusLabel = document.getElementById('calificadorSyncStatus'); if(statusLabel) { statusLabel.innerText = "Sincronizando ⏳"; statusLabel.style.color = "var(--neon-yellow)"; }
+
+    saveCalificadorChange(change).then(result => {
         if(statusLabel) { statusLabel.innerText = result.confirmed ? "Sincronizado ✔️" : "Enviado ✔️ (sin confirmar)"; statusLabel.style.color = "var(--neon-green)"; }
         if(callbackSuccess) callbackSuccess(result);
     }).catch(err => {

@@ -23,6 +23,7 @@ async function pullGacha() {
     query { 
         Page(page: ${randomPage}, perPage: 50) { 
             media(type: ${format}, sort: POPULARITY_DESC, ${yearParams} isAdult: false) { 
+                id
                 title { romaji english } 
                 coverImage { extraLarge } 
                 description 
@@ -43,19 +44,8 @@ async function pullGacha() {
         }
 
         // Filtrar para excluir lo que el usuario ya ha visto/leído
-        const myAnimeNames = _masterData.map(a => a.anime.toLowerCase());
-        const myMangaNames = _mangaData.map(m => m.manga.toLowerCase());
-
-        const unseenMedias = medias.filter(item => {
-            const titleRomaji = (item.title.romaji || '').toLowerCase();
-            const titleEng = (item.title.english || '').toLowerCase();
-            
-            if (format === 'ANIME') {
-                return !myAnimeNames.includes(titleRomaji) && !myAnimeNames.includes(titleEng);
-            } else {
-                return !myMangaNames.includes(titleRomaji) && !myMangaNames.includes(titleEng);
-            }
-        });
+        const owned = format === 'ANIME' ? buildOwnedIndex(_masterData, 'anime') : buildOwnedIndex(_mangaData, 'manga');
+        const unseenMedias = medias.filter(item => !owned.has(item));
 
         loader.style.display = 'none';
 

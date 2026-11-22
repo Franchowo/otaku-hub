@@ -410,6 +410,7 @@
                         <select id="filterStudio" onchange="onFilterChange()"><option value="all">Todos</option></select>
                     </div>
                     <div class="btn-action-group">
+                        <button class="clear-cache-btn" onclick="startAnilistLinking()" title="Rellena la columna AniList ID de tus listas para portadas y filtros exactos">🔗 Vincular AniList</button>
                         <button class="clear-cache-btn" onclick="clearLocalMemory()">🧹 Limpiar Caché</button>
                         <button class="btn-reload" onclick="reloadStatsData()">🔄 Recargar</button>
                         <button class="btn-reset-filter" onclick="resetFilters()">Reset</button>
@@ -905,6 +906,7 @@
     <script src="js/services/anilist.js"></script>
     <script src="js/services/image-queue.js"></script>
     <script src="js/services/sheets-api.js"></script>
+    <script src="js/services/anilist-link.js"></script>
     <script src="js/services/cloud-sync.js"></script>
     <script src="js/core/router.js"></script>
     <script src="js/services/sheets-fetchers.js"></script>

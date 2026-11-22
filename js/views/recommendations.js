@@ -13,7 +13,7 @@
         async function buildRecommendations() {
             document.getElementById('recomLoader').style.display = 'block'; document.getElementById('recomContent').style.display = 'none';
             const recomStatus = document.getElementById('recomStatusBar');
-            const myAnimeNames = _masterData.map(a => a.anime.toLowerCase()), myMangaNames = _mangaData.map(m => m.manga.toLowerCase());
+            const ownedAnime = buildOwnedIndex(_masterData, 'anime'), ownedManga = buildOwnedIndex(_mangaData, 'manga');
 
             // 1. Análisis Anime
             let topUserAnime = _masterData.filter(a => a.score >= 8), recomAnimes = [], animeBaseName = "";
@@ -24,10 +24,12 @@
                     recomStatus.innerText = `Extrayendo recomendaciones basadas en "${animeBaseName}"...`;
                     
                     // CÓDIGO CORREGIDO ANIME
-const gql = `query($search: String) { Page(page: 1, perPage: 1) { media(search: $search, type: ANIME) { recommendations(sort: RATING_DESC, perPage: 12) { nodes { mediaRecommendation { title { romaji } coverImage { large } } } } } } }`;
-const res = await fetchAnilist(gql, { search: animeBaseName });
-const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.mediaRecommendation).filter(Boolean) || [];
-                    recomAnimes = recs.filter(a => a && a.title && !myAnimeNames.includes(a.title.romaji.toLowerCase())).slice(0, 6);
+                    // Con ID vinculado se consulta la obra exacta; si no, se busca por título.
+                    const filter = randomAnime.anilistId ? 'id: $id' : 'search: $search';
+                    const gql = `query($search: String, $id: Int) { Page(page: 1, perPage: 1) { media(${filter}, type: ANIME) { recommendations(sort: RATING_DESC, perPage: 12) { nodes { mediaRecommendation { id title { romaji english } coverImage { large } } } } } } }`;
+                    const res = await fetchAnilist(gql, randomAnime.anilistId ? { id: randomAnime.anilistId } : { search: animeBaseName });
+                    const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.mediaRecommendation).filter(Boolean) || [];
+                    recomAnimes = recs.filter(a => a && a.title && !ownedAnime.has(a)).slice(0, 6);
                 } catch(e) {}
             }
 
@@ -36,10 +38,10 @@ const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.med
                  try {
                      recomStatus.innerText = `Buscando joyas perdidas en el Top Global de Anime...`;
                      let randomPage = Math.floor(Math.random() * 5) + 1;
-                     const gql = `query($page: Int) { Page(page: $page, perPage: 15) { media(type: ANIME, sort: SCORE_DESC) { title { romaji } coverImage { large } } } }`;
+                     const gql = `query($page: Int) { Page(page: $page, perPage: 15) { media(type: ANIME, sort: SCORE_DESC) { id title { romaji english } coverImage { large } } } }`;
                      const res = await fetchAnilist(gql, { page: randomPage });
                      const tops = res?.data?.Page?.media || [];
-                     recomAnimes = tops.filter(a => a && !myAnimeNames.includes(a.title.romaji.toLowerCase())).slice(0, 6);
+                     recomAnimes = tops.filter(a => a && !ownedAnime.has(a)).slice(0, 6);
                  } catch(e) {}
             }
 
@@ -52,10 +54,11 @@ const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.med
                     recomStatus.innerText = `Buscando lecturas similares a: "${mangaBaseName}"...`;
                     
                     // CÓDIGO CORREGIDO MANGA
-const gql = `query($search: String) { Page(page: 1, perPage: 1) { media(search: $search, type: MANGA) { recommendations(sort: RATING_DESC, perPage: 12) { nodes { mediaRecommendation { title { romaji } coverImage { large } } } } } } }`;
-const res = await fetchAnilist(gql, { search: mangaBaseName });
-const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.mediaRecommendation).filter(Boolean) || [];
-                    recomMangas = recs.filter(m => m && m.title && !myMangaNames.includes(m.title.romaji.toLowerCase())).slice(0, 6);
+                    const filter = randomManga.anilistId ? 'id: $id' : 'search: $search';
+                    const gql = `query($search: String, $id: Int) { Page(page: 1, perPage: 1) { media(${filter}, type: MANGA) { recommendations(sort: RATING_DESC, perPage: 12) { nodes { mediaRecommendation { id title { romaji english } coverImage { large } } } } } } }`;
+                    const res = await fetchAnilist(gql, randomManga.anilistId ? { id: randomManga.anilistId } : { search: mangaBaseName });
+                    const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.mediaRecommendation).filter(Boolean) || [];
+                    recomMangas = recs.filter(m => m && m.title && !ownedManga.has(m)).slice(0, 6);
                 } catch(e) {}
             }
 
@@ -64,10 +67,10 @@ const recs = res?.data?.Page?.media?.[0]?.recommendations?.nodes?.map(n => n.med
                  try {
                      recomStatus.innerText = `Buscando mangas aclamados en el Top Global...`;
                      let randomPage = Math.floor(Math.random() * 5) + 1;
-                     const gql = `query($page: Int) { Page(page: $page, perPage: 15) { media(type: MANGA, sort: SCORE_DESC) { title { romaji } coverImage { large } } } }`;
+                     const gql = `query($page: Int) { Page(page: $page, perPage: 15) { media(type: MANGA, sort: SCORE_DESC) { id title { romaji english } coverImage { large } } } }`;
                      const res = await fetchAnilist(gql, { page: randomPage });
                      const tops = res?.data?.Page?.media || [];
-                     recomMangas = tops.filter(m => m && !myMangaNames.includes(m.title.romaji.toLowerCase())).slice(0, 6);
+                     recomMangas = tops.filter(m => m && !ownedManga.has(m)).slice(0, 6);
                  } catch(e) {}
             }
 
