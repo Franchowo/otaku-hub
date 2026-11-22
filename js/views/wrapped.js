@@ -109,7 +109,7 @@ function drawWrapped(data) {
     // Cabecera
     let y = 130;
     ctx.fillStyle = '#00f0ff'; ctx.font = font(900, 40);
-    ctx.fillText('O T A K U   H U B', P, y);
+    ctx.fillText('W R A P P E D', P, y);
     y += 230;
     ctx.fillStyle = '#ffffff'; ctx.font = font(900, 230);
     ctx.fillText(String(data.year), P - 8, y);
